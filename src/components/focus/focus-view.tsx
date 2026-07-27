@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, RotateCcw, Coffee, Brain, Check } from "lucide-react";
+import { Play, Pause, RotateCcw, Coffee, Brain, Check, Flame } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useHabits } from "@/hooks/use-habits";
-import { toBn, bnDuration } from "@/lib/date-bn";
+import { toBn } from "@/lib/date-bn";
+import { fireConfetti } from "@/lib/confetti";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { IconTile } from "@/components/shared/icon-renderer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +36,7 @@ interface FocusData {
   totalMinutes: number;
   totalSessions: number;
   dailySeries: { date: string; minutes: number }[];
+  focusStreak: number;
 }
 
 export function FocusView() {
@@ -57,16 +59,34 @@ export function FocusView() {
 
   const logSession = useMutation({
     mutationFn: (input: { durationMin: number; type: TimerMode; habitId?: string | null }) =>
-      api.post("/api/focus", input),
-    onSuccess: () => {
+      api.post<{
+        xpAwarded: number;
+        totalXp: number;
+        level: number;
+        leveledUp: boolean;
+      }>("/api/focus", input),
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["focus"] });
+      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+      if (res.xpAwarded > 0) {
+        if (res.leveledUp) {
+          toast.success(`⭐ লেভেল আপ! এখন লেভেল ${toBn(res.level)}`, {
+            description: `+${toBn(res.xpAwarded)} XP অর্জন`,
+          });
+        } else {
+          toast.success(`+${toBn(res.xpAwarded)} XP`, {
+            description: `${toBn(res.xpAwarded / 2)} মিনিট ফোকাস`,
+          });
+        }
+      }
     },
   });
 
   const handleComplete = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setState("done");
-    // log the session
+    // log the session (XP toast handled by mutation onSuccess)
     const durationMin = mode === "work" ? preset.work : preset.break;
     logSession.mutate({
       durationMin,
@@ -75,9 +95,7 @@ export function FocusView() {
     });
     if (mode === "work") {
       setCompletedCount((c) => c + 1);
-      toast.success(`✅ ${toBn(durationMin)} মিনিট ফোকাস সম্পন্ন!`, {
-        description: "বিশ্রাম নিন বা আরেকটি সেশন শুরু করুন।",
-      });
+      fireConfetti({ count: 60, duration: 600 });
     }
     // auto-switch mode
     setTimeout(() => {
@@ -286,7 +304,7 @@ export function FocusView() {
         <Skeleton className="h-28 rounded-3xl" />
       ) : (
         focusData && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatBox
               label="আজ"
               value={focusData.todayMinutes}
@@ -304,6 +322,13 @@ export function FocusView() {
               value={focusData.totalSessions}
               unit="টি"
               color="#7c3aed"
+            />
+            <StatBox
+              label="স্ট্রিক"
+              value={focusData.focusStreak}
+              unit="দিন"
+              color="var(--streak)"
+              icon="flame"
             />
           </div>
         )
@@ -355,18 +380,23 @@ function StatBox({
   value,
   unit,
   color,
+  icon,
 }: {
   label: string;
   value: number;
   unit: string;
   color: string;
+  icon?: "flame";
 }) {
   return (
     <div className="rounded-2xl border bg-card p-3 text-center">
       <div
-        className="tabular text-xl font-extrabold leading-none"
+        className="flex items-center justify-center gap-1 tabular text-xl font-extrabold leading-none"
         style={{ color }}
       >
+        {icon === "flame" && value > 0 && (
+          <Flame size={14} fill="currentColor" className="streak-glow" />
+        )}
         {toBn(value)}
       </div>
       <div className="text-[9px] text-muted-foreground">{unit}</div>

@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toBn, bnDayFirst, fromDateKey } from "@/lib/date-bn";
 import { IconTile } from "@/components/shared/icon-renderer";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +43,33 @@ export function JournalView() {
     staleTime: 30_000,
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [moodFilter, setMoodFilter] = useState<number | null>(null);
+
+  const allDays = data?.days ?? [];
+
+  // apply filters client-side
+  const days = useMemo(() => {
+    let filtered = allDays;
+    if (moodFilter !== null) {
+      filtered = filtered.filter((d) => d.mood?.mood === moodFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((d) => {
+        // match mood note
+        if (d.mood?.note?.toLowerCase().includes(q)) return true;
+        // match any habit name or note
+        return d.completedHabits.some(
+          (h) =>
+            h.name.toLowerCase().includes(q) ||
+            (h.note?.toLowerCase().includes(q) ?? false)
+        );
+      });
+    }
+    return filtered;
+  }, [allDays, searchQuery, moodFilter]);
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-5">
@@ -51,8 +81,6 @@ export function JournalView() {
     );
   }
 
-  const days = data?.days ?? [];
-
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-5">
       <div>
@@ -62,13 +90,60 @@ export function JournalView() {
         </p>
       </div>
 
+      {/* Search + mood filter */}
+      {allDays.length > 0 && (
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="অভ্যাস, নোট বা মুড খুঁজুন..."
+              className="h-9 pl-9 pr-9 text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+                aria-label="মুছুন"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            <FilterChip
+              active={moodFilter === null}
+              onClick={() => setMoodFilter(null)}
+            >
+              সব
+            </FilterChip>
+            {[5, 4, 3, 2, 1].map((m) => (
+              <FilterChip
+                key={m}
+                active={moodFilter === m}
+                onClick={() => setMoodFilter(moodFilter === m ? null : m)}
+              >
+                {MOOD_EMOJI[m]} {MOOD_LABEL[m]}
+              </FilterChip>
+            ))}
+          </div>
+        </div>
+      )}
+
       {days.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/50 p-10 text-center">
           <span className="text-4xl">📔</span>
           <div>
-            <h3 className="font-semibold">এখনো কোনো এন্ট্রি নেই</h3>
+            <h3 className="font-semibold">
+              {searchQuery || moodFilter !== null
+                ? "কিছু পাওয়া যায়নি"
+                : "এখনো কোনো এন্ট্রি নেই"}
+            </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              অভ্যাস সম্পন্ন করুন, মুড লগ করুন, বা নোট যোগ করুন — সব এখানে একসাথে দেখা যাবে।
+              {searchQuery || moodFilter !== null
+                ? "অন্য ফিল্টার বা সার্চ চেষ্টা করুন।"
+                : "অভ্যাস সম্পন্ন করুন, মুড লগ করুন, বা নোট যোগ করুন — সব এখানে একসাথে দেখা যাবে।"}
             </p>
           </div>
         </div>
@@ -204,5 +279,29 @@ function JournalDayCard({
         )}
       </div>
     </motion.div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-medium transition",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "bg-card text-muted-foreground hover:border-foreground/20"
+      )}
+    >
+      {children}
+    </button>
   );
 }

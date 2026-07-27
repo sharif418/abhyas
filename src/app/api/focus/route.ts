@@ -48,12 +48,33 @@ export async function GET(req: Request) {
     minutes: byDate.get(d) ?? 0,
   }));
 
+  // focus streak: consecutive days (ending today or yesterday) with ≥1 work session
+  const workDates = new Set(
+    sessions.filter((s) => s.type === "work").map((s) => s.date)
+  );
+  let focusStreak = 0;
+  let cursor = new Date();
+  // allow today to be empty (streak still intact from yesterday)
+  if (!workDates.has(todayKey())) {
+    cursor = new Date(Date.now() - 86400000);
+  }
+  for (let i = 0; i < 366; i++) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+    if (workDates.has(key)) {
+      focusStreak++;
+      cursor = new Date(cursor.getTime() - 86400000);
+    } else {
+      break;
+    }
+  }
+
   return NextResponse.json({
     sessions: sessions.slice(0, 50),
     todayMinutes,
     totalMinutes,
     totalSessions,
     dailySeries,
+    focusStreak,
   });
 }
 
@@ -81,10 +102,29 @@ export async function POST(req: Request) {
     },
   });
 
+  // Award XP for completed work sessions (2 XP per minute)
+  let xpAwarded = 0;
+  let totalXp = user.xp;
+  let newLevel = user.level;
+  if (type === "work") {
+    xpAwarded = durationMin * 2;
+    totalXp = user.xp + xpAwarded;
+    const { levelFromXp } = await import("@/lib/gamification");
+    newLevel = levelFromXp(totalXp);
+    await db.user.update({
+      where: { id: user.id },
+      data: { xp: totalXp, level: newLevel },
+    });
+  }
+
   return NextResponse.json({
     id: session.id,
     durationMin: session.durationMin,
     type: session.type,
     date: session.date,
+    xpAwarded,
+    totalXp,
+    level: newLevel,
+    leveledUp: newLevel > user.level,
   });
 }

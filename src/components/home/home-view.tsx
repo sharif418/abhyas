@@ -15,6 +15,7 @@ import { HabitRow } from "@/components/habits/habit-row";
 import { AICoachPanel } from "@/components/home/ai-coach-panel";
 import { CalendarPanel } from "@/components/home/calendar-panel";
 import { MoodSelector } from "@/components/home/mood-selector";
+import { WeeklyRecapCard } from "@/components/home/weekly-recap-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -139,6 +140,11 @@ export function HomeView() {
       {/* Daily mood selector */}
       <div className="mt-4">
         <MoodSelector />
+      </div>
+
+      {/* Weekly AI Recap */}
+      <div className="mt-4">
+        <WeeklyRecapCard />
       </div>
 
       {/* Habits by time of day */}

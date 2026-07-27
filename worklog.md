@@ -555,6 +555,59 @@ was introduced mid-round.
 - **Focus enhancements**: ambient sounds, custom intervals, focus streaks,
   integration with XP (award XP for focus sessions).
 
+---
+
+## Task ID: R9 (webDevReview Round 9 — Focus XP + Journal Search/Filter)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R8, the app was stable with 8 views including the new Focus/Pomodoro
+timer. This round connected the Focus timer to the gamification system (XP
+awards + level-ups) and added focus streaks, plus implemented journal
+search/filter (a top R7 recommendation). All QA-verified via agent-browser.
+
+### Work Log
+- **Focus XP integration**: `/api/focus` POST now awards 2 XP per minute for
+  completed work sessions (e.g., 25-min session → +50 XP). Updates the user's
+  XP + level, returns `xpAwarded`, `totalXp`, `level`, `leveledUp`. The Focus
+  view's `logSession` mutation handles XP toast feedback (regular XP toast +
+  special level-up toast) and invalidates `["me"]` + `["stats"]` queries.
+  Verified: 25-min session → +50 XP, totalXp 302→352.
+- **Focus streak**: `/api/focus` GET now computes `focusStreak` — consecutive
+  days (ending today or yesterday) with ≥1 work session. Added to the Focus
+  view's stats grid as a 4th stat box with a Flame icon (streak-glow animation).
+  Verified: focusStreak=1 after today's session.
+- **Confetti on focus completion**: the timer's `handleComplete` now fires
+  confetti (60 particles) on work-session completion, replacing the redundant
+  toast (the logSession onSuccess now handles the XP toast).
+- **Journal search/filter** (`journal-view.tsx`): added a search input
+  (filters by habit name, habit note, or mood note) + mood filter chips
+  (5 emoji-labeled chips: খুব খারাপ → খুব ভালো). Filter logic runs
+  client-side via `useMemo`. Empty state differentiates "no entries" vs
+  "no results found" (when a filter is active). Verified: searching "নামাজ"
+  finds matching entries; mood filter chips work.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Focus view renders; XP API returns `xpAwarded=50, totalXp=352, leveledUp=false`.
+  - Focus streak stat renders (focusStreak=1) with Flame icon.
+  - Journal view: search input + mood filter chips render; search "নামাজ" finds
+    results; mood filter chips toggle correctly.
+  - Desktop: all 8 nav items render correctly.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r9-journal-filter.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, custom intervals, focus badges.
+- **Weekly AI recap**: AI-generated weekly summary using z-ai-web-dev-sdk.
+
+
 
 
 
