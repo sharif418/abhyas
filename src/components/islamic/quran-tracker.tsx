@@ -11,6 +11,7 @@ import { SURAHS } from "@/constants";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -62,6 +63,9 @@ export function QuranTracker() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>কুরআন সেশন লগ করুন</DialogTitle>
+              <DialogDescription>
+                আজকের তিলাওয়াতের বিবরণ লিখুন
+              </DialogDescription>
             </DialogHeader>
             <LogForm onSuccess={() => setOpen(false)} />
           </DialogContent>

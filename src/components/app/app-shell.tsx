@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { useSettingsEffect } from "@/hooks/use-settings-effect";
+import { useNotifications } from "@/hooks/use-notifications";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
 import { TopBar } from "./top-bar";
@@ -9,6 +9,7 @@ import { ViewRouter } from "./view-router";
 import { HabitFormSheet } from "@/components/habits/habit-form";
 import { HabitDetailSheet } from "@/components/habits/habit-detail";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
+import { ServiceWorkerRegister } from "@/components/app/sw-register";
 
 /**
  * Root application shell.
@@ -17,6 +18,7 @@ import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
  */
 export function AppShell() {
   useSettingsEffect();
+  useNotifications();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -33,6 +35,7 @@ export function AppShell() {
       <HabitFormSheet />
       <HabitDetailSheet />
       <OnboardingModal />
+      <ServiceWorkerRegister />
     </div>
   );
 }

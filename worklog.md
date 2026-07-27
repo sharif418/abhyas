@@ -189,4 +189,72 @@ polish. All QA-verified via agent-browser on mobile + desktop with zero errors.
 - **Notifications**: browser notification API for habit reminders (settings toggles exist
   in Profile but aren't wired to actual notifications yet).
 
+---
+
+## Task ID: R3 (webDevReview Round 3 — PWA Offline + Templates + Notifications + a11y)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R2, the app was stable with 3 flagship features (AI Coach, streak freeze,
+drag-reorder). QA via agent-browser surfaced 6 accessibility console warnings
+(DialogContent missing Title/Description) — a real bug worth fixing. This round
+fixed those + delivered the top three roadmap items: Service Worker (offline
+PWA), Habit Templates Library, and Browser Notifications.
+
+### Work Log
+- **Accessibility fix (bug)**: onboarding modal's `DialogContent` lacked
+  `DialogTitle`/`DialogDescription` (used motion headings). Added
+  `VisuallyHidden`-wrapped title+description. Added `DialogDescription` to the
+  Quran tracker dialog. Verified: a11y console warnings dropped 6 → 0 after
+  fresh reload.
+- **Service Worker / offline PWA**: new `public/sw.js` with three caching
+  strategies — precache app shell, network-first for `/api/*` (fresh data
+  online, cache fallback offline), stale-while-revalidate for same-origin
+  assets. New `public/offline.html` Bengali fallback page. New
+  `ServiceWorkerRegister` component (production-only, avoids HMR conflicts).
+  Wired into AppShell.
+- **Habit Templates Library**: new `TEMPLATE_BUNDLES` constant with 6 curated
+  bundles (রমজান প্রস্তুতি, ছাত্র রুটিন, সকাল রুটিন, স্বাস্থ্য ও ফিটনেস, মানসিক
+  সুস্থতা, উৎপাদনশীলতা) — 32 habits total. New `/api/habits/templates`
+  endpoint installs a bundle's habits transactionally. New `TemplatesModal`
+  component with browse → detail → install flow (animated, gradient-themed
+  cards per bundle). New `LayoutGrid` button in Habits view header opens it.
+  Verified: installed "সকাল রুটিন" → habits 25 → 30, no errors.
+- **Browser Notifications**: new `useNotifications` hook wires the
+  `notificationsEnabled` + `remindersEnabled` settings toggles to the browser
+  Notification API. Requests permission when enabled, checks every 15 min for
+  habits with `reminderTime` matching the current hour (not completed today,
+  not yet notified today → fires OS notification with habit name + streak).
+  Per-day localStorage dedup. New `TestNotificationButton` in Profile view
+  (next to the notifications toggle) lets users verify permission + send a test.
+- **Styling polish**: refined toggle row with optional `extra` slot, gradient
+  bundle cards, animated bundle-detail habit list (staggered entrance).
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ a11y console warnings: 6 → 0 after fresh reload.
+- ✅ agent-browser QA (mobile 390×844 + desktop 1280×800):
+  - Templates modal: 6 bundles render, bundle detail shows habits, install
+    works (25 → 30 habits, toast confirmation).
+  - Profile: "পরীক্ষা" test-notification button renders next to toggle.
+  - Desktop: AI Coach + hero + sidebar all render correctly.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r3-profile-notifications.png`, `qa-r3-desktop-home.png`.
+
+### Unresolved / next-phase recommendations
+- **SW in production only**: the SW registration is gated to
+  `NODE_ENV === "production"` to avoid HMR conflicts; a production build test
+  would confirm offline behavior end-to-end.
+- **Social/leaderboard via WebSocket mini-service**: schema ready, needs UI +
+  realtime layer — the last major feature gap.
+- **Bangladesh calendar integration**: Bengali New Year (পহেলা বৈশাখ), Eid,
+  national holidays as special habit targets.
+- **Habit statistics depth**: monthly trend lines, year-over-year comparison,
+  best-time-of-day heatmap.
+- **Data sync**: server-side persistence of offline changes (currently the
+  local SQLite is the single source of truth; a sync API would enable
+  multi-device).
+
+
 

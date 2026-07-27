@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ArrowUpDown, Check } from "lucide-react";
+import { Plus, Search, ArrowUpDown, Check, LayoutGrid } from "lucide-react";
 import { useHabits, useToggleHabit } from "@/hooks/use-habits";
 import { useUIStore } from "@/stores/ui-store";
 import { HabitRow } from "@/components/habits/habit-row";
 import { SortableHabitsList } from "@/components/habits/sortable-habits-list";
+import { TemplatesModal } from "@/components/habits/templates-modal";
 import { EmptyState } from "@/components/shared/stat-pill";
 import { Input } from "@/components/ui/input";
 import { CATEGORIES, TIMES_OF_DAY } from "@/constants";
@@ -25,6 +26,7 @@ export function HabitsView() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [reorderMode, setReorderMode] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   // reorder mode only valid when no filter/search applied
   const canReorder = filter === "all" && !query.trim() && habits && habits.length > 0;
@@ -79,6 +81,14 @@ export function HabitsView() {
               <span className="hidden sm:inline">{reorderMode ? "সম্পন্ন" : "সাজান"}</span>
             </button>
           )}
+          <button
+            onClick={() => setTemplatesOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-full border bg-card text-foreground shadow-sm transition hover:scale-105 active:scale-95"
+            aria-label="টেমপ্লেট লাইব্রেরি"
+            title="টেমপ্লেট লাইব্রেরি"
+          >
+            <LayoutGrid size={18} />
+          </button>
           <button
             onClick={openAddHabit}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition hover:scale-105 active:scale-95"
@@ -189,6 +199,8 @@ export function HabitsView() {
           </AnimatePresence>
         </div>
       )}
+
+      <TemplatesModal open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </div>
   );
 }

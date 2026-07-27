@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>অফলাইন — অভ্যাস</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Noto Sans Bengali", system-ui, sans-serif;
+      background: #f0fdf4;
+      color: #14532d;
+      text-align: center;
+      padding: 2rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a2e; color: #d1fae5; }
+    }
+    .card { max-width: 360px; }
+    .emoji { font-size: 3rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+    p { margin: 0 0 1.5rem; opacity: 0.8; line-height: 1.5; }
+    button {
+      background: #059669;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #047857; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">📡</div>
+    <h1>আপনি এখন অফলাইন</h1>
+    <p>ইন্টারনেট সংযোগ নেই। অভ্যাস ট্র্যাকিং অফলাইনেও কাজ করবে — আপনার ডেটা সংরক্ষিত আছে এবং সংযোগ ফিরলে সিঙ্ক হবে।</p>
+    <button onclick="location.href='/'">পুনরায় চেষ্টা করুন</button>
+  </div>
+</body>
+</html>

@@ -15,6 +15,8 @@ import {
   Vibrate,
   Volume2,
   Bell,
+  BellRing,
+  Send,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -181,6 +183,9 @@ export function ProfileView() {
           checked={settings.notificationsEnabled}
           onChange={settings.toggleNotifications}
           last
+          extra={
+            settings.notificationsEnabled ? <TestNotificationButton /> : null
+          }
         />
       </Section>
 
@@ -329,6 +334,7 @@ function ToggleRow({
   checked,
   onChange,
   last,
+  extra,
 }: {
   icon: string;
   label: string;
@@ -336,6 +342,7 @@ function ToggleRow({
   checked: boolean;
   onChange: () => void;
   last?: boolean;
+  extra?: React.ReactNode;
 }) {
   const Icons: Record<string, any> = { Vibrate, Volume2, Bell, BellRing: Bell };
   const Icon = Icons[icon] ?? Bell;
@@ -353,8 +360,48 @@ function ToggleRow({
         <div className="text-sm font-medium">{label}</div>
         <div className="text-[11px] text-muted-foreground">{desc}</div>
       </div>
+      {extra}
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
+  );
+}
+
+/** Test notification button — fires a sample OS notification. */
+function TestNotificationButton() {
+  const [status, setStatus] = useState<"idle" | "sent" | "denied">("idle");
+  const send = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setStatus("denied");
+      return;
+    }
+    let perm = Notification.permission;
+    if (perm === "default") {
+      perm = await Notification.requestPermission();
+    }
+    if (perm !== "granted") {
+      setStatus("denied");
+      return;
+    }
+    try {
+      new Notification("🔔 অভ্যাস", {
+        body: "নোটিফিকেশন সফলভাবে চালু হয়েছে!",
+        icon: "/icon.svg",
+      });
+      setStatus("sent");
+    } catch {
+      setStatus("denied");
+    }
+  };
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={send}
+      className="h-7 gap-1 px-2 text-[11px]"
+    >
+      <Send size={11} />
+      {status === "sent" ? "পাঠানো হয়েছে" : status === "denied" ? "অনুমতি নেই" : "পরীক্ষা"}
+    </Button>
   );
 }
 
