@@ -25,6 +25,10 @@ import {
   WeeklyInsights,
   type InsightsData,
 } from "@/components/stats/weekly-insights";
+import {
+  MonthlyTrendChart,
+  type MonthlyTrendPoint,
+} from "@/components/stats/monthly-trend-chart";
 import { AnimatedNumber } from "@/components/shared/celebration";
 
 interface StatsResponse {
@@ -50,6 +54,7 @@ interface StatsResponse {
   quranSessions: number;
   habitsCount: number;
   insights: InsightsData;
+  monthlyTrend: MonthlyTrendPoint[];
 }
 
 export function StatsView() {
@@ -208,6 +213,11 @@ export function StatsView() {
           </ResponsiveContainer>
         </div>
       </Card>
+
+      {/* Monthly trend (12 months) */}
+      {stats.monthlyTrend && stats.monthlyTrend.length > 0 && (
+        <MonthlyTrendChart data={stats.monthlyTrend} />
+      )}
 
       {/* Category breakdown */}
       {stats.categories.length > 0 && (

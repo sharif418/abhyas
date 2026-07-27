@@ -17,6 +17,7 @@ import {
   Bell,
   BellRing,
   Send,
+  FileSpreadsheet,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -193,9 +194,15 @@ export function ProfileView() {
       <Section title="ডেটা" icon="Database">
         <DataRow
           icon="Download"
-          label="ডেটা এক্সপোর্ট"
-          desc="JSON ফরম্যাটে ডাউনলোড"
-          action={<ExportButton />}
+          label="JSON এক্সপোর্ট"
+          desc="সম্পূর্ণ ডেটা JSON ফরম্যাটে"
+          action={<ExportButton format="json" label="JSON" />}
+        />
+        <DataRow
+          icon="FileSpreadsheet"
+          label="CSV এক্সপোর্ট"
+          desc="স্প্রেডশিটের জন্য CSV ফাইল"
+          action={<ExportButton format="csv" label="CSV" />}
         />
         <DataRow
           icon="RotateCcw"
@@ -420,7 +427,7 @@ function DataRow({
   danger?: boolean;
   last?: boolean;
 }) {
-  const Icons: Record<string, any> = { Download, RotateCcw, Info, Database: Info };
+  const Icons: Record<string, any> = { Download, RotateCcw, Info, Database: Info, FileSpreadsheet };
   const Icon = Icons[icon] ?? Info;
   return (
     <div
@@ -446,34 +453,57 @@ function DataRow({
   );
 }
 
-function ExportButton() {
+function ExportButton({
+  format = "json",
+  label = "ডাউনলোড",
+}: {
+  format?: "json" | "csv";
+  label?: string;
+}) {
   return (
     <Button
       variant="outline"
       size="sm"
       onClick={async () => {
         try {
-          const [habits, stats] = await Promise.all([
-            api.get("/api/habits"),
-            api.get("/api/stats"),
-          ]);
-          const blob = new Blob(
-            [JSON.stringify({ habits, stats, exportedAt: new Date().toISOString() }, null, 2)],
-            { type: "application/json" }
-          );
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `abhyas-export-${new Date().toISOString().slice(0, 10)}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-          toast.success("ডেটা এক্সপোর্ট হয়েছে");
+          if (format === "csv") {
+            // trigger CSV download via direct URL
+            const a = document.createElement("a");
+            a.href = `/api/export?format=csv&t=${Date.now()}`;
+            a.download = `abhyas-export-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            toast.success("CSV এক্সপোর্ট হয়েছে");
+          } else {
+            const [habits, stats] = await Promise.all([
+              api.get("/api/habits"),
+              api.get("/api/stats"),
+            ]);
+            const blob = new Blob(
+              [
+                JSON.stringify(
+                  { habits, stats, exportedAt: new Date().toISOString() },
+                  null,
+                  2
+                ),
+              ],
+              { type: "application/json" }
+            );
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `abhyas-export-${new Date()
+              .toISOString()
+              .slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success("JSON এক্সপোর্ট হয়েছে");
+          }
         } catch {
           toast.error("এক্সপোর্ট ব্যর্থ");
         }
       }}
     >
-      <Download size={14} /> ডাউনলোড
+      <Download size={14} /> {label}
     </Button>
   );
 }

@@ -192,6 +192,36 @@ export async function GET() {
     count: v,
   }));
 
+  // ---- 12-month trend: completion rate per month over last year ----
+  const monthlyTrend: { month: string; label: string; done: number; scheduled: number; rate: number }[] = [];
+  const monthLabels = ["জানু", "ফেব্রু", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্ট", "অক্টো", "নভে", "ডিসে"];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const monthStart = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const nextMonth = new Date(y, m + 1, 1);
+    const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
+    const done = completions.filter((c) => c.date >= monthStart && c.date < monthEnd).length;
+    // scheduled: sum of active habits' scheduled days in that month
+    let scheduled = 0;
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(y, m, day);
+      for (const h of habits) {
+        if (isScheduledOn(h, date)) scheduled++;
+      }
+    }
+    monthlyTrend.push({
+      month: `${y}-${String(m + 1).padStart(2, "0")}`,
+      label: monthLabels[m],
+      done,
+      scheduled,
+      rate: scheduled > 0 ? done / scheduled : 0,
+    });
+  }
+
   return NextResponse.json({
     user: {
       name: user.name,
@@ -232,5 +262,6 @@ export async function GET() {
       weekdaySeries,
       timeOfDaySeries,
     },
+    monthlyTrend,
   });
 }

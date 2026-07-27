@@ -256,5 +256,64 @@ PWA), Habit Templates Library, and Browser Notifications.
   local SQLite is the single source of truth; a sync API would enable
   multi-device).
 
+---
+
+## Task ID: R4 (webDevReview Round 4 — Analytics + BD Calendar + CSV Export)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R3, the app was stable (lint clean, a11y fixed, PWA SW + templates +
+notifications shipped). This round delivered the remaining analytics + cultural
+features from the roadmap: 12-month trend chart, Bangladesh calendar panel,
+and CSV export. All QA-verified via agent-browser on mobile + desktop.
+
+### Work Log
+- **12-month trend analytics**: extended `/api/stats` to compute a 12-month
+  completion-rate series (`monthlyTrend[]` with done/scheduled/rate per month).
+  New `MonthlyTrendChart` component — gradient-filled area chart with X-axis
+  month labels (Bengali), Y-axis percentage, average-rate summary, and
+  best-month stat. Inserted into Stats view after the 30-day bar chart.
+  Verified: API returns 12 months (July shows 18% rate from seeded data).
+- **Bangladesh calendar panel**: new `bangladesh-calendar.ts` constants with
+  10 curated special days (Bengali: পহেলা বৈশাখ; Islamic: Eid ul-Fitr, Eid
+  ul-Adha, Shab-e-Barat, Shab-e-Qadr, Ashura, Mawlid; National: Language
+  Martyrs Day, Independence Day, Victory Day). New `/api/calendar` endpoint
+  returns upcoming events within 60 days. New `CalendarPanel` component on the
+  Home view with category-colored cards (amber=bengali, teal=islamic,
+  rose=national), days-until countdown, and habit-theme suggestions.
+  Verified: ঈদে মিলাদুন্নবী (40 days) renders on Home.
+- **CSV export**: new `/api/export?format=csv` endpoint exports all habits +
+  completion dates as a well-formed CSV (Bengali-escaped, semicolon-delimited
+  date lists). Profile view now has two export rows: JSON + CSV. Verified:
+  CSV downloads correctly with Bengali content (6KB, 30 rows).
+- **Styling polish**: gradient area chart with defs, CartesianGrid, active
+  dots; calendar cards with colored rings + emoji date tiles; category chips
+  on calendar entries.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA (mobile 390×844 + desktop 1280×800):
+  - Home: Calendar panel ("আসন্ন বিশেষ দিন") renders with ঈদে মিলাদুন্নবী.
+  - Stats: Monthly trend chart ("বার্ষিক ধারা") renders with 12-month data.
+  - Profile: CSV export button ("CSV") renders next to JSON export.
+  - CSV API returns 200 with well-formed CSV (verified content).
+  - Calendar API returns 1 upcoming day within 60 days.
+  - Desktop: calendar + AI coach + hero all render correctly.
+- Screenshots: `qa-r4-stats-with-trend.png`, `qa-r4-profile-csv.png`,
+  `test-export.csv`.
+
+### Unresolved / next-phase recommendations
+- **Social/leaderboard via WebSocket mini-service**: the last major feature
+  gap — schema ready, needs a socket.io mini-service + UI.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Habit statistics depth**: year-over-year comparison, best-time-of-day
+  heatmap (the monthly trend is done; these would add more depth).
+- **Production build test**: confirm the Service Worker offline behavior
+  end-to-end in a production build.
+- **Bangladesh calendar Hijri accuracy**: the Islamic dates are approximate;
+  a proper Hijri→Gregorian conversion would make them exact per year.
+
+
 
 
