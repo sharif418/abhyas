@@ -796,6 +796,49 @@ All QA-verified.
 - **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
 - **Image-based sharing**: generate a PNG image of the share card.
 
+---
+
+## Task ID: R14 (webDevReview Round 14 — Yearly Heatmap)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R13, the app was stable with AI recap cooldown + category analytics. This
+round added a **GitHub-style 365-day yearly heatmap** to the Stats view, showing
+combined habit completion density across the entire year. All QA-verified.
+
+### Work Log
+- **Backend**: extended `/api/stats` to fetch completions for the full year
+  (365 days instead of just 30). Added `yearlyHeatmap` array to the response —
+  each entry is `{date, count}` representing the number of habit completions on
+  that day. Verified: API returns 365 days, 22 active days, today=6 completions.
+- **YearlyHeatmap component** (`yearly-heatmap.tsx`): GitHub-style 365-day
+  calendar grid. Columns = weeks (52), rows = 7 days. Each cell is colored by
+  completion density (0 = muted, increasing primary-color opacity for higher
+  counts). Bengali month labels across the top. Color legend (কম → বেশি) at the
+  bottom. Active-days + total-completions summary header. Horizontally scrollable
+  on mobile. Hover tooltip shows date + count. Inserted into Stats view after
+  the weekly insights card.
+- **Styling polish**: color-mix for intensity shading, 11px cells with 2px gaps,
+  rounded corners, hover ring, month labels, legend.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Stats: yearly heatmap ("বার্ষিক কার্যকলাপ") renders with 365 days.
+  - API: returns 365 days, 22 active days, today=6 completions.
+  - Desktop: all features render correctly.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r14-yearly-heatmap.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+- **Image-based sharing**: generate a PNG image of the share card.
+- **Heatmap interactivity**: click a cell to see that day's details (habits, mood, notes).
 
 
 

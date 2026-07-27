@@ -37,6 +37,7 @@ import {
   MoodCorrelationCard,
   type MoodCorrelation,
 } from "@/components/stats/mood-correlation-card";
+import { YearlyHeatmap } from "@/components/stats/yearly-heatmap";
 import { AnimatedNumber } from "@/components/shared/celebration";
 
 interface StatsResponse {
@@ -69,6 +70,7 @@ interface StatsResponse {
     today: { mood: number; note: string | null } | null;
   };
   moodCorrelations: MoodCorrelation[];
+  yearlyHeatmap: { date: string; count: number }[];
   badgeStats: {
     totalCompletions: number;
     bestStreak: number;
@@ -182,6 +184,11 @@ export function StatsView() {
 
       {/* Weekly insights (new) */}
       <WeeklyInsights insights={stats.insights} />
+
+      {/* Yearly heatmap */}
+      {stats.yearlyHeatmap && stats.yearlyHeatmap.length > 0 && (
+        <YearlyHeatmap data={stats.yearlyHeatmap} />
+      )}
 
       {/* Weekly completion chart */}
       <Card>

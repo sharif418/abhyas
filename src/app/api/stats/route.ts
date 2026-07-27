@@ -22,15 +22,23 @@ export async function GET() {
   const last30 = lastNDays(30, today);
   const last7 = lastNDays(7, today);
 
-  // daily completion counts across habits
+  // daily completion counts across habits (fetch full year for yearly heatmap)
+  const yearAgo = lastNDays(365, today)[0];
   const completions = await db.habitCompletion.findMany({
-    where: { userId: user.id, date: { gte: last30[0] } },
+    where: { userId: user.id, date: { gte: yearAgo } },
     select: { date: true, habitId: true },
   });
   const byDate = new Map<string, number>();
   for (const c of completions) {
     byDate.set(c.date, (byDate.get(c.date) ?? 0) + 1);
   }
+
+  // yearly heatmap: 365-day completion density
+  const yearlyDays = lastNDays(365, today);
+  const yearlyHeatmap = yearlyDays.map((date) => ({
+    date,
+    count: byDate.get(date) ?? 0,
+  }));
 
   const dailySeries = last30.map((k) => ({
     date: k,
@@ -327,5 +335,6 @@ export async function GET() {
       today: todayMood ? { mood: todayMood.mood, note: todayMood.note } : null,
     },
     moodCorrelations,
+    yearlyHeatmap,
   });
 }
