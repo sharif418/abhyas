@@ -30,6 +30,7 @@ model User {
   quran        QuranSession[]
   achievements Achievement[]
   moods        MoodEntry[]
+  focusSessions FocusSession[]
 }
 
 model Habit {
@@ -152,5 +153,21 @@ model MoodEntry {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// Focus / Pomodoro sessions — track deep-work time spent on habits.
+model FocusSession {
+  id          String   @id @default(cuid())
+  userId      String
+  habitId     String?  // optional linked habit
+  date        String   // YYYY-MM-DD
+  durationMin Int      // session duration in minutes
+  type        String   @default("work") // "work" | "break"
+  completed   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, date])
 }

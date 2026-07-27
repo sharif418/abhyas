@@ -26,24 +26,24 @@ export function BottomNav() {
             >
               <span
                 className={cn(
-                  "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
+                  "flex h-8 w-10 items-center justify-center rounded-full transition-colors",
                   active ? "text-primary-foreground" : "text-muted-foreground"
                 )}
               >
                 {active && (
                   <motion.span
                     layoutId="bottom-nav-active"
-                    className="absolute h-8 w-12 rounded-full bg-primary"
+                    className="absolute h-8 w-10 rounded-full bg-primary"
                     transition={{ type: "spring", stiffness: 450, damping: 32 }}
                   />
                 )}
                 <span className="relative z-10">
-                  <IconRenderer name={item.icon} size={20} />
+                  <IconRenderer name={item.icon} size={19} />
                 </span>
               </span>
               <span
                 className={cn(
-                  "relative z-10 text-[10px] font-medium transition-colors",
+                  "relative z-10 text-[9px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >

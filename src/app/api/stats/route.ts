@@ -134,6 +134,48 @@ export async function GET() {
     : 0;
   const todayMood = moodEntries.find((m) => m.date === todayStr);
 
+  // ---- Mood-habit correlation: avg mood on days a habit was done vs not done ----
+  const moodByDate = new Map(moodEntries.map((m) => [m.date, m.mood]));
+  const completionsByDate = new Map<string, Set<string>>();
+  for (const c of completions) {
+    let s = completionsByDate.get(c.date);
+    if (!s) {
+      s = new Set();
+      completionsByDate.set(c.date, s);
+    }
+    s.add(c.habitId);
+  }
+  const moodCorrelations = habits
+    .map((h) => {
+      let doneMoodSum = 0;
+      let doneMoodCount = 0;
+      let notDoneMoodSum = 0;
+      let notDoneMoodCount = 0;
+      for (const [date, mood] of moodByDate) {
+        const dayCompletions = completionsByDate.get(date);
+        const wasDone = dayCompletions?.has(h.id) ?? false;
+        if (wasDone) {
+          doneMoodSum += mood;
+          doneMoodCount++;
+        } else {
+          notDoneMoodSum += mood;
+          notDoneMoodCount++;
+        }
+      }
+      return {
+        habitId: h.id,
+        habitName: h.name,
+        icon: h.icon,
+        color: h.color,
+        avgMoodWhenDone: doneMoodCount > 0 ? doneMoodSum / doneMoodCount : null,
+        avgMoodWhenNotDone: notDoneMoodCount > 0 ? notDoneMoodSum / notDoneMoodCount : null,
+        sampleSize: doneMoodCount,
+      };
+    })
+    .filter((c) => c.avgMoodWhenDone !== null && c.sampleSize >= 2)
+    .sort((a, b) => (b.avgMoodWhenDone ?? 0) - (a.avgMoodWhenDone ?? 0))
+    .slice(0, 5);
+
   // ---- Weekly insights ----
   // Best weekday: which day-of-week historically has highest completion count
   const weekdayCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun..Sat
@@ -284,5 +326,6 @@ export async function GET() {
       average: avgMood,
       today: todayMood ? { mood: todayMood.mood, note: todayMood.note } : null,
     },
+    moodCorrelations,
   });
 }

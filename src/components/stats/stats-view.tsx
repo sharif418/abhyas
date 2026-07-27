@@ -33,6 +33,10 @@ import {
   MoodTrendChart,
   type MoodPoint,
 } from "@/components/stats/mood-trend-chart";
+import {
+  MoodCorrelationCard,
+  type MoodCorrelation,
+} from "@/components/stats/mood-correlation-card";
 import { AnimatedNumber } from "@/components/shared/celebration";
 
 interface StatsResponse {
@@ -64,6 +68,7 @@ interface StatsResponse {
     average: number;
     today: { mood: number; note: string | null } | null;
   };
+  moodCorrelations: MoodCorrelation[];
 }
 
 export function StatsView() {
@@ -230,6 +235,11 @@ export function StatsView() {
 
       {/* Mood trend chart */}
       {stats.mood && <MoodTrendChart data={stats.mood.series} />}
+
+      {/* Mood-habit correlation */}
+      {stats.moodCorrelations && (
+        <MoodCorrelationCard correlations={stats.moodCorrelations} />
+      )}
 
       {/* Category breakdown */}
       {stats.categories.length > 0 && (

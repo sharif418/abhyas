@@ -441,6 +441,64 @@ feature from the original proposal ("মুড ট্র্যাকিং").
 - **Mood-habit correlation**: analytics showing which habits correlate with
   better moods (e.g., "days you pray Fajr, your average mood is 4.2 vs 3.1").
 
+---
+
+## Task ID: R7 (webDevReview Round 7 — Journal Timeline + Mood-Habit Correlation)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R6, the app was stable with mood tracking + habit notes shipped. This
+round delivered the two top R6 recommendations: a unified Journal timeline
+view and mood-habit correlation analytics. All QA-verified via agent-browser
+on mobile + desktop with zero errors.
+
+### Work Log
+- **Journal API** (`/api/journal?days=30`): unified timeline endpoint that
+  merges mood entries + habit completions + notes into a per-day timeline.
+  Only includes days with activity (mood or completions). Returns up to 60
+  days. Verified: 14 days returned with today showing mood=4, 8 habits.
+- **Journal view** (`journal-view.tsx`): new 7th nav tab ("জার্নাল" 📔).
+  Premium timeline UI with a vertical line + colored mood dots, day cards
+  showing mood emoji + label, mood notes, completed habits with icon tiles +
+  notes, "নিখুঁত!" badge for 100% days, "আজ" highlight for today. Empty
+  state when no entries. Animated entrance with staggered delays.
+- **Mood-habit correlation** (backend): extended `/api/stats` to compute
+  avg mood when a habit was done vs not done. Returns top 5 habits by mood
+  impact (requires ≥2 mood entries with that habit done). Added
+  `moodCorrelations` to the stats response.
+- **Mood-habit correlation card** (`mood-correlation-card.tsx`): Stats view
+  card showing each habit with dual progress bars (done vs not-done mood),
+  emoji labels, sample size, and a colored impact-delta badge (+/-). Empty
+  state when insufficient data. Insight footer.
+- **Styling polish**: compacted bottom nav for 7 items (w-10 pills, 19px
+  icons, 9px labels), timeline animations, correlation bar charts with
+  gradient fills.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Journal view: renders with 14 days of activity; today's entry shows
+    mood=4 (ভালো) + 8 completed habits; timeline dots + day cards visible.
+  - Stats: mood-habit correlation card renders (empty state since only 1
+    mood entry — requires ≥2 for correlation; correct behavior).
+  - Bottom nav: all 7 items render compactly on mobile (390×844).
+  - Desktop: sidebar shows all 7 nav items including Journal.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r7-journal.png`, `qa-r7-stats-correlation.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm SW + social socket + journal + mood
+  correlation work end-to-end in a production build.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+  Hijri→Gregorian conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Journal search/filter**: filter by habit, mood, or date range.
+- **More mood data needed**: the correlation feature needs ≥2 mood entries
+  per habit to show data — will populate naturally as the user logs moods.
+
+
 
 
 

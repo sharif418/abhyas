@@ -12,6 +12,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "habits", label: "অভ্যাস", icon: "ListChecks", emoji: "✅" },
   { key: "stats", label: "পরিসংখ্যান", icon: "BarChart3", emoji: "📊" },
   { key: "islamic", label: "ইসলামিক", icon: "Moon", emoji: "🕌" },
+  { key: "journal", label: "জার্নাল", icon: "BookHeart", emoji: "📔" },
   { key: "social", label: "সোশ্যাল", icon: "Users", emoji: "👥" },
   { key: "profile", label: "প্রোফাইল", icon: "User", emoji: "👤" },
 ];

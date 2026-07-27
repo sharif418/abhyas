@@ -7,6 +7,7 @@ import { HabitsView } from "@/components/habits/habits-view";
 import { StatsView } from "@/components/stats/stats-view";
 import { IslamicView } from "@/components/islamic/islamic-view";
 import { SocialView } from "@/components/social/social-view";
+import { JournalView } from "@/components/journal/journal-view";
 import { ProfileView } from "@/components/profile/profile-view";
 
 const VIEWS = {
@@ -15,6 +16,7 @@ const VIEWS = {
   stats: StatsView,
   islamic: IslamicView,
   social: SocialView,
+  journal: JournalView,
   profile: ProfileView,
 } as const;
 
