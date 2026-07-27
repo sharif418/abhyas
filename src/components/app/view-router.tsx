@@ -6,6 +6,7 @@ import { HomeView } from "@/components/home/home-view";
 import { HabitsView } from "@/components/habits/habits-view";
 import { StatsView } from "@/components/stats/stats-view";
 import { IslamicView } from "@/components/islamic/islamic-view";
+import { SocialView } from "@/components/social/social-view";
 import { ProfileView } from "@/components/profile/profile-view";
 
 const VIEWS = {
@@ -13,6 +14,7 @@ const VIEWS = {
   habits: HabitsView,
   stats: StatsView,
   islamic: IslamicView,
+  social: SocialView,
   profile: ProfileView,
 } as const;
 

@@ -142,6 +142,24 @@ export function useToggleHabit() {
       qc.invalidateQueries({ queryKey: ["stats"] });
       qc.invalidateQueries({ queryKey: ["me"] });
 
+      // broadcast to social feed (if connected) via a custom DOM event
+      if (res.completed && typeof window !== "undefined") {
+        const habit = qc.getQueryData<HabitWithMeta[]>(["habits"])?.find(
+          (h) => h.id === vars.habitId
+        );
+        window.dispatchEvent(
+          new CustomEvent("abhyas-activity", {
+            detail: {
+              type: [7, 14, 30, 100, 365].includes(res.streak)
+                ? "streak"
+                : "completion",
+              habitName: habit?.name,
+              streak: res.streak,
+            },
+          })
+        );
+      }
+
       if (res.completed) {
         // Streak milestone feedback
         if ([7, 14, 30, 100, 365].includes(res.streak)) {

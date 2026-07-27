@@ -314,6 +314,71 @@ and CSV export. All QA-verified via agent-browser on mobile + desktop.
 - **Bangladesh calendar Hijri accuracy**: the Islamic dates are approximate;
   a proper Hijri→Gregorian conversion would make them exact per year.
 
+---
+
+## Task ID: R5 (webDevReview Round 5 — Social/Leaderboard WebSocket Mini-Service)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R4, the app was stable with all prior features (habit tracking, Islamic,
+gamification, AI coach, templates, PWA SW, notifications, analytics, BD
+calendar, CSV export). The last major roadmap gap was the **social/leaderboard
+via WebSocket mini-service** — this round delivered it in full.
+
+### Work Log
+- **WebSocket mini-service** (`mini-services/social/index.ts`): independent bun
+  project on port 3003, socket.io server with `path: "/"`. Maintains an
+  in-memory leaderboard seeded with 10 demo users (আরিফ, সাবরিনা, তানভীর… with
+  XP/level/streak), plus a live activity feed (max 30 events). Emits periodic
+  demo activity every 18s so the feed feels alive. Events: `join`, `activity`,
+  `update-xp`, `leaderboard`, `presence`, `activity`.
+- **Social hook** (`use-social.ts`): socket.io-client wrapper with auto-join,
+  XP sync, and a custom-event bridge — habit toggles dispatch a
+  `window.CustomEvent("abhyas-activity")` which the hook forwards to the
+  socket. Critical fix: `path: "/"` + `transports: ["polling", "websocket"]`
+  to work through the Caddy gateway (port 81). Connecting via port 3000
+  directly fails because the gateway proxy is required for `XTransformPort`.
+- **Social view** (`social-view.tsx`): global leaderboard with rank badges
+  (gold/silver/bronze for top 3), your-rank hero card with crown for top-3,
+  live activity feed with animated entries (completion/streak/levelup/join
+  events), online-count indicator, connection status pill. Added "social" to
+  the ViewKey type + nav config + view router.
+- **Activity broadcasting**: the toggle hook now dispatches a custom DOM event
+  on habit completion → the social hook forwards it to the socket → all
+  connected clients see it in the live feed. Streak milestones broadcast as
+  "streak" type; regular completions as "completion".
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Social mini-service running on port 3003 (verified via `mini-services/social.log`).
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Social view connects: "অতিথি joined (xp=268)" logged server-side.
+  - Leaderboard renders with 10 demo users + your entry.
+  - Live activity feed shows demo activities (আরিফ completed ফজরের নামাজ, etc.).
+  - Habit toggle broadcasts: XP updated 268 → 285, reconnected with new XP.
+  - Online count + connection status pill render correctly.
+  - Desktop layout: sidebar nav includes সোশ্যাল tab.
+- Screenshots: `qa-r5-social-connected.png`, `qa-r5-social-final.png`.
+
+### Key technical note
+The social WebSocket requires accessing the app through the Caddy gateway
+(port 81), not directly via port 3000. The `XTransformPort=3003` query param
+only works through Caddy's reverse proxy. The `path: "/"` setting on both
+server and client is essential to avoid Next.js intercepting `/socket.io/`.
+
+### Unresolved / next-phase recommendations
+- **Habit notes/journal**: the toggle hook now supports activity broadcasting,
+  but the habit notes feature (add note to a completion) was scoped out this
+  round — schema field exists, UI not yet built.
+- **Production build test**: confirm the Service Worker + social socket work
+  end-to-end in a production build.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+  Hijri→Gregorian conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages —
+  the current social is global-only.
+
+
 
 
 
