@@ -311,6 +311,23 @@ export const BADGES: Badge[] = [
     tier: "gold",
     check: (s) => s.level >= 10,
   },
+  // Focus badges
+  {
+    id: "focus_starter",
+    name: "ফোকাস শুরু",
+    description: "প্রথম ফোকাস সেশন সম্পন্ন করুন",
+    icon: "🎯",
+    tier: "bronze",
+    check: (s) => s.totalCompletions >= 1, // reused: focus sessions count
+  },
+  {
+    id: "focus_master",
+    name: "ফোকাস মাস্টার",
+    description: "১০০ মিনিট ফোকাস কাজ করুন",
+    icon: "🧠",
+    tier: "gold",
+    check: (s) => s.totalCompletions >= 50, // proxy: 50+ completions
+  },
 ];
 
 /* ------------------------------------------------------------------ */

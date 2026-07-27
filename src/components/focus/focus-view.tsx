@@ -12,6 +12,7 @@ import { ProgressRing } from "@/components/shared/progress-ring";
 import { IconTile } from "@/components/shared/icon-renderer";
 import { FocusDailyChart } from "@/components/focus/focus-daily-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +32,9 @@ const PRESETS = [
   { label: "গভীর কাজ", work: 50, break: 10 },
   { label: "ছোট", work: 15, break: 3 },
 ];
+
+// Custom interval state key for localStorage
+const CUSTOM_KEY = "abhyas-focus-custom";
 
 interface FocusData {
   sessions: any[];
@@ -47,9 +52,29 @@ export function FocusView() {
   const [secondsLeft, setSecondsLeft] = useState(PRESETS[0].work * 60);
   const [selectedHabitId, setSelectedHabitId] = useState<string>("none");
   const [completedCount, setCompletedCount] = useState(0);
+  const [customWork, setCustomWork] = useState(30);
+  const [customBreak, setCustomBreak] = useState(5);
+  const [showCustom, setShowCustom] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const preset = PRESETS[presetIdx];
+  // Load custom interval from localStorage
+  useState(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_KEY);
+      if (saved) {
+        const { work, brk } = JSON.parse(saved);
+        if (work > 0 && brk >= 0) {
+          setCustomWork(work);
+          setCustomBreak(brk);
+        }
+      }
+    } catch {}
+  });
+
+  const isCustom = presetIdx === -1;
+  const preset = isCustom
+    ? { label: "কাস্টম", work: customWork, break: customBreak }
+    : PRESETS[presetIdx];
   const totalSeconds = (mode === "work" ? preset.work : preset.break) * 60;
   const qc = useQueryClient();
   const { data: habits } = useHabits();
@@ -141,9 +166,23 @@ export function FocusView() {
   const switchPreset = (idx: number) => {
     setPresetIdx(idx);
     setMode("work");
-    setSecondsLeft(PRESETS[idx].work * 60);
+    const p = idx === -1
+      ? { work: customWork, break: customBreak }
+      : PRESETS[idx];
+    setSecondsLeft(p.work * 60);
     setState("idle");
     if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const applyCustom = () => {
+    try {
+      localStorage.setItem(CUSTOM_KEY, JSON.stringify({ work: customWork, brk: customBreak }));
+    } catch {}
+    setPresetIdx(-1);
+    setMode("work");
+    setSecondsLeft(customWork * 60);
+    setState("idle");
+    setShowCustom(false);
   };
 
   const switchMode = (m: TimerMode) => {
@@ -185,7 +224,75 @@ export function FocusView() {
             </div>
           </button>
         ))}
+        <button
+          onClick={() => setShowCustom(true)}
+          className={cn(
+            "flex-1 rounded-2xl border px-3 py-2 text-center text-xs font-medium transition",
+            isCustom
+              ? "border-primary bg-primary/5 text-primary"
+              : "text-muted-foreground hover:border-foreground/20"
+          )}
+        >
+          <div className="font-bold">⚙️ কাস্টম</div>
+          <div className="text-[10px]">
+            {isCustom
+              ? `${toBn(customWork)}মি / ${toBn(customBreak)}মি`
+              : "নিজের সময়"}
+          </div>
+        </button>
       </div>
+
+      {/* Custom interval picker */}
+      {showCustom && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="rounded-3xl border bg-card p-4 shadow-sm"
+        >
+          <h3 className="mb-3 text-sm font-bold">কাস্টম সময় নির্ধারণ করুন</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                কাজের সময় (মিনিট)
+              </label>
+              <Input
+                type="number"
+                min={1}
+                max={180}
+                value={customWork}
+                onChange={(e) => setCustomWork(Math.max(1, Math.min(180, Number(e.target.value))))}
+                className="h-10"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                বিশ্রামের সময় (মিনিট)
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={60}
+                value={customBreak}
+                onChange={(e) => setCustomBreak(Math.max(0, Math.min(60, Number(e.target.value))))}
+                className="h-10"
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button onClick={applyCustom} size="sm" className="flex-1">
+              প্রয়োগ করুন
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCustom(false)}
+            >
+              বাতিল
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Timer */}
       <motion.div

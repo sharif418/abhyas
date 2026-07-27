@@ -707,6 +707,51 @@ chart. This round delivered **Habit Sharing** (WhatsApp + clipboard) and
 - **Focus enhancements**: ambient sounds, custom intervals, focus badges.
 - **Image-based sharing**: generate a PNG image of the share card (not just text).
 
+---
+
+## Task ID: R12 (webDevReview Round 12 — Custom Focus Intervals + Focus Badges)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R11, the app was stable with habit sharing + badge progress. This round
+delivered **Custom Focus Intervals** (user-configurable work/break durations)
+and **Focus Badges** (gamification for focus sessions). All QA-verified.
+
+### Work Log
+- **Custom focus intervals**: added a 4th preset button "⚙️ কাস্টম" that opens
+  an animated interval picker with two number inputs (work 1-180 min, break
+  0-60 min). Custom interval persists in localStorage (`abhyas-focus-custom`).
+  When the custom preset is active, the timer uses the custom durations.
+  Verified: picker opens, inputs work, custom button shows current values.
+- **Focus badges**: added 2 new badges to the BADGES constant — "ফোকাস শুরু"
+  (🎯 bronze, first focus session) and "ফোকাস মাস্টার" (🧠 gold, 50+ sessions).
+  These appear on the Stats view badge grid with progress bars (using the
+  existing `getBadgeProgress` function).
+- **Styling polish**: custom interval picker with animated entrance, ⚙️ emoji
+  on the custom button, refined preset selector (4 buttons), custom durations
+  displayed on the button when active.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Focus view: custom preset button renders, clicking opens the picker with
+    work/break inputs, "প্রয়োগ করুন" button applies the custom interval.
+  - Desktop: all nav items render correctly.
+  - No console errors (429 LLM rate-limit on AI recap is expected, not a bug).
+- Screenshots: `qa-r12-focus-custom.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+- **Image-based sharing**: generate a PNG image of the share card.
+- **AI recap rate limiting**: the LLM 429 errors suggest adding a client-side
+  cooldown or caching the recap for longer.
+
+
 
 
 
