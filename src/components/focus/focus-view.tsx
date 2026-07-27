@@ -10,6 +10,7 @@ import { toBn } from "@/lib/date-bn";
 import { fireConfetti } from "@/lib/confetti";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { IconTile } from "@/components/shared/icon-renderer";
+import { FocusDailyChart } from "@/components/focus/focus-daily-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -332,6 +333,11 @@ export function FocusView() {
             />
           </div>
         )
+      )}
+
+      {/* Daily focus chart */}
+      {focusData && focusData.dailySeries && (
+        <FocusDailyChart data={focusData.dailySeries} />
       )}
 
       {/* Recent sessions */}

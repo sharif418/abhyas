@@ -607,6 +607,58 @@ search/filter (a top R7 recommendation). All QA-verified via agent-browser.
 - **Focus enhancements**: ambient sounds, custom intervals, focus badges.
 - **Weekly AI recap**: AI-generated weekly summary using z-ai-web-dev-sdk.
 
+---
+
+## Task ID: R10 (webDevReview Round 10 — Weekly AI Recap + Focus Daily Chart)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R9, the app was stable with 8 views, Focus XP integration, and journal
+search/filter. This round delivered the **Weekly AI Recap** (a flagship LLM-
+powered feature) and a **Focus daily chart**. All QA-verified via agent-browser.
+
+### Work Log
+- **Weekly AI Recap backend** (`/api/ai/recap`): uses `z-ai-web-dev-sdk` LLM to
+  generate a structured weekly summary. Gathers: completion count/rate, avg
+  mood, focus minutes, active streaks, best streak, prayers done, Quran pages,
+  XP/level. LLM returns `{headline, highlights[], improvement, nextWeekFocus}`
+  in Bengali. Graceful deterministic fallback if LLM unavailable. Verified: LLM
+  returned personalized recap with specific numbers (58 completions, 14 prayers,
+  28% rate, 210 scheduled).
+- **WeeklyRecapCard** (`weekly-recap-card.tsx`): collapsible card on the Home
+  view with violet gradient theme, Sparkles icon, refresh button. Shows:
+  headline (emerald box), highlights (✓ list with staggered animation),
+  improvement (amber box with 📈), next-week focus (violet box with Target icon).
+  Loading shimmer state. Verified: renders with AI content on Home.
+- **FocusDailyChart** (`focus-daily-chart.tsx`): 7-day focus minutes bar chart on
+  the Focus view. Bengali weekday labels (রবি/সোম/মঙ্গল...), colored bars
+  (primary for active days, muted for zero days), total minutes summary.
+  Inserted between the stats grid and recent sessions.
+- **Styling polish**: violet gradient theme for recap card, staggered highlight
+  animations, colored insight boxes (emerald/amber/violet), chart with
+  weekday labels.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Home: WeeklyRecapCard renders with AI-generated content (headline +
+    highlights + improvement + nextWeekFocus).
+  - Focus: daily chart ("দৈনিক ফোকাস") renders with 7-day data.
+  - Recap API returns structured Bengali JSON with specific metrics.
+  - Desktop: all features render correctly.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r10-home-recap.png`, `qa-r10-focus-chart.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, custom intervals, focus badges.
+- **Habit sharing**: share habit progress cards to social media (WhatsApp/FB).
+
+
 
 
 
