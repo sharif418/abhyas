@@ -165,6 +165,7 @@ export type ViewKey =
   | "islamic"
   | "social"
   | "journal"
+  | "focus"
   | "profile";
 
 /** Bengali weekday names (0=Sunday … 6=Saturday). */

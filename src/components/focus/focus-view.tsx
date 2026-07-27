@@ -1,0 +1,376 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Pause, RotateCcw, Coffee, Brain, Check } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api-client";
+import { useHabits } from "@/hooks/use-habits";
+import { toBn, bnDuration } from "@/lib/date-bn";
+import { ProgressRing } from "@/components/shared/progress-ring";
+import { IconTile } from "@/components/shared/icon-renderer";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+type TimerMode = "work" | "break";
+type TimerState = "idle" | "running" | "paused" | "done";
+
+const PRESETS = [
+  { label: "পোমোডোরো", work: 25, break: 5 },
+  { label: "গভীর কাজ", work: 50, break: 10 },
+  { label: "ছোট", work: 15, break: 3 },
+];
+
+interface FocusData {
+  sessions: any[];
+  todayMinutes: number;
+  totalMinutes: number;
+  totalSessions: number;
+  dailySeries: { date: string; minutes: number }[];
+}
+
+export function FocusView() {
+  const [presetIdx, setPresetIdx] = useState(0);
+  const [mode, setMode] = useState<TimerMode>("work");
+  const [state, setState] = useState<TimerState>("idle");
+  const [secondsLeft, setSecondsLeft] = useState(PRESETS[0].work * 60);
+  const [selectedHabitId, setSelectedHabitId] = useState<string>("none");
+  const [completedCount, setCompletedCount] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const preset = PRESETS[presetIdx];
+  const totalSeconds = (mode === "work" ? preset.work : preset.break) * 60;
+  const qc = useQueryClient();
+  const { data: habits } = useHabits();
+  const { data: focusData, isLoading } = useQuery<FocusData>({
+    queryKey: ["focus"],
+    queryFn: () => api.get<FocusData>("/api/focus?days=7"),
+  });
+
+  const logSession = useMutation({
+    mutationFn: (input: { durationMin: number; type: TimerMode; habitId?: string | null }) =>
+      api.post("/api/focus", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["focus"] });
+    },
+  });
+
+  const handleComplete = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setState("done");
+    // log the session
+    const durationMin = mode === "work" ? preset.work : preset.break;
+    logSession.mutate({
+      durationMin,
+      type: mode,
+      habitId: selectedHabitId !== "none" ? selectedHabitId : null,
+    });
+    if (mode === "work") {
+      setCompletedCount((c) => c + 1);
+      toast.success(`✅ ${toBn(durationMin)} মিনিট ফোকাস সম্পন্ন!`, {
+        description: "বিশ্রাম নিন বা আরেকটি সেশন শুরু করুন।",
+      });
+    }
+    // auto-switch mode
+    setTimeout(() => {
+      const nextMode: TimerMode = mode === "work" ? "break" : "work";
+      setMode(nextMode);
+      setSecondsLeft((nextMode === "work" ? preset.work : preset.break) * 60);
+      setState("idle");
+    }, 1500);
+  }, [mode, preset, logSession, selectedHabitId]);
+
+  // timer tick
+  useEffect(() => {
+    if (state !== "running") return;
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          // session complete
+          handleComplete();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [state, mode, handleComplete]);
+
+  const start = () => {
+    setState("running");
+  };
+  const pause = () => {
+    setState("paused");
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+  const reset = () => {
+    setState("idle");
+    setSecondsLeft(totalSeconds);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const switchPreset = (idx: number) => {
+    setPresetIdx(idx);
+    setMode("work");
+    setSecondsLeft(PRESETS[idx].work * 60);
+    setState("idle");
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const switchMode = (m: TimerMode) => {
+    if (state === "running") return;
+    setMode(m);
+    setSecondsLeft((m === "work" ? preset.work : preset.break) * 60);
+    setState("idle");
+  };
+
+  const progress = 1 - secondsLeft / totalSeconds;
+  const mm = Math.floor(secondsLeft / 60);
+  const ss = secondsLeft % 60;
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-5 px-4 py-5">
+      <div>
+        <h1 className="text-xl font-bold">🎯 ফোকাস মোড</h1>
+        <p className="text-xs text-muted-foreground">
+          পোমোডোরো টেকনিকে দিয়ে গভীর কাজ করুন
+        </p>
+      </div>
+
+      {/* Preset selector */}
+      <div className="flex gap-2">
+        {PRESETS.map((p, i) => (
+          <button
+            key={i}
+            onClick={() => switchPreset(i)}
+            className={cn(
+              "flex-1 rounded-2xl border px-3 py-2 text-center text-xs font-medium transition",
+              presetIdx === i
+                ? "border-primary bg-primary/5 text-primary"
+                : "text-muted-foreground hover:border-foreground/20"
+            )}
+          >
+            <div className="font-bold">{p.label}</div>
+            <div className="text-[10px]">
+              {toBn(p.work)}মি কাজ / {toBn(p.break)}মি বিশ্রাম
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Timer */}
+      <motion.div
+        layout
+        className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-6 shadow-sm"
+      >
+        <div
+          className={cn(
+            "absolute inset-0 opacity-30 transition-opacity",
+            mode === "work" ? "bg-primary/5" : "bg-amber-500/5"
+          )}
+        />
+
+        <div className="relative flex flex-col items-center">
+          {/* Mode toggle */}
+          <div className="mb-4 flex gap-1 rounded-full bg-muted/50 p-1">
+            <button
+              onClick={() => switchMode("work")}
+              disabled={state === "running"}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition disabled:opacity-50",
+                mode === "work" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              )}
+            >
+              <Brain size={13} /> কাজ
+            </button>
+            <button
+              onClick={() => switchMode("break")}
+              disabled={state === "running"}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition disabled:opacity-50",
+                mode === "break" ? "bg-amber-500 text-white" : "text-muted-foreground"
+              )}
+            >
+              <Coffee size={13} /> বিশ্রাম
+            </button>
+          </div>
+
+          {/* Circular timer */}
+          <ProgressRing
+            value={progress}
+            size={200}
+            stroke={12}
+            color={mode === "work" ? "var(--primary)" : "var(--streak)"}
+            showGlow={state === "running"}
+          >
+            <div className="text-center">
+              <div className="tabular text-4xl font-extrabold">
+                {toBn(mm)}:{toBn(String(ss).padStart(2, "0"))}
+              </div>
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                {mode === "work" ? "কাজের সময়" : "বিশ্রাম"}
+              </div>
+              {completedCount > 0 && (
+                <div className="mt-1 text-[9px] font-medium text-primary">
+                  আজ {toBn(completedCount)} টি সেশন ✓
+                </div>
+              )}
+            </div>
+          </ProgressRing>
+
+          {/* Controls */}
+          <div className="mt-5 flex gap-3">
+            {state === "idle" || state === "paused" ? (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={start}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
+                aria-label="শুরু"
+              >
+                <Play size={24} fill="currentColor" />
+              </motion.button>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={pause}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg"
+                aria-label="বিরতি"
+              >
+                <Pause size={24} fill="currentColor" />
+              </motion.button>
+            )}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={reset}
+              className="flex h-14 w-14 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm"
+              aria-label="রিসেট"
+            >
+              <RotateCcw size={20} />
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Habit linking */}
+      <div className="rounded-3xl border bg-card p-4 shadow-sm">
+        <div className="mb-2 text-xs font-medium text-muted-foreground">
+          কোন অভ্যাসের সাথে যুক্ত করবেন? (ঐচ্ছিক)
+        </div>
+        <Select value={selectedHabitId} onValueChange={setSelectedHabitId}>
+          <SelectTrigger>
+            <SelectValue placeholder="অভ্যাস নির্বাচন করুন" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">কোনোটিই নয়</SelectItem>
+            {habits?.map((h) => (
+              <SelectItem key={h.id} value={h.id}>
+                {h.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Today stats */}
+      {isLoading ? (
+        <Skeleton className="h-28 rounded-3xl" />
+      ) : (
+        focusData && (
+          <div className="grid grid-cols-3 gap-3">
+            <StatBox
+              label="আজ"
+              value={focusData.todayMinutes}
+              unit="মিনিট"
+              color="var(--primary)"
+            />
+            <StatBox
+              label="এই সপ্তাহ"
+              value={focusData.totalMinutes}
+              unit="মিনিট"
+              color="var(--streak)"
+            />
+            <StatBox
+              label="সেশন"
+              value={focusData.totalSessions}
+              unit="টি"
+              color="#7c3aed"
+            />
+          </div>
+        )
+      )}
+
+      {/* Recent sessions */}
+      {focusData && focusData.sessions.length > 0 && (
+        <div className="rounded-3xl border bg-card p-4 shadow-sm">
+          <h3 className="mb-2 text-sm font-bold">সাম্প্রতিক সেশন</h3>
+          <div className="space-y-1.5">
+            {focusData.sessions.slice(0, 8).map((s) => {
+              const habit = habits?.find((h) => h.id === s.habitId);
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-2.5 rounded-xl bg-muted/30 p-2"
+                >
+                  <div
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-lg",
+                      s.type === "work"
+                        ? "bg-primary/15 text-primary"
+                        : "bg-amber-500/15 text-amber-600"
+                    )}
+                  >
+                    {s.type === "work" ? <Brain size={14} /> : <Coffee size={14} />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-semibold">
+                      {toBn(s.durationMin)} মিনিট {s.type === "work" ? "কাজ" : "বিশ্রাম"}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {habit ? habit.name : "সাধারণ"} • {s.date}
+                    </div>
+                  </div>
+                  <Check size={14} className="text-emerald-500" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  unit,
+  color,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  color: string;
+}) {
+  return (
+    <div className="rounded-2xl border bg-card p-3 text-center">
+      <div
+        className="tabular text-xl font-extrabold leading-none"
+        style={{ color }}
+      >
+        {toBn(value)}
+      </div>
+      <div className="text-[9px] text-muted-foreground">{unit}</div>
+      <div className="mt-0.5 text-[10px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}

@@ -10,6 +10,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { key: "home", label: "হোম", icon: "Home", emoji: "🏠" },
   { key: "habits", label: "অভ্যাস", icon: "ListChecks", emoji: "✅" },
+  { key: "focus", label: "ফোকাস", icon: "Timer", emoji: "🎯" },
   { key: "stats", label: "পরিসংখ্যান", icon: "BarChart3", emoji: "📊" },
   { key: "islamic", label: "ইসলামিক", icon: "Moon", emoji: "🕌" },
   { key: "journal", label: "জার্নাল", icon: "BookHeart", emoji: "📔" },

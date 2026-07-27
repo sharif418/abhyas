@@ -498,6 +498,64 @@ on mobile + desktop with zero errors.
 - **More mood data needed**: the correlation feature needs ≥2 mood entries
   per habit to show data — will populate naturally as the user logs moods.
 
+---
+
+## Task ID: R8 (webDevReview Round 8 — Focus/Pomodoro Timer)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R7, the app was stable with 7 views (Home/Habits/Stats/Islamic/Journal/
+Social/Profile). This round added the **Focus/Pomodoro Timer** — a productivity
+feature that lets users do deep-work sessions with configurable work/break
+intervals, linked to habits, with session logging and stats. Fixed a lint error
+(`react-hooks/immutability` — `handleComplete` used before declaration) that
+was introduced mid-round.
+
+### Work Log
+- **FocusSession model**: new Prisma model (userId, habitId?, date, durationMin,
+  type "work"|"break", completed). Pushed to DB.
+- **Focus API** (`/api/focus`): GET returns 7-day sessions + today's minutes +
+  total stats + daily series. POST logs a completed session. Verified: 25-min
+  work session logged → todayMinutes=25, totalSessions=1.
+- **Focus view** (`focus-view.tsx`): new 8th nav tab ("ফোকাস" 🎯). Premium
+  Pomodoro timer UI with:
+  - 3 presets (পোমোডোরো 25/5, গভীর কাজ 50/10, ছোট 15/3)
+  - Work/Break mode toggle with color-coded theming (primary for work, amber for break)
+  - Large circular timer with ProgressRing (200px, animated, glow when running)
+  - Play/Pause/Reset controls with spring animations
+  - Habit linking via Select dropdown (optional)
+  - Today/week/session stats grid
+  - Recent sessions list with habit names
+  - Auto mode-switch on completion + toast notification + session logging
+- **Bug fix**: moved `handleComplete` useCallback before the timer `useEffect`
+  to resolve `react-hooks/immutability` error (variable used before declaration).
+- **Bottom nav update**: made horizontally scrollable (`no-scrollbar` + `overflow-x-auto`)
+  with `min-w-[3.25rem]` items to handle 8 tabs gracefully on mobile.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Focus view renders with 3 presets, mode toggle, circular timer.
+  - Timer starts (Play button → "বিরতি" pause appears, countdown 25:00 → 24:46).
+  - Focus API: POST logs session, GET returns correct stats.
+  - All 8 nav items render compactly on mobile (390×844) with horizontal scroll.
+  - Desktop sidebar shows all 8 nav items including Focus.
+  - Full tour of all 8 views: no errors in dev.log.
+- Screenshots: `qa-r8-focus-running.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm SW + social socket + focus timer work
+  end-to-end in a production build.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+  Hijri→Gregorian conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Journal search/filter**: filter by habit, mood, or date range.
+- **Focus enhancements**: ambient sounds, custom intervals, focus streaks,
+  integration with XP (award XP for focus sessions).
+
+
 
 
 
