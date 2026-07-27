@@ -751,6 +751,52 @@ and **Focus Badges** (gamification for focus sessions). All QA-verified.
 - **AI recap rate limiting**: the LLM 429 errors suggest adding a client-side
   cooldown or caching the recap for longer.
 
+---
+
+## Task ID: R13 (webDevReview Round 13 — AI Recap Cooldown + Category Analytics)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R12, the app was stable with custom focus intervals + focus badges.
+This round fixed the **AI recap rate limiting** (429 errors from R12) and
+enhanced **Category Analytics** with per-category completion progress bars.
+All QA-verified.
+
+### Work Log
+- **AI recap cooldown fix**: added a 30-minute client-side cooldown to the
+  WeeklyRecapCard. The refresh button is disabled during cooldown and shows a
+  countdown timer ("৩০মি"). Last-fetch timestamp persisted in localStorage
+  (`abhyas-recap-last-fetch`). The query function now catches errors and returns
+  a graceful fallback recap instead of throwing. `retry: 0` prevents automatic
+  retries on 429. `staleTime` increased to 30 min. Verified: recap loads
+  (from LLM or fallback), no 429 errors in dev.log.
+- **Category analytics enhancement**: the Stats view's category breakdown now
+  shows per-category today's completion rate with a colored progress bar
+  (using the category's theme color). Each category row shows `done/total`
+  (e.g., "৩/৫") + a progress bar. Verified: progress bars render with correct
+  colors and rates.
+- **Styling polish**: recap refresh button now shows cooldown countdown,
+  category rows have progress bars with category-colored fills.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Home: recap card loads (LLM or fallback), no 429 errors.
+  - Stats: category analytics card renders with per-category progress bars.
+  - Desktop: all features render correctly.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r13-stats-category.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+- **Image-based sharing**: generate a PNG image of the share card.
+
+
 
 
 

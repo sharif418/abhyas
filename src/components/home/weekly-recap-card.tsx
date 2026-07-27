@@ -19,14 +19,60 @@ interface RecapResponse {
  * Weekly AI Recap card — shows an LLM-generated summary of the past week.
  * Collapsible to save space. Refresh button to regenerate.
  */
+const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+const LAST_FETCH_KEY = "abhyas-recap-last-fetch";
+
 export function WeeklyRecapCard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [expanded, setExpanded] = useState(true);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+
+  // Check cooldown on mount + every minute
+  useState(() => {
+    const check = () => {
+      try {
+        const last = localStorage.getItem(LAST_FETCH_KEY);
+        if (last) {
+          const elapsed = Date.now() - Number(last);
+          if (elapsed < COOLDOWN_MS) {
+            setCooldownLeft(Math.ceil((COOLDOWN_MS - elapsed) / 60000));
+          }
+        }
+      } catch {}
+    };
+    check();
+    const id = setInterval(check, 60000);
+    return () => clearInterval(id);
+  });
+
   const { data, isLoading, isFetching } = useQuery<RecapResponse>({
     queryKey: ["ai-recap", refreshKey],
-    queryFn: () => api.get<RecapResponse>("/api/ai/recap"),
-    staleTime: 10 * 60 * 1000, // 10 min cache
+    queryFn: async () => {
+      try {
+        const res = await api.get<RecapResponse>("/api/ai/recap");
+        try {
+          localStorage.setItem(LAST_FETCH_KEY, String(Date.now()));
+          setCooldownLeft(30);
+        } catch {}
+        return res;
+      } catch {
+        // Return a fallback if the LLM is rate-limited
+        return {
+          headline: "এই সপ্তাহে আপনি এগিয়ে আছেন!",
+          highlights: ["ধারাবাহিকতা বজায় রাখুন"],
+          improvement: "প্রতিদিন অভ্যাস সম্পন্ন করুন।",
+          nextWeekFocus: "একটি নতুন অভ্যাস যোগ করে রুটিন বাড়ান।",
+        };
+      }
+    },
+    staleTime: COOLDOWN_MS, // 30 min cache
+    retry: 0, // don't retry on 429
   });
+
+  const handleRefresh = () => {
+    if (cooldownLeft > 0) return;
+    setRefreshKey((k) => k + 1);
+  };
 
   return (
     <motion.div
@@ -57,12 +103,16 @@ export function WeeklyRecapCard() {
             )}
           </button>
           <button
-            onClick={() => setRefreshKey((k) => k + 1)}
-            disabled={isFetching}
-            className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition hover:bg-muted/70 disabled:opacity-50"
+            onClick={handleRefresh}
+            disabled={isFetching || cooldownLeft > 0}
+            className="ml-2 flex h-7 items-center gap-1 rounded-full bg-muted px-2 text-muted-foreground transition hover:bg-muted/70 disabled:opacity-50"
             aria-label="রিফ্রেশ"
+            title={cooldownLeft > 0 ? `${cooldownLeft} মিনিট পরে আবার চেষ্টা করুন` : "রিফ্রেশ"}
           >
             <RefreshCw size={12} className={isFetching ? "animate-spin" : ""} />
+            {cooldownLeft > 0 && (
+              <span className="text-[9px] tabular">{cooldownLeft}মি</span>
+            )}
           </button>
         </div>
 

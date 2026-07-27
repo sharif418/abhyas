@@ -281,21 +281,33 @@ export function StatsView() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex-1 space-y-1.5">
+            <div className="flex-1 space-y-2">
               {stats.categories.slice(0, 6).map((c) => {
                 const meta = CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP];
+                const rate = c.habits > 0 ? c.doneToday / c.habits : 0;
                 return (
-                  <div key={c.category} className="flex items-center gap-2 text-xs">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: meta?.color }}
-                    />
-                    <span className="flex-1 truncate">
-                      {meta?.emoji} {c.category}
-                    </span>
-                    <span className="tabular font-medium text-muted-foreground">
-                      {toBn(c.habits)} টি
-                    </span>
+                  <div key={c.category} className="space-y-0.5">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ background: meta?.color }}
+                      />
+                      <span className="flex-1 truncate">
+                        {meta?.emoji} {c.category}
+                      </span>
+                      <span className="tabular font-medium text-muted-foreground">
+                        {toBn(c.doneToday)}/{toBn(c.habits)}
+                      </span>
+                    </div>
+                    <div className="h-1 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${rate * 100}%`,
+                          background: meta?.color ?? "var(--primary)",
+                        }}
+                      />
+                    </div>
                   </div>
                 );
               })}
