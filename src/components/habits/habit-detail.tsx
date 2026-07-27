@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Pencil, Trash2, Trophy, Target, TrendingUp, Snowflake } from "lucide-react";
+import { Flame, Pencil, Trash2, Trophy, Target, TrendingUp, Snowflake, StickyNote } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -9,11 +10,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Heatmap } from "@/components/shared/heatmap";
 import { IconTile, IconRenderer } from "@/components/shared/icon-renderer";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { useHabits, useToggleHabit, useDeleteHabit } from "@/hooks/use-habits";
 import { useFreezeHabit } from "@/hooks/use-freeze";
+import { useSetHabitNote, useHabitNotes } from "@/hooks/use-mood";
 import { useUIStore } from "@/stores/ui-store";
 import { toBn, todayKey } from "@/lib/date-bn";
 import { CATEGORY_MAP } from "@/constants";
@@ -210,6 +213,9 @@ export function HabitDetailSheet() {
                   })}
                 </div>
               </div>
+
+              {/* Notes / Journal */}
+              <NotesSection habitId={habit.id} completedToday={habit.completedToday} />
             </div>
           </>
         )}
@@ -247,4 +253,131 @@ function cnBadge(reached: boolean) {
       ? "border-streak/30 bg-streak/10 text-streak"
       : "border-border bg-muted/50 text-muted-foreground",
   ].join(" ");
+}
+
+/** Notes / Journal section — add a note for today + view past notes. */
+function NotesSection({
+  habitId,
+  completedToday,
+}: {
+  habitId: string;
+  completedToday: boolean;
+}) {
+  const [noteText, setNoteText] = useState("");
+  const [showInput, setShowInput] = useState(false);
+  const setNote = useSetHabitNote(habitId);
+  const { data } = useHabitNotes(habitId);
+  const notes = data?.notes ?? [];
+
+  const save = () => {
+    if (!noteText.trim()) return;
+    setNote.mutate(
+      { date: todayKey(), note: noteText.trim() },
+      {
+        onSuccess: () => {
+          setNoteText("");
+          setShowInput(false);
+        },
+      }
+    );
+  };
+
+  return (
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <StickyNote size={14} className="text-primary" />
+          <h3 className="text-sm font-semibold">নোট / জার্নাল</h3>
+        </div>
+        {!showInput && (
+          <button
+            onClick={() => setShowInput(true)}
+            className="text-[11px] font-medium text-primary hover:underline"
+          >
+            + নতুন নোট
+          </button>
+        )}
+      </div>
+
+      {showInput && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="mb-3 space-y-2"
+        >
+          <Textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="আজকের অভিজ্ঞতা বা অনুভূতি লিখুন..."
+            className="resize-none text-sm"
+            rows={3}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={save}
+              disabled={!noteText.trim() || setNote.isPending}
+            >
+              {setNote.isPending ? "সংরক্ষণ..." : "সংরক্ষণ"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setShowInput(false);
+                setNoteText("");
+              }}
+            >
+              বাতিল
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {notes.length === 0 && !showInput ? (
+        <p className="rounded-xl bg-muted/30 p-3 text-center text-[11px] text-muted-foreground">
+          {completedToday
+            ? "এই অভ্যাসের জন্য এখনো কোনো নোট নেই।"
+            : "অভ্যাস সম্পন্ন করে নোট যোগ করুন।"}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {notes.slice(0, 5).map((n) => (
+            <motion.div
+              key={n.id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border-l-2 border-primary/40 bg-muted/30 p-2.5"
+            >
+              <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{bnRelNote(n.date)}</span>
+                <span>{toBn(new Date(n.completedAt).toLocaleDateString("bn-BD"))}</span>
+              </div>
+              <p className="text-xs leading-snug">{n.note}</p>
+            </motion.div>
+          ))}
+          {notes.length > 5 && (
+            <p className="text-center text-[10px] text-muted-foreground">
+              আরও {toBn(notes.length - 5)} টি নোট আছে
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function bnRelNote(key: string): string {
+  const d = new Date(key);
+  const today = new Date();
+  const diff = Math.round(
+    (new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() -
+      new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) /
+      86400000
+  );
+  if (diff === 0) return "আজ";
+  if (diff === 1) return "গতকাল";
+  if (diff > 0 && diff < 7) return `${toBn(diff)} দিন আগে`;
+  return `${toBn(d.getDate())} ${["জানু","ফেব্রু","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্ট","অক্টো","নভে","ডিসে"][d.getMonth()]}`;
 }

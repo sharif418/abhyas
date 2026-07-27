@@ -29,6 +29,10 @@ import {
   MonthlyTrendChart,
   type MonthlyTrendPoint,
 } from "@/components/stats/monthly-trend-chart";
+import {
+  MoodTrendChart,
+  type MoodPoint,
+} from "@/components/stats/mood-trend-chart";
 import { AnimatedNumber } from "@/components/shared/celebration";
 
 interface StatsResponse {
@@ -55,6 +59,11 @@ interface StatsResponse {
   habitsCount: number;
   insights: InsightsData;
   monthlyTrend: MonthlyTrendPoint[];
+  mood: {
+    series: MoodPoint[];
+    average: number;
+    today: { mood: number; note: string | null } | null;
+  };
 }
 
 export function StatsView() {
@@ -218,6 +227,9 @@ export function StatsView() {
       {stats.monthlyTrend && stats.monthlyTrend.length > 0 && (
         <MonthlyTrendChart data={stats.monthlyTrend} />
       )}
+
+      {/* Mood trend chart */}
+      {stats.mood && <MoodTrendChart data={stats.mood.series} />}
 
       {/* Category breakdown */}
       {stats.categories.length > 0 && (

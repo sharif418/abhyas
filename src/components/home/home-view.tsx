@@ -14,6 +14,7 @@ import { StatPill, EmptyState } from "@/components/shared/stat-pill";
 import { HabitRow } from "@/components/habits/habit-row";
 import { AICoachPanel } from "@/components/home/ai-coach-panel";
 import { CalendarPanel } from "@/components/home/calendar-panel";
+import { MoodSelector } from "@/components/home/mood-selector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -133,6 +134,11 @@ export function HomeView() {
       {/* Bangladesh Calendar panel */}
       <div className="mt-4">
         <CalendarPanel />
+      </div>
+
+      {/* Daily mood selector */}
+      <div className="mt-4">
+        <MoodSelector />
       </div>
 
       {/* Habits by time of day */}

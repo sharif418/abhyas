@@ -29,6 +29,7 @@ model User {
   prayers      PrayerRecord[]
   quran        QuranSession[]
   achievements Achievement[]
+  moods        MoodEntry[]
 }
 
 model Habit {
@@ -136,4 +137,20 @@ model PrayerTimeCache {
   fetchedAt DateTime @default(now())
 
   @@unique([date, lat, lng, method])
+}
+
+// Daily mood tracking (1=very sad .. 5=very happy) + optional reflection note.
+model MoodEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD
+  mood      Int // 1..5
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
 }

@@ -118,6 +118,22 @@ export async function GET() {
     _count: true,
   });
 
+  // ---- Mood stats (last 30 days) ----
+  const moodEntries = await db.moodEntry.findMany({
+    where: { userId: user.id, date: { gte: last30[0] } },
+    orderBy: { date: "asc" },
+  });
+  const moodSeries = moodEntries.map((m) => ({
+    date: m.date,
+    mood: m.mood,
+    note: m.note,
+  }));
+  const moodValues = moodEntries.map((m) => m.mood);
+  const avgMood = moodValues.length > 0
+    ? moodValues.reduce((a, b) => a + b, 0) / moodValues.length
+    : 0;
+  const todayMood = moodEntries.find((m) => m.date === todayStr);
+
   // ---- Weekly insights ----
   // Best weekday: which day-of-week historically has highest completion count
   const weekdayCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun..Sat
@@ -263,5 +279,10 @@ export async function GET() {
       timeOfDaySeries,
     },
     monthlyTrend,
+    mood: {
+      series: moodSeries,
+      average: avgMood,
+      today: todayMood ? { mood: todayMood.mood, note: todayMood.note } : null,
+    },
   });
 }

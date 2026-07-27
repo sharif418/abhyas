@@ -378,6 +378,70 @@ server and client is essential to avoid Next.js intercepting `/socket.io/`.
 - **Social depth**: friend challenges, group leaderboards, direct messages —
   the current social is global-only.
 
+---
+
+## Task ID: R6 (webDevReview Round 6 — Mood Tracking + Habit Notes/Journal)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R5, the app was stable with all major roadmap features shipped (habit
+tracking, Islamic, gamification, AI coach, templates, PWA SW, notifications,
+analytics, BD calendar, CSV export, social/leaderboard). This round added
+emotional intelligence: daily mood tracking + habit notes/journal — a Phase-2
+feature from the original proposal ("মুড ট্র্যাকিং").
+
+### Work Log
+- **Mood tracking backend**: new `MoodEntry` Prisma model (userId, date, mood
+  1-5, note). New `/api/mood` endpoint (GET returns 30-day series + average +
+  today's entry; POST upserts mood for a date). Extended `/api/stats` to
+  include `mood.series`, `mood.average`, `mood.today`.
+- **Mood selector UI** (`mood-selector.tsx`): 5-emoji mood picker on the Home
+  view (😞😕😐🙂😄 with Bengali labels). Active mood gets a colored background
+  matching the mood value. Shows average mood + entry count. Haptic feedback
+  on selection. Verified: mood=4 (ভালো) saved → API returns `today.mood: 4`.
+- **Mood trend chart** (`mood-trend-chart.tsx`): line chart on the Stats view
+  showing 30-day mood trend with emoji Y-axis labels, average mood summary,
+  and an empty state when no mood entries exist. Connected with `connectNulls`
+  to handle gaps.
+- **Habit notes/journal backend**: new `/api/habits/[id]/notes` endpoint
+  (POST upserts a note on a completion; GET returns last 30 notes). The
+  existing `note` field on `HabitCompletion` was already in the schema.
+- **Habit notes UI**: `NotesSection` component in the habit detail drawer
+  with a "+ নতুন নোট" button that expands a textarea, save/cancel buttons,
+  and a timeline of past notes (date + relative time + note text, max 5 shown
+  with "আরও N টি" overflow). Verified: note "আজ ভোরে উঠে নামাজ পড়তে পেরে
+  ভালো লাগলো।" saved and displayed.
+- **Styling polish**: mood-colored active states, animated note input
+  expansion, border-left accent on note cards, emoji-based mood chart axis.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors (after restart to
+  pick up Prisma client regeneration for MoodEntry).
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Home: MoodSelector renders with 5 emoji buttons; clicking "ভালো" saves
+    mood=4 (verified via API: `today.mood: 4`).
+  - Stats: Mood trend chart ("মুড ধারা") renders with the saved entry.
+  - Habit detail: NotesSection renders with "+ নতুন নোট" button; adding a
+    note saves it (verified via API: 1 note returned); note displays in the
+    timeline.
+  - Desktop: all Home features (AI Coach, Calendar, Mood, habits) render.
+- Screenshots: `qa-r6-stats-mood.png`.
+
+### Unresolved / next-phase recommendations
+- **Journal timeline view**: a dedicated view combining all habit completions
+  + notes + mood entries into a unified daily journal timeline (the notes UI
+  exists per-habit, but a cross-habit journal view would be more powerful).
+- **Production build test**: confirm SW + social socket + mood/notes work
+  end-to-end in a production build.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+  Hijri→Gregorian conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Mood-habit correlation**: analytics showing which habits correlate with
+  better moods (e.g., "days you pray Fajr, your average mood is 4.2 vs 3.1").
+
+
 
 
 
