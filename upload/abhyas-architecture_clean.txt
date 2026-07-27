@@ -1,0 +1,779 @@
+📱
+অভ্যাস
+হ্যা<বিট Ùট্র্যাকার — Ǝমাবিাইল অ্যাপ
+সম্পূ'র্ণ আ< র্ণকর্কিBটকচার ও ƎডেBভেলপBমন্ć
+ń ট প<রকল্Ēপনা
+ভা7র্সন: 2.0 — মাস্ćটারšপিস প্ল্যান
+তা<রিখ: ৩ জুন, ২০২৬
+Ǝটেক স্ćট্যাক: React Native + Expo + Custom Native Modules
+টোƍর্সটে: বাংলাBদেƍশের প্র<তিŭ&টি স্মা#র্টBফান
+
+১. এťক্সি<কিউŭ&টিভ সামা<রি
+এই ডকুBমন্ć
+ń টŭ&টি
+ "অভ্যাস"  হ্যা<ব#  Ùট্র্যাকার Ǝমাবাইল অ্যাƍপির সম্পিূ'র্ণ আ< র্ণকর্কিB#কচার,  šফচার Ɛস্পিšসšফBকশেন,
+ƎডBভলপিBমন্ć
+ń ট প্ল্যান, এবং Ǝ#ক<নক্যাল স্Ĉট্র্যাB#<জ উপিস্থাপিন করBছে। আমাBদের লক্ষ্য হBলা বাংলাBদেƍশের প্র<তিŭ&টি
+স্মা#র্টBফান ব্যবহারকারীর কাBছে এই অ্যাপি ƐপিৌঁBছে Ǝদেও2য়া — সম্পিূ'র্ণ বাংলা2য়, সম্পিূ'র্ণ Ǝনŭ&টিভ পিারফরম্যাBন্সে, ƎকাBনা
+কƍম্প
+ম্প্র
+ামাইজ ছোডয়া।
+মূল দৃŭÁষ্টিভŢঙ্গি: একŭ&টি Ţপ্রšম2য়াম হ্যা<ব# Ùট্র্যা<কং অ্যাপি 2া বাংলাBদেšশে ইউজাBরর জীবনধারা, সংস্ī Łকৃ<তি, এবং
+ধমীী2য় চচর্ণার সাƍথে গভীরভাBব সম্পি< র্ণকর্কিতি। ইসলাšমক šফচার (নামাজ Ùট্র্যা<কং, কুরআন পিডয়া, Ǝরাজা রাখা) হBব
+আমাBদের সবBচB2য় বডয় ইউ<নক Ǝসţলং পিB2য়ন্ć
+ń ট (USP)। 
+১.১ Ǝটেক স্ćট্যাক ওভারিšভউ
+ক্যাটাগ<রি
+প্রযুŢŀ ক্তি
+কারিণ
+Ǝমাবাইল Ǝì
+ফ্রে
+মও2য়াকর্ণ
+React Native + Expo
+Android + iOS এক Ǝকাড, দ্রুতি ƎডBভলপিBমন্ć
+ń ট
+Ǝনŭ&টিভ মŢডউল
+Kotlin (Android)
+Widget, Alarm, Deep Notification
+Ǝস্ćট# ম্যাBনজBমন্ć
+ń ট
+Zustand + MMKV
+ফাস্ćট অফলাইন Ǝস্ćটাBরজ
+অফলাইন ডা#াBবস
+expo-sqlite
+ইন্ć
+ń টারBন# ছোডয়া পিুBরা অ্যাপি চলBব
+অ্যা<নBমশেন
+Reanimated 3
+60fps Ǝনŭ&টিভ অ্যা<নBমশেন
+ব্যাকএন্Ćń  API
+Node.js + Express
+REST API, Auth, Sync
+সাভর্ণার ডা#াBবস
+PostgreSQL + Redis
+Ɛস্ī ŁকBলবল, ফাস্ćট ƎকাB2য়<র
+পিুশে Ǝনাŭ&টিšফBকশেন
+FCM + expo-notifications
+ক্রস-প্ল্যা#ফমর্ণ পিুশে
+ইসলাšমক API
+Aladhan API
+নামাBজর সম2য়সূŬচ (বাংলাBদেশে)
+১.২ ƎডেBভলপBমন্ć
+ń ট ŭ&টিম ও Ǝরিস্পţন্সি<বিţলŭ&টি
+কাজ
+ক্
+ল
+াউড এBজন্ć
+ń ট
+Ǝডস্ī Łকটপ এBজন্ć
+ń ট
+আ< র্ণকর্কিB#কচার ও প্ল্যা<নং
+✅
+—
+React Native UI Components
+✅
+—
+Backend API + Database
+✅
+—
+
+State Management + Logic
+✅
+—
+Charts, Animations, Social
+✅
+—
+Home Screen Widget (Kotlin)
+❌
+✅
+Alarm Manager (Kotlin)
+❌
+✅
+Android Build + Signing
+❌
+✅
+Play Store <রţলজ
+❌
+✅
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+২. প
+্র
+Bজে¾ক্ট স্Ĉট্রাকিচারি
+২.১ ƎমাBনাBরিƍপা স্Ĉট্রাকচারি
+abhyas/ ├── apps/ │ ├── mobile/ # React Native ⢝মোবোইল অ্যোপ │ │ ├── app/ # Expo Router
+⢝পজস │ │ ├── src/ │ │ │ ├── components/ # UI কߵম্পোߵনেন্ট (বোংলো UI) │ │ │ ├── screens/ # ߯⥔স্ক্রিনে
+(Home, Habits, Stats...) │ │ │ ├── stores/ # Zustand ⢝⢾স্টোর │ │ │ ├── services/ # API ও
+ডোস্টোߵবস সো߯ߣর্ভিস │ │ │ ├── hooks/ # Custom React hooks │ │ │ ├── utils/ # ⢝হেল্পোর ফোংশনে │ │ │ ├──
+constants/ # কোলোর, ߯থিম, বোংলো ⢝স্টক্সস্ট │ │ │ ├── navigation/ # Navigation config │ │ │ ├──
+types/ # TypeScript types │ │ │ └── assets/ # Images, fonts, icons │ │ ├── android/
+# Android native (Kotlin) │ │ │ ├── widget/ # Home Screen Widget │ │ │ ├── alarm/ #
+Alarm Manager │ │ │ └── notification/ # Deep Notification │ │ ├── ios/ # iOS native
+(Future) │ │ ├── package.json │ │ └── app.json # Expo config │ │ │ └── backend/ #
+Node.js Backend API │ ├── src/ │ │ ├── routes/ # API routes │ │ ├── middleware/ #
+Auth, validation │ │ ├── services/ # Business logic │ │ ├── models/ # Database
+models │ │ └── utils/ # Helpers │ ├── prisma/ │ │ └── schema.prisma # Database
+schema │ └── package.json │ ├── packages/ │ └── shared/ # Shared types & utils │ ├──
+types/ # Common TypeScript types │ └── constants/ # Shared constants │ ├── docs/ #
+ডকুߵমߵন্টশনে ├── scripts/ # Build & deploy scripts └── turbo.json # Turborepo config 
+২.২ Ǝনšভƍশন স্Ĉট্রাকচারি
+Expo Router (file-based routing) ব্যবহার করা হBব:
+app/ ├── (tabs)/ # বস্টম স্ট্যোব ⢝নে߯ߣߵগেশনে │ ├── _layout.tsx # স্ট্যোব ⢝লআউস্ট + বস্টম ⢝নেߣ │ ├── index.tsx #
+⢝হেোম ߯⥔স্ক্রিনে │ ├── habits.tsx # অߣ্যোস ߯ল⢾স্ট │ ├── stats.tsx # প߯রসংখ্যোনে │ └── profile.tsx # ⢝পপ্রোফোইল │
+├── add-habit/ # নেতুনে অߣ্যোস (Modal/Sheet) │ └── index.tsx │ ├── habit/[id]/ # হে্যো߯বস্ট ߯ডߵস্টইল │
+└── index.tsx │ ├── islamic/ # ইসলো߯মক ߯ফচোর │ ├── index.tsx # নেোমোজ সময়সূ߯চ │ ├── quran.tsx
+# কুরআনে স্টপ্র্যো߯কং │ └── dua.tsx # ⢝দোয়ো লোইߵবপ্র߯র │ ├── social/ # ⢝সোশ্যোল ߯ফচোর │ ├── index.tsx # ߯লডোরߵবোডর্ভি
+│ └── friends.tsx # বন্ধু তো߯লকো │ ├── onboarding/ # অনেߵবো߯ডর্ভিং │ └── index.tsx │ └──
+_layout.tsx # রুস্ট ⢝লআউস্ট 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৩. সম্পূ'র্ণ šফিচারি ƐúপšসšফিBকিশন
+৩.১ Ǝকারি হ্যা<বিটে Ùট্র্যা<কং
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+হ্যা<ব# Ɠতি<র/সম্পিাদেনা/মুছেুন
+নাম, ক্যা#াগ<র, আইকন, কালার, লক্ষ্য,
+šì
+ফ্রে
+BকাB2য়ţন্সে
+সBবির্বাচ্চ
+Phase 1
+Ɠদে<নক Ǝচক-ইন
+#্যাপি কBর সম্পিন্đńন করা, ůস্Ĉō্রক অB#া
+ক্যালকুBলশেন
+সBবির্বাচ্চ
+Phase 1
+ক্যা#াগ<র šফল্ćটার
+স্ī কাস্থ্য, šশেক্ষা, ধমর্ণ, জীবনধারা, মানšসক স্ī কাস্থ্য +
+কাস্ćটম
+সBবির্বাচ্চ
+Phase 1
+সম2য়šভŢত্তিক Ǝসকশেন
+সকাল/দেুপিুর/<বকাল/রাতি — অB#া স#র্ট
+উচ্চ
+Phase 1
+ůস্Ĉō্রক Ùট্র্যা<কং
+কাBরন্ć
+ń ট ůস্Ĉō্রক, Ǝবস্ćট ůস্Ĉō্রক, ůস্Ĉō্রক ক্যাBলন্Ćń ার
+সBবির্বাচ্চ
+Phase 1
+হ্যা<ব# #াইমার
+স্ćটপিও2য়াচ — ব্যা2য়াম/পিডয়ার সম2য় Ùট্র্যাক
+šমিŢডযয়ামি
+Phase 2
+হ্যা<ব# Ǝনা#
+প্র<তি<দেBনর জানর্ণাল Ǝনা# Ǝলখা
+šমিŢডযয়ামি
+Phase 2
+৩.২ ƐšমšফিBকশন
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+XP ও ƎলBভল šসBস্ćটম
+প্র<তিŭ&টি কŨম্প্লশেBন XP, ůস্Ĉō্রক Ǝবানাস, ƎলBভল
+আপি
+সBবির্বাচ্চ
+Phase 1
+ব্যাজ সংগ্রহ
+১৫+ ব্যাজ (৭ <দেন ůস্Ĉō্রক, প্রাতিরাশেী, কুরআন
+পিাঠক...)
+সBবির্বাচ্চ
+Phase 1
+ţলডারBবাডর্ণ
+বন্đńī Ńধু ও ƎÇলগ্লাবাল র্যাং<কং (সাপতাŪহক/মাšসক)
+উচ্চ
+Phase 3
+Ǝডইţল চ্যাBলঞ্জ
+প্র<তি<দেন নতিুন চ্যাBলঞ্জ (Ǝবানাস XP)
+šমিŢডযয়ামি
+Phase 3
+অ্যাভা#ার কাস্ćটমাইBজশেন
+ƎলBভল অনু2া2য়ী আনলক হও2য়া আইB#ম
+šমিŢডযয়ামি
+Phase 4
+
+৩.৩ ই7লাšমক šফিচারি (7বিBচB2য়ে বিডেয়ে USP)
+বিাংলাBদƍশরি মানুBষেরি কাBছে এটোই আমাBদরি 7বিBচB2য়ে বিডেয়ে হুক! শুধু হ্যা<ব# Ùট্র্যাকার ŪহBসBব অ্যাপিŭ&টি ইন্সে#ল
+হBব না। <কন্তু নামাBজর সম2য়সূŬচ, কুরআন Ùট্র্যা<কং, Ǝদো2য়া — এগুBলা ƐপিB2য় মানুষ আনইন্সে#ল করBব না। 
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+নামাBজর সম2য়সূŬচ
+Aladhan API <দেB2য় বাংলাBদেƍশের প্র<তিŭ&টি
+Ǝজলার জন্য সŲÂঠিক সম2য়
+সBবির্বাচ্চ
+Phase 2
+নামাজ Ùট্র্যা<কং
+৫ ও2য়াত্তি্রক নামাজ + সুন্đńনাতি + নফল
+সBবির্বাচ্চ
+Phase 2
+অB#া নামাজ <রমাইন্Ćń ার
+প্র<তিŭ&টি ও2য়াBত্তি্রকর ১৫ šম<ন# আƍগ
+Ǝনাŭ&টিšফBকশেন
+সBবির্বাচ্চ
+Phase 2
+কুরআন Ùট্র্যা<কং
+পিডয়া পিৃÃষ্ঠা, সূরা, জুজ, ůস্Ĉō্রক
+সBবির্বাচ্চ
+Phase 2
+Ǝরাজা Ùট্র্যা<কং
+রমজান: šস2য়াম/ইফতিার #াইম, তিারাবীহ
+উচ্চ
+Phase 2
+Ǝদো2য়া লাইƌíফ্রেব্রে<র
+সকাল/সন্đńī Ńধ্যার Ǝদো2য়া, ঘুমাBনার আƍগ, <বƍশেষ
+Ǝদো2য়া
+উচ্চ
+Phase 2
+তিাস<বহ কাউন্ć
+ń টার
+<2<কর, সুবহানআল্đলাহ, দেরুদে শেরীফ
+šমিŢডযয়ামি
+Phase 3
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৩. সম্পূ'র্ণ šফিচারি (চল<তি)
+৩.৪ Ǝনাŭ&টিšফিBকশন ও <রিমাইন্Ćń ারি
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+কাস্ćটম <রমাইন্Ćń ার
+প্র<তিŭ&টি হ্যা<বB# আলাদো সম2য়, বাতির্ণা
+সBবির্বাচ্চ
+Phase 1
+অফলাইন অ্যালামর্ণ
+Native AlarmManager — ইন্ć
+ń টারBন#
+ছোডয়াও কাজ
+সBবির্বাচ্চ
+Phase 1
+স্মা#র্ট <রমাইন্Ćń ার
+AI-šভŢত্তিক Ǝসরা সম2য় সাBজস্ćট
+šমিŢডযয়ামি
+Phase 4
+মুBমন্ć
+ń টাম <রমাইন্Ćń ার
+ůস্Ĉō্রক ভাঙBতি 2াও2য়ার আƍগ সতিকর্ণতিা
+উচ্চ
+Phase 2
+৩.৫ Ǝ7াশ্যাল ও Ɛশ2য়ো<রিং
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+Ǝসাশে্যাল Ɛশে2য়ার কাডর্ণ
+"আšম ৩০ <দেন ফজর পিBডয়Ūছে" — সুন্দে
+ń
+র
+গ্রাšফক্স
+সBবির্বাচ্চ
+Phase 3
+Ǝì
+ফ্রে
+ন্Ćń  চ্যাBলঞ্জ
+বন্đńī ŃধুBদের সাƍথে হ্যা<ব# চ্যাBলঞ্জ
+উচ্চ
+Phase 3
+কšমউ<নŭ&টি šফড
+অ্যা<কšভŭ&টি šফড, একাউƍন্ć
+ń ট<বţলŭ&টি
+šমিŢডযয়ামি
+Phase 4
+৩.৬ Ǝহাম šûı ŀস্ক্রিন উইBজেটে (Native)
+গুরিুত্বপূ'র্স: Ǝহাম šস্ı ্রকন উইBজ# হBলা হ্যা<ব# Ùট্র্যাকাBরর সবBচB2য় গুরুত্বপিূ'র্ণ šফচার। ইউজারBক বারবার অ্যাপি
+ওƍপিন করBতি হBব না — Ǝহাম šস্ı ্রকন ƐথেBকই হ্যা<ব# ŭ&টিক করBতি পিারBব। এŭ&টি শুধুমা Native (Kotlin) <দেB2য়
+করা সম্ভব। 
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+কমপি্যা¾ক্ট উইBজ# (4x1)
+আজBকর Ǝপ্রাƌগ্রস: ৫/৮ সম্পিন্đńন
+সBবির্বাচ্চ
+Phase 1
+ŢডB#ইল উইBজ# (4x2)
+আজBকর হ্যা<ব# ţলস্ćট + ŭ&টিক বা#ন
+সBবির্বাচ্চ
+Phase 1
+নামাজ উইBজ# (4x1)
+পিরবতিীী নামাBজর সম2য় + কাউন্ć
+ń টডাউন
+সBবির্বাচ্চ
+Phase 2
+
+ůস্Ĉō্রক উইBজ# (4x1)
+কাBরন্ć
+ń ট ůস্Ĉō্রক ফা2য়ার অ্যা<নBমশেন
+উচ্চ
+Phase 2
+৩.৭ অন্যান্য Ţêপ্রিšম2য়োম šফিচারি
+šফিচারি
+<বিবিরিণ
+অগ্রা<ধিকারি
+Ǝফিজ
+ডাকর্ণ Ǝমাড
+šসBস্ćটম অনু2া2য়ী + ম্যানু2য়াল
+সBবির্বাচ্চ
+Phase 1
+Biometric Lock
+šফঙ্গারŢপ্রন্ć
+ń ট/Ǝফস আনলক <দেB2য় অ্যাপি ওƍপিন
+উচ্চ
+Phase 1
+Haptic Feedback
+#্যাপি, সম্পিন্đńন, ƎলBভল আপি — ভাইƌíফ্রেব্রেশেন
+উচ্চ
+Phase 1
+<গ#হাব-স্ćটাইল Ūহ#ম্যাপি
+বছেরভ< র্ণতির্কি কŨম্প্লশেন Ūহ#ম্যাপি
+উচ্চ
+Phase 1
+এক্সƍপিা#র্ট/Import
+ডা#া JSON/CSV Ǝতি এক্সƍপিা#র্ট
+šমিŢডযয়ামি
+Phase 2
+অ্যাBক্সšস<বţলŭ&টি
+ব2য়স্ī ŁকBদের জন্য বডয় ফন্ć
+ń ট, ভB2য়স গাইড
+šমিŢডযয়ামি
+Phase 4
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৪. ডাটাBবেস <úī Łস্কিমা
+৪.১ 7াভর্সারি ডোটোBবি7 (PostgreSQL)
+-- Users User { id UUID @id @default(uuid()) name String email String? @unique phone
+String? @unique passwordHash String? avatar String? xp Int @default(0) level Int
+@default(1) settings Json @default("{}") createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt habits Habit[] completions HabitCompletion[] } --
+Habits Habit { id UUID @id @default(uuid()) userId UUID name String nameEn String?
+icon String @default("Dumbbell") category String @default("স্বোস্থ্য") color String
+@default("#10B981") target String @default("পপ্র߯ত߯দনে") frequency String @default("পপ্র߯ত߯দনে")
+timeOfDay String @default("সকোল") streak Int @default(0) bestStreak Int @default(0)
+sortOrder Int @default(0) active Boolean @default(true) createdAt DateTime
+@default(now()) updatedAt DateTime @updatedAt user User @relation(...) completions
+HabitCompletion[] } -- Daily Completions HabitCompletion { id UUID @id
+@default(uuid()) habitId UUID date String // YYYY-MM-DD completedAt DateTime? note
+String? habit Habit @relation(...) @@unique([habitId, date]) } -- Prayer Tracking
+(নেোমোজ) PrayerRecord { id UUID @id @default(uuid()) userId UUID date String fajr
+Boolean @default(false) dhuhr Boolean @default(false) asr Boolean @default(false)
+maghrib Boolean @default(false) isha Boolean @default(false) sunnahFajr Boolean
+@default(false) sunnahOther Boolean @default(false) @@unique([userId, date]) } --
+Quran Tracking QuranSession { id UUID @id @default(uuid()) userId UUID date String
+surah Int fromAyah Int toAyah Int pagesRead Int @@unique([userId, date, surah]) } --
+Achievements Achievement { id UUID @id @default(uuid()) userId UUID badgeId String
+earnedAt DateTime @default(now()) @@unique([userId, badgeId]) } -- Friends
+Friendship { id UUID @id @default(uuid()) requesterId UUID addresseeId UUID status
+String @default("pending") createdAt DateTime @default(now()) } 
+৪.২ অফিলাইন ডোটোBবি7 (expo-sqlite / device)
+অফলাইন ডা#াBবBস সাভর্ণাBরর মBতিাই স্Ĉট্রাকচার থোকBব। šসঙ্ক স্Ĉট্র্যাB#<জ:
+š7ঙ্ক স্Ĉট্র্যাBটে<জে:
+১. প্র<তিŭ&টি অ্যাকশেন প্রথেBম ƎলাকাBল Ǝসভ হBব (ফাস্ćট)
+২. ব্যাকগ্রাউBন্Ćń  সাভর্ণাBর šসঙ্ক হBব (eventual consistency)
+৩. কনšì
+ফ্লি
+¾ক্ট হBল: "last write wins" + conflict resolution UI
+৪. অফলাইBন šক্রB2য়# করা ডা#া পিBর সাভর্ণাBর আপিBলাড 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৫. Backend API Ţডজোইন
+৫.১ API Endpoints
+Method
+Endpoint
+<বিবিরিণ
+Auth
+POST
+/api/auth/register
+Ǝর<জBস্Ĉট্রশেন (Ǝফান/ইBমইল)
+❌
+POST
+/api/auth/login
+লগইন
+❌
+POST
+/api/auth/refresh
+Ǝ#াBকন <রBì
+ফ্রে
+শে
+✅
+Habit APIs
+GET
+/api/habits
+সব হ্যা<ব# (completedToday সহ)
+✅
+POST
+/api/habits
+নতিুন হ্যা<ব# Ɠতি<র
+✅
+PUT
+/api/habits/:id
+হ্যা<ব# আপিBড#
+✅
+DELETE
+/api/habits/:id
+হ্যা<ব# মুছেুন
+✅
+POST
+/api/habits/:id/toggle
+আজBকর কŨম্প্লশেন #গল
+✅
+GET
+/api/habits/stats
+সাপতাŪহক/মাšসক পি<রসংখ্যান
+✅
+Islamic APIs
+GET
+/api/prayer/times
+আজBকর নামাBজর সম2য় (location অনু2া2য়ী)
+✅
+POST
+/api/prayer/log
+নামাজ লগ Ǝসভ
+✅
+POST
+/api/quran/session
+কুরআন Ǝসশেন Ǝসভ
+✅
+Social APIs
+GET
+/api/leaderboard
+ţলডারBবাডর্ণ (ƎÇলগ্লাবাল/Ǝì
+ফ্রে
+ন্Ćń স)
+✅
+POST
+/api/friends/request
+Ǝì
+ফ্রে
+ন্Ćń  <রBকাB2য়স্ćট
+✅
+GET
+/api/share/card
+Ǝসাশে্যাল Ɛশে2য়ার কাডর্ণ ƎজনাBর#
+✅
+Sync API
+POST
+/api/sync
+অফলাইন ডা#া šসঙ্ক
+✅
+
+৫.২ Authentication Ǝì
+ফ্ল
+া
+1. ইউজোর ⢝ফোনে নেম্বর ⢝দয় 2. OTP (৬ ߯ড߯জস্ট) পোঠোߵনেো হেয় (SMS/Voice) 3. OTP ⢝ߣ߯রফোই → JWT Access Token +
+Refresh Token 4. Access Token: ৭ ߯দনে ⢝ময়োদ 5. Refresh Token: ৩০ ߯দনে ⢝ময়োদ 6. পপ্র߯ত߯স্ট API Request:
+Authorization: Bearer {token} 
+৫.৩ আ< র্সকর্কিBটেকচারি ডো2য়োগ্রাম
+Data Flow:
+Ǝমাবাইল অ্যাপি → (Offline: expo-sqlite) → (Online: REST API) → PostgreSQL → Redis Cache
+পিুশে Ǝনাŭ&টিšফBকশেন: Server → FCM → Device
+নামাজ সম2য়: Aladhan API → Server Cache → Device Cache 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৬. Native Module ƐúপšসšফিBকিশন (Kotlin)
+Ǝডেস্ī Łকটেপ এBজেƍন্ć
+ń টরি জেন্য: এই ƎসকশেBনর সব কাজ শুধুমা Kotlin (Android) <দেB2য় করা লাগBব। ক্ফ্লিাউড
+এBজন্ć
+ń ট এগুBলা করBতি পিারBব না। <বস্তা<রতি ইমšপ্লBমƍন্ć
+ń টশেন গাইড <নBচ Ǝদেও2য়া হBলা। 
+৬.১ Home Screen Widget
+// ফোইল: android/app/src/main/java/com/abhyas/widget/ GlanceAppWidget.kt — মূল উইߵজস্ট
+কߵম্পোߵনেন্ট কোজ: 1. Glance (Jetpack Glance) ߯দߵয় Widget UI ⢞ত߯র 2. RemoteViews ߯দߵয় ⢝লআউস্ট ইনেߵফফ্লেস্ট 3.
+ডোস্টোߵবস ⢝থিߵক আজߵকর হে্যো߯বস্ট পড়ুনে 4. পপ্র߯ত߯স্ট হে্যো߯বߵস্ট ߯স্টক বোস্টনে (PendingIntent) 5. ߯স্টক ߯কফ্লেক → বপ্রডকো⢾স্ট ߯র߯সߣোর → ডোস্টোߵবস আপߵডস্ট
+6. পপ্র߯ত ১ ߯ম߯নেߵস্ট উইߵজস্ট ߯রߵফপ্রশ (WorkManager) উইߵজস্ট সোইজ: - 4x1: কমপ্যোক্ট (⢝পপ্রোߵগেপ্রস বোর + ߯⢾স্টপ্রক কোউন্ট) - 4x2: ߯ডߵস্টইল
+(হে্যো߯বস্ট ߯ল⢾স্ট + ߯স্টক বোস্টনে) - 4x1: নেোমোজ উইߵজস্ট (পরবতর্ভিী নেোমোজ + কোউন্টডোউনে) XML Layout: - res/layout/
+widget_compact.xml - res/layout/widget_detail.xml - res/layout/widget_prayer.xml 
+৬.২ Alarm Manager
+// ফোইল: android/app/src/main/java/com/abhyas/alarm/ AlarmScheduler.kt — অ্যোলোমর্ভি ߯শ߯ডউ߯লং
+কোজ: 1. AlarmManager.setExactAndAllowWhileIdle() ব্যবহেোর 2. DOZE MODE এও কোজ করߵব 3.
+BroadcastReceiver ߯দߵয় অ্যোলোমর্ভি হে্যোߵন্ডেল 4. NotificationCompat ߯দߵয় ⢝নেো߯স্ট߯ফߵকশনে ⢝দখোনে 5. কো⢾স্টম সোউন্ডে (raw/
+res/ এ অ߯ডও ফোইল) 6. ߣোইߵবপ্রশনে প্যোস্টোনের্ভি 7. অ্যোকশনে বোস্টনে: "সম্পন্ন" / "স্নুজ ১৫ ߯ম߯নেস্ট" বুߵনেো ⢝ফফ্লেো: App →
+AlarmScheduler.schedule(habitId, time) → AlarmManager.set (exact time) →
+BroadcastReceiver.onReceive() → NotificationManager.notify() → User ߯কফ্লেক কߵর → Habit
+toggle API 
+৬.৩ Deep Notification Service
+// ফোইল: android/app/src/main/java/com/abhyas/notification/ NotificationHelper.kt —
+⢝নেো߯স্ট߯ফߵকশনে চ্যোߵনেল ও ⢾স্টোইল কোজ: 1. Notification Channels ⢞ত߯র: - "habits" — হে্যো߯বস্ট ߯রমোইন্ডেোর (হেোই) -
+"prayer" — নেোমোজ ߯রমোইন্ডেোর (সߵবর্ভিোচ্চ) - "social" — ⢝ফপ্রন্ডে অ্যো߯ক্ট߯ߣ߯স্ট (߯ডফল্ট) - "achievement" — ব্যোজ আনেলক
+(߯ডফল্ট) 2. গেপ্রুপ ⢝নেো߯স্ট߯ফߵকশনে (Android 7+) 3. অ্যোকশনে বোস্টনে 4. ߯বগে ߯পকচোর ⢾স্টোইল (Android ⢝নেো߯স্ট߯ফߵকশনে কো⢾স্টমোইߵজশনে)
+5. HEADS UP Notification (তোৎক্ষ߯ণিক) 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৭. ƎডBভলপBমন্ć
+ń ট Ǝফিজে ও টাইমলাইন
+Phase 1: MVP — Ǝকারি অ্যাপ (৪-৬ সপতাহ)
+ক্
+ফ্ল
+াউডে এBজেন্ć
+ń ট (React Native):
+Expo Router Ǝস#আপি ও প্রBজ¾ক্ট স্Ĉট্রাকচার
+৫ŭ&টি মূল šস্ı ্রকন (Home, Habits, Stats, Profile, Add Habit)
+Zustand Ǝস্ćটার + expo-sqlite (offline-first)
+Habit CRUD + #গল + ůস্Ĉō্রক ক্যালকুBলশেন
+<গ#হাব-স্ćটাইল Ūহ#ম্যাপি + সাপতাŪহক চা#র্ট
+Dark Mode + Haptic Feedback
+Backend API (Node.js + PostgreSQL)
+Auth šসBস্ćটম (OTP + JWT)
+XP, Level, Badge šসBস্ćটম
+Ǝডেস্ī Łকটেপ এBজেন্ć
+ń ট (Kotlin):
+Home Screen Widget (কমপি্যা¾ক্ট + ŢডB#ইল)
+Alarm Manager (অফলাইন <রমাইন্Ćń ার)
+Notification Channels ও স্ćটাইল
+Android Build + Play Store Beta
+Phase 2: ইসলাšমিক šফিচারি (২-৩ সপতাহ)
+ক্
+ফ্ল
+াউডে এBজেন্ć
+ń ট:
+নামাজ সম2য়সূŬচ šস্ı ্রকন (Aladhan API ইůন্ć
+ń ō ƌগ্রশেন)
+নামাজ Ùট্র্যা<কং UI (৫ ও2য়াত্তি্রক + সুন্đńনাতি)
+কুরআন Ùট্র্যা<কং UI (সূরা, পিৃÃষ্ঠা, জুজ)
+Ǝদো2য়া লাইƌíফ্রেব্রে<র (সকাল/সন্đńī Ńধ্যা/<বƍশেষ)
+Ǝরাজা Ùট্র্যা<কং (রমজান)
+মুBমন্ć
+ń টাম <রমাইন্Ćń ার (ůস্Ĉō্রক Əíফ্রেব্রেক সতিকর্ণতিা)
+Ǝডেস্ī Łকটেপ এBজেন্ć
+ń ট:
+নামাজ উইBজ# (পিরবতিীী নামাজ + কাউন্ć
+ń টডাউন)
+নামাজ অ্যালামর্ণ (প্র<তিŭ&টি ও2য়াBত্তি্রকর ১৫ šম. আƍগ)
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+অB#া সাউন্Ćń  (আজান)
+Phase 3: Ǝসাশ্যাল ও ƐগšমিšফিBকশন (২-৩ সপতাহ)
+ক্
+ফ্ল
+াউডে এBজেন্ć
+ń ট:
+Ǝসাশে্যাল Ɛশে2য়ার কাডর্ণ ƎজনাBর#র (Canvas/ViewShot)
+Ǝì
+ফ্রে
+ন্Ćń  šসBস্ćটম (<রBকাB2য়স্ćট/একBসপ্ćট/চ্যাBলঞ্জ)
+ţলডারBবাডর্ণ (ƎÇলগ্লাবাল/Ǝì
+ফ্রে
+ন্Ćń স)
+Ǝডইţল চ্যাBলঞ্জ
+ভাইরাল Ɛশে2য়ার (Facebook, WhatsApp deep link)
+Ǝডেস্ī Łকটেপ এBজেন্ć
+ń ট:
+Ɛশে2য়ার কাডর্ণ Image ƎজনাBরশেন (Kotlin Canvas)
+Deep Link হ্যান্Ćń ţলং (অ্যাপি ওƍপিন ফর Ɛশে2য়ারড ţলংক)
+Phase 4: পţলশ ও Ɛস্ī Łকল (চলমিান)
+অ্যাBক্সšস<বţলŭ&টি (বডয় ফন্ć
+ń ট, ভB2য়স গাইড)
+A/B Testing (Expo OTA)
+Analytics (Mixpanel/Amplitude)
+Crash Reporting (Sentry)
+পিারফরম্যান্সে অŰপ্ćō মাইBজশেন
+iOS <বল্Ć (Future)
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৮. ŢডƍপBন্Ć
+ń
+ţন্সি ও প্যাBকিজে
+৮.১ React Native / Expo Packages
+{ "dependencies": { "expo": "~52.0.0", "expo-router": "~4.0.0", "expo-sqlite":
+"~15.0.0", "expo-notifications": "~0.30.0", "expo-secure-store": "~14.0.0", "expo-
+haptics": "~14.0.0", "expo-screen-orientation": "~7.0.0", "expo-local-
+authentication": "~15.0.0", "expo-location": "~18.0.0", "expo-image-picker":
+"~16.0.0", "expo-sharing": "~13.0.0", "expo-linear-gradient": "~14.0.0", "react":
+"18.3.1", "react-native": "0.76.5", "react-native-reanimated": "~3.16.0", "react-
+native-gesture-handler": "~2.20.0", "react-native-screens": "~4.4.0", "react-native-
+safe-area-context": "~5.0.0", "react-native-svg": "~15.8.0", "react-native-chart-
+kit": "~6.12.0", "react-native-mmkv": "~3.1.0", "react-native-view-shot": "~4.0.0",
+"@shopify/flash-list": "~1.7.0", "zustand": "~5.0.0", "date-fns": "~4.1.0", "axios":
+"~1.7.0", "lucide-react-native": "~0.460.0" } } 
+৮.২ Backend Dependencies
+{ "dependencies": { "express": "~4.21.0", "prisma": "~6.1.0", "@prisma/client":
+"~6.1.0", "jsonwebtoken": "~9.0.0", "bcrypt": "~5.1.0", "cors": "~2.8.0", "helmet":
+"~8.0.0", "rate-limit": "~7.4.0", "twilio": "~5.5.0", "axios": "~1.7.0", "redis":
+"~4.7.0" } } 
+৮.৩ Ǝনাŭ&টিšফিBকশন 7াউন্Ćń
+কাস্ćটম Ǝনাŭ&টিšফBকশেন সাউন্Ćń  Android res/raw/ Ǝফাল্ĆাBর রাখা হBব:
+- habit_complete.mp3 — হ্যা<ব# সম্পিন্đńন
+- prayer_adhan.mp3 — নামাBজর আজান
+- streak_break.mp3 — ůস্Ĉō্রক Əíফ্রেব্রেক
+- level_up.mp3 — ƎলBভল আপি
+- achievement.mp3 — ব্যাজ আনলক 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+৯. Ţডজোইন šসBস্ćটম
+৯.১ কালারি <থিম
+রিং
+Hex
+বি্যবিহারি
+Primary
+#059669
+বা#ন, অ্যাŮ¾টিভ #্যাব, Ǝপ্রাƌগ্রস
+Primary Light
+#34D399
+গ্র্যাŢডB2য়ন্ć
+ń ট, সাকBসস
+Secondary
+#F59E0B
+ůস্Ĉō্রক ফা2য়ার, ůস্Ĉō্রক ব্যাজ
+Accent
+#0d9488
+গ্র্যাŢডB2য়ন্ć
+ń ট, Ǝহডার
+Dark BG
+#1a1a2e
+ডাকর্ণ Ǝমাড ব্যাকগ্রাউন্Ćń
+Light BG
+#f0fdf4
+লাই# Ǝমাড ব্যাকগ্রাউন্Ćń
+৯.২ টোইƍপাগ্রাšফি
+স্ćটাইল
+ফিন্ć
+ń ট
+সাইজ
+বি্যবিহারি
+Headline
+Noto Sans Bengali Bold
+24px
+šস্ı ্রকন #াইB#ল
+Title
+Noto Sans Bengali SemiBold
+18px
+Ǝসকশেন ƎহŢডং
+Body
+Noto Sans Bengali Regular
+14px
+বŢড Ǝ#ক্স#
+Caption
+Noto Sans Bengali Regular
+12px
+ƎলBবল, সাবB#ক্স#
+Overline
+Noto Sans Bengali Medium
+10px
+#্যাগ, ব্যাজ
+৯.৩ কƍðপাBনন্ć
+ń ট Ɛস্পš7šফিBকশন
+বিাটেন: border-radius: 12px, height: 48px, শে্যাBডা + haptic
+কাডের্স: border-radius: 16px, padding: 16px, elevation: 2dp
+ইনপুটে: border-radius: 12px, height: 48px, focus border: primary
+বিটেম Ǝনভ: height: 64px, safe area padding, অ্যাŮ¾টিভ ইŪন্Ćń Bক#র
+Ǝচকবিক্স: circular 24px, spring animation, haptic on complete
+বি্যাজে: rounded 12px, emoji + text, glow effect on earned
+টে্যাবি: pill-shaped, border-radius: full, smooth scroll
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+৯.৪ অ্যা<নBমশন াইডেলাইন
+šস্ı ্রকন Ùট্রান<জশেন: spring(300, 30) — slide from right
+হ্যা<ব# ŭ&টিক: spring(300, 20) — scale bounce + haptic
+ůস্Ĉō্রক ফা2য়ার: Lottie বা Reanimated sequence
+ব্যাজ আনলক: spring(500, 15) — scale + glow + confetti
+ţলস্ćট আইB#ম: stagger 50ms delay, fadeInUp
+পিুল #ু <রBì
+ফ্রে
+শে: native spring animation
+• 
+• 
+• 
+• 
+• 
+• 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0
+
+১০. Ǝকিা2য়াţলŭ&টি অ্যা¼্যBরিন্সি ও সামা<রি
+১০.১ নন-ফিাংশনাল <রিBকা2য়োরিBমন্ć
+ń ট
+অ্যাপি সাইজ: 15MB এরি <নBচ রাখBতি হBব
+Ǝকাল্Ć স্ćটা#র্ট: ৩ Ǝ7BকBন্Ćń রি মB+্য অ্যাপি ওƍপিন হBব
+ì
+ফ্লিুইড অ্যা<নBমশেন: 60fps ƎমইনB#ইন
+অফলাইন: 100% šফিচারি ইন্ć
+ń টারBন# ছোডয়া
+ব্যা#া<র: ১% এরি <নBচ ব্যাকগ্রাউন্Ćń  ব্যবহার
+Ǝমম<র: ১০০MB এরি <নBচ RAM ব্যবহার
+অ্যান্Ćń্রB2য়ড সাƍপিা#র্ট: API 24+ (Android 7.0+)
+১০০% বাংলা ইন্ć
+ń টারBফস
+১০.২ š7<কউ<রিŭ&টি
+API: JWT Authentication + Rate Limiting
+ডা#া: এনšক্রƍপ্ćটড Ǝস্ćটাBরজ (expo-secure-store)
+Ǝন#ও2য়াকর্ণ: HTTPS শুধুমা
+API Key: Environment variables
+OTP: ৬ Ţড<জ#, ৫ šম<ন# Ǝম2য়াদে, ৩ বার Ùট্রাই
+১০.৩ êপ্রিBজে¾ক্ট 7ামা<রি
+অভ্যা7 হBলা বাংলাBদেƍশের প্রথেম পিূ'র্ণাঙ্গ বাংলা হ্যা<ব# Ùট্র্যাকার 2া:
+- React Native + Expo <দেB2য় Ɠতি<র (Android + iOS)
+- Custom Kotlin Native Modules (Widget + Alarm)
+- Offline-First Architecture
+- ইসলাšমক šফচার সহ (নামাজ, কুরআন, Ǝদো2য়া)
+- Ǝসাশে্যাল ƐগšমšফBকশেন (XP, Badge, Leaderboard)
+- Ǝসাশে্যাল Ɛশে2য়া<রং (ভাইরাল মাBকর্ণŭ&টিং)
+- ১৫MB এর <নBচ অ্যাপি সাইজ
+- Ǝপ্ল-Ǝস্ćটার + অ্যাপি Ǝস্ćটার <রţলজ 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+অভ্যাস হ্যা<ব# Ùট্র্যাকার — আ< র্ণকর্কিB#কচার ডকুBমন্ć
+ń ট v2.0

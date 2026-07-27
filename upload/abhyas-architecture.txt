@@ -1,0 +1,851 @@
+                          📱
+                    অভ্যাস
+        হ্যা বিট ্রট ্যাকার — মাবিাইল অ্যাপ
+
+
+সম্পূ র্ণ আ কর্কির্ণ টকচার ও ডে ভেলপ মন্ট প রকল্
+                                              প না
+
+
+
+                 ভা র্স ন: 2.0 — মাস্ট ার পিস প্
+                                              ল ্যান
+
+                       তা রিখ: ৩ জু ন, ২০২৬
+
+  টেক স্ট ্যাক: React Native + Expo + Custom Native Modules
+
+                                       ্র তি টি স্মা র্ট ফান
+              টো র্স টে: বাংলা দে শের প
+১. এ ক্সি কিউ টি ভ সামা রি
+
+এই ডকু মন্ট টি         "অভ্যাস" হ্যা ব          ্রট ্যাকার   মাবাইল অ্যা পির সম্পিূ র্ণ আ কর্কির্ণ কচার, ফচার স্পি স ফ কশেন,
+ ড ভলপি মন্ট প্
+             ল ্যান, এবং                ক নক্যাল স্ট র ্যা    জ উপিস্থাপিন কর ছে। আমা দের লক্ষ্য হ লা বাংলা দে শের প
+                                                                                                                   ্র তি টি
+স্মা র্ট ফান ব্যবহারকারীর কা ছে এই অ্যাপি পিৌঁ ছে দেও য় া — সম্পিূ র্ণ বাংলা য় , সম্পিূ র্ণ ন টি ভ পিারফরম্যা ন্সে, কা না
+ক ম্ম্প্র পামাইজ ছোডয়া।
+
+
+     মূল দৃ ষ্টি ভ ঙ্গি: এক টি   ্র ম য় াম হ্যা ব ্রট ্যা কং অ্যাপি া বাংলা দে শে ইউজা রর জীবনধারা, সংস্ৃ ক তি, এবং
+                                 প
+     ধমী য় চচর্ণার সা থে গভীরভা ব সম্পি কর্কির্ণ তি। ইসলা মক ফচার (নামাজ ্রট ্যা কং, কুরআন পিডয়া, রাজা রাখা) হ ব
+     আমা দের সব চ য় বডয় ইউ নক স লং পি য় ন্ট (USP)।
+
+
+
+১.১ টেক স্ট ্যাক ওভারি ভউ
+
+
+  ক্যাটাগ রি                       প
+                                   ্র যু ক্তি                                কারিণ
+
+
+   মাবাইল ফ্রে মও য় াকর্ণ           React Native + Expo                     Android + iOS এক কাড, ্রদুতি ড ভলপি মন্ট
+
+
+   ন টি ভ ম ডউল                      Kotlin (Android)                        Widget, Alarm, Deep Notification
+
+
+   স্ট   ম্যা নজ মন্ট                Zustand + MMKV                          ফাস্ট অফলাইন স্ট া রজ
+
+
+  অফলাইন ডা া বস                     expo-sqlite                             ইন্ট ার ন ছোডয়া পিু রা অ্যাপি চল ব
+
+
+  অ্যা ন মশেন                        Reanimated 3                            60fps ন টি ভ অ্যা ন মশেন
+
+
+  ব্যাকএন্ API                       Node.js + Express                       REST API, Auth, Sync
+
+
+  সাভর্ণার ডা া বস                   PostgreSQL + Redis                      স্ক লবল, ফাস্ট কা য় র
+
+
+  পিু শে না টি ফ কশেন                FCM + expo-notifications                  ক্র স-প্
+                                                                                     ল ্যা ফমর্ণ পিু শে
+
+
+  ইসলা মক API                        Aladhan API                             নামা জর সম য় সূ চ (বাংলা দেশে)
+
+
+
+১.২ ডে ভলপ মন্ট টি ম ও রিস্প ন্সি বি ল টি
+
+
+  কাজ                                                                   লক্াউড এ জন্ট                     ডস্ক টপ এ জন্ট
+
+
+  আ কর্কির্ণ কচার ও প্
+                    ল ্যা নং                                                        ✅                                —
+
+
+  React Native UI Components                                                        ✅                                —
+
+
+  Backend API + Database                                                            ✅                                —
+State Management + Logic                                                  ✅              —
+
+
+Charts, Animations, Social                                                ✅              —
+
+
+Home Screen Widget (Kotlin)                                               ❌              ✅
+
+
+Alarm Manager (Kotlin)                                                    ❌              ✅
+
+
+Android Build + Signing                                                   ❌              ✅
+
+
+Play Store র লজ                                                           ❌              ✅
+
+
+
+                              অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+২. ্রপ জেক্ট স্ট র াকিচারি
+
+
+২.১ মা না রি পা স্র ট াকচারি
+
+   abhyas/ ├── apps/ │ ├── mobile/ # React Native মোবোইল অ্যোপ │ │ ├── app/ # Expo Router
+   পজস │ │ ├── src/ │ │ │ ├── components/ # UI ক ম্পো নেন্ট (বোংলো UI) │ │ │ ├── screens/ #                             স্ক্রি নে
+   (Home, Habits, Stats...) │ │ │ ├── stores/ # Zustand                                   স্টোর │ │ │ ├── services/ # API ও
+   ডোস্টো বস সো র্ভিস │ │ │ ├── hooks/ # Custom React hooks │ │ │ ├── utils/ # হেল্পোর ফোংশনে │ │ │ ├──
+   constants/ # কোলোর, থিম, বোংলো স্টক্সস্ট │ │ │ ├── navigation/ # Navigation config │ │ │ ├──
+   types/ # TypeScript types │ │ │ └── assets/ # Images, fonts, icons │ │ ├── android/
+   # Android native (Kotlin) │ │ │ ├── widget/ # Home Screen Widget │ │ │ ├── alarm/ #
+   Alarm Manager │ │ │ └── notification/ # Deep Notification │ │ ├── ios/ # iOS native
+   (Future) │ │ ├── package.json │ │ └── app.json # Expo config │ │ │ └── backend/ #
+   Node.js Backend API │ ├── src/ │ │ ├── routes/ # API routes │ │ ├── middleware/ #
+   Auth, validation │ │ ├── services/ # Business logic │ │ ├── models/ # Database
+   models │ │ └── utils/ # Helpers │ ├── prisma/ │ │ └── schema.prisma # Database
+   schema │ └── package.json │ ├── packages/ │ └── shared/ # Shared types & utils │ ├──
+   types/ # Common TypeScript types │ └── constants/ # Shared constants │ ├── docs/ #
+   ডকু ম ন্টশনে ├── scripts/ # Build & deploy scripts └── turbo.json # Turborepo config
+
+
+
+
+২.২ ন ভ       শন স্র ট াকচারি
+
+Expo Router (file-based routing) ব্যবহার করা হ ব:
+
+
+   app/ ├── (tabs)/ # বস্টম স্ট্যোব নে    গেশনে │ ├── _layout.tsx # স্ট্যোব লআউস্ট + বস্টম নে
+                                                                                         │ ├── index.tsx #
+   হেোম স্ক্রি নে │ ├── habits.tsx # অ ্যোস ল স্ট │ ├── stats.tsx # প রসংখ্যোনে │ └── profile.tsx # পোপ্র ফোইল │
+   ├── add-habit/ # নেতু নে অ ্যোস (Modal/Sheet) │ └── index.tsx │ ├── habit/[id]/ # হে্যো বস্ট ড স্টইল │
+   └── index.tsx │ ├── islamic/ # ইসলো মক ফচোর │ ├── index.tsx # নেোমোজ সময়সূ চ │ ├── quran.tsx
+   # কু রআনে স্টপ্র্যো কং │ └── dua.tsx # দোয়ো লোই বপ্র র │ ├── social/ # সোশ্যোল ফচোর │ ├── index.tsx # লডোর বোডর্ভি
+   │ └── friends.tsx # বন্ধু তো লকো │ ├── onboarding/ # অনে বো ডর্ভিং │ └── index.tsx │ └──
+   _layout.tsx # রুস্ট লআউস্ট
+
+
+
+
+                                         অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৩. সম্পূ র্ণ ফিচারি                  প স ফি কিশন
+
+
+৩.১ কারি হ্যা বিটে ্রট ্যা কং
+
+
+  ফিচারি                                       বিবিরিণ                                              অগ
+                                                                                                     ্র া ধিকারি    ফিজ
+
+
+                                        নাম, ক্যা াগ র, আইকন, কালার, লক্ষ্য,
+  হ্যা ব   তি র/সম্পিাদেনা/মু ছেুন                                                                   স বির্ব াচ্চ   Phase 1
+                                        ফ্রে      কা য় ন্সে
+
+
+                                               ্যাপি ক র সম্পিন্ করা, স্র ক অ া
+   দে নক চক-ইন                                                                                       স বির্ব াচ্চ   Phase 1
+                                        ক্যালকু লশেন
+
+
+                                        স্ক াস্থ্য, শেক্ষা, ধমর্ণ , জীবনধারা, মান সক স্ক াস্থ্য +
+  ক্যা াগ র ফল্ট ার                                                                                  স বির্ব াচ্চ   Phase 1
+                                        কাস্ট ম
+
+
+  সম য় ভ ত্তিক সকশেন                   সকাল/দেু পিু র/ বকাল/রাতি — অ া স র্ট                        উচ্চ           Phase 1
+
+
+  স্র ক ্রট ্যা কং                      কা রন্ট স্র ক, বস্ট স্র ক, স্র ক ক্যা লন্ ার                 স বির্ব াচ্চ   Phase 1
+
+
+  হ্যা ব    াইমার                       স্ট পিও য় াচ — ব্যা য় াম/পিডয়ার সম য় ্রট ্যাক             মি ডযয়ামি    Phase 2
+
+
+  হ্যা ব   না                           প
+                                        ্র তি দে নর জানর্ণ াল না        লখা                           মি ডযয়ামি    Phase 2
+
+
+
+৩.২        ম ফি কশন
+
+
+  ফিচারি                                       বিবিরিণ                                              অগ
+                                                                                                     ্র া ধিকারি    ফিজ
+
+
+                                        প
+                                        ্র তি টি ক ম্প্
+                                                     ল শে ন XP, স্র ক বানাস, ল ভল
+  XP ও ল ভল স স্ট ম                                                                                  স বির্ব াচ্চ   Phase 1
+                                        আপি
+
+
+                                        ১৫+ ব্যাজ (৭ দেন স্র ক, প
+                                                                ্র াতিরাশেী, কুরআন
+  ব্যাজ সংগ
+          ্র হ                                                                                       স বির্ব াচ্চ   Phase 1
+                                        পিাঠক...)
+
+
+  লডার বাডর্ণ                           বন্ু ধ ও ল গ্ল াবাল র্যাং কং (সাপ
+                                                                        ত া হক/মা সক)                উচ্চ           Phase 3
+
+
+   ডই ল চ্যা লঞ্জ                       ্র তি দেন নতিুন চ্যা লঞ্জ ( বানাস XP)
+                                        প                                                             মি ডযয়ামি    Phase 3
+
+
+  অ্যাভা ার কাস্ট মাই জশেন                     ল ভল অনু া য় ী আনলক হও য় া আই ম                      মি ডযয়ামি    Phase 4
+৩.৩ ই লা মক ফিচারি ( বি চ য়ে বিডেয়ে USP)
+
+
+   বিাংলা দ শরি মানু ষেরি কা ছে এটোই আমা দরি বি চ য়ে বিডেয়ে হুক! শুধু হ্যা ব ্রট ্যাকার হ স ব অ্যাপি টি ইন্সে ল
+            তু নামা জর সম য় সূ চ, কুরআন ্রট ্যা কং, দো য় া — এগু লা পি য় মানু ষ আনইন্সে ল কর ব না।
+   হ ব না। কন্
+
+
+
+  ফিচারি                             বিবিরিণ                                                    অগ
+                                                                                                 ্র া ধিকারি    ফিজ
+
+
+                                     Aladhan API দে য় বাংলা দে শের প
+                                                                    ্র তি টি
+ নামা জর সম য় সূ চ                                                                              স বির্ব াচ্চ   Phase 2
+                                      জলার জন্য স ঠি ক সম য়
+
+
+ নামাজ ্রট ্যা কং                    ৫ ও য় াত্তি্রক নামাজ + সু ন্াতি + নফল                      স বির্ব াচ্চ   Phase 2
+
+
+                                     ্র তি টি ও য় া ত্তি্রক র ১৫ ম ন আ গ
+                                     প
+ অ া নামাজ রমাইন্ ার                                                                             স বির্ব াচ্চ   Phase 2
+                                      না টি ফ কশেন
+
+
+ কুরআন ্রট ্যা কং                    পিডয়া পিৃ ষ্ঠ া, সূ রা, জু জ, স্র ক                        স বির্ব াচ্চ   Phase 2
+
+
+  রাজা ্রট ্যা কং                    রমজান: স য় াম/ইফতিার াইম, তিারাবীহ                         উচ্চ           Phase 2
+
+
+                                     সকাল/সন্ধ ্যার দো য় া, ঘু মা নার আ গ, ব শেষ
+  দো য় া লাই ফ্রে ব্রে র                                                                       উচ্চ           Phase 2
+                                      দো য় া
+
+
+ তিাস বহ কাউন্ট ার                       কর, সু বহানআল্াহ, দেরুদে শেরীফ                           মি ডযয়ামি    Phase 3
+
+
+
+                                     অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৩. সম্পূ র্ণ ফিচারি (চল তি)
+
+
+৩.৪ না টি ফি কশন ও রিমাইন্ ারি
+
+
+  ফিচারি                                 বিবিরিণ                                      অগ
+                                                                                       ্র া ধিকারি     ফিজ
+
+
+ কাস্ট ম রমাইন্ ার                      প
+                                        ্র তি টি হ্যা ব     আলাদো সম য় , বাতির্ণা    স বির্ব াচ্চ   Phase 1
+
+
+                                        Native AlarmManager — ইন্ট ার ন
+ অফলাইন অ্যালামর্ণ                                                                     স বির্ব াচ্চ   Phase 1
+                                        ছোডয়াও কাজ
+
+
+ স্মা র্ট রমাইন্ ার                     AI- ভ ত্তিক সরা সম য় সা জস্ট                   মি ডযয়ামি    Phase 4
+
+
+ মু মন্ট াম রমাইন্ ার                    স্র ক ভাঙ তি াও য় ার আ গ সতিকর্ণতিা          উচ্চ           Phase 2
+
+
+
+৩.৫      াশ্যাল ও শ য়ে া রিং
+
+
+  ফিচারি                                 বিবিরিণ                                      অগ
+                                                                                       ্র া ধিকারি     ফিজ
+
+
+                                        "আ ম ৩০ দেন ফজর পি ডয় ছে" — সু ন্দের
+  সাশে্যাল শে য় ার কাডর্ণ                                                             স বির্ব াচ্চ   Phase 3
+                                        গ
+                                        ্র া ফক্স
+
+
+  ফ্রে ন্ চ্যা লঞ্জ                     বন্ু ধ দের সা থে হ্যা ব চ্যা লঞ্জ              উচ্চ           Phase 3
+
+
+ ক মউ ন টি      ফড                      অ্যা ক ভ টি       ফড, একাউ ন্ট ব ল টি           মি ডযয়ামি    Phase 4
+
+
+
+৩.৬ হাম          স্ক্রি ন উই জেটে (Native)
+
+
+        ্ব পূ র্স : হাম স্্র ক ন উই জ হ লা হ্যা ব ্রট ্যাকা রর সব চ য় গুরুত
+   গুরিুত                                                                  ্ব পিূ র্ণ ফচার। ইউজার ক বারবার অ্যাপি
+   ও পিন কর তি হ ব না — হাম স্্র ক ন থে কই হ্যা ব টি ক কর তি পিার ব। এ টি শুধু মা Native (Kotlin) দে য়
+        ভ ব।
+   করা সম্
+
+
+
+  ফিচারি                                 বিবিরিণ                                      অগ
+                                                                                       ্র া ধিকারি     ফিজ
+
+
+ কমপি্যাক্ট উই জ (4x1)                  আজ কর প
+                                              ্র া গ              ন
+                                                   ্র স: ৫/৮ সম্পিন্                   স বির্ব াচ্চ   Phase 1
+
+
+  ড ইল উই জ (4x2)                       আজ কর হ্যা ব           লস্ট + টি ক বা ন        স বির্ব াচ্চ   Phase 1
+
+
+ নামাজ উই জ (4x1)                       পিরবতিীী নামা জর সম য় + কাউন্ট ডাউন           স বির্ব াচ্চ   Phase 2
+   স্র ক উই জ (4x1)                     কা রন্ট স্র ক ফা য় ার অ্যা ন মশেন                          উচ্চ           Phase 2
+
+
+
+৩.৭ অন্যান্য প্রি     ম য়ে াম ফিচারি
+
+
+   ফিচারি                               বিবিরিণ                                                    অগ
+                                                                                                    ্র া ধিকারি    ফিজ
+
+
+  ডাকর্ণ মাড                            স স্ট ম অনু া য় ী + ম্যানু য় াল                           স বির্ব াচ্চ   Phase 1
+
+
+  Biometric Lock                               ্র ন্ট / ফস আনলক দে য় অ্যাপি ও পিন
+                                        ফঙ্গার প                                                    উচ্চ           Phase 1
+
+
+  Haptic Feedback                        ্যাপি, সম্পিন্, ল ভল আপি — ভাই ফ্রে ব্রেশেন                উচ্চ           Phase 1
+
+
+   গ হাব-স্ট াইল হ ম্যাপি               বছেরভ তির্কির্ণ ক ম্প্
+                                                            ল শেন হ ম্যাপি                          উচ্চ           Phase 1
+
+
+  এক্স পিা র্ট /Import                  ডা া JSON/CSV তি এক্স পিা র্ট                                মি ডযয়ামি    Phase 2
+
+
+  অ্যা ক্স স ব ল টি                     ব য় স্ক দের জন্য বডয় ফন্ট , ভ য় স গাইড                    মি ডযয়ামি    Phase 4
+
+
+
+                                        অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৪. ডাটা বেস                  স্কি মা
+
+
+৪.১ াভর্সারি ডোটো বি (PostgreSQL)
+
+   -- Users User { id UUID @id @default(uuid()) name String email String? @unique phone
+   String? @unique passwordHash String? avatar String? xp Int @default(0) level Int
+   @default(1) settings Json @default("{}") createdAt DateTime @default(now())
+   updatedAt DateTime @updatedAt habits Habit[] completions HabitCompletion[] } --
+   Habits Habit { id UUID @id @default(uuid()) userId UUID name String nameEn String?
+   icon String @default("Dumbbell") category String @default("স্বোস্থ্য") color String
+   @default("#10B981") target String @default("পপ্র ত দনে") frequency String @default("পপ্র ত দনে")
+   timeOfDay String @default("সকোল") streak Int @default(0) bestStreak Int @default(0)
+   sortOrder Int @default(0) active Boolean @default(true) createdAt DateTime
+   @default(now()) updatedAt DateTime @updatedAt user User @relation(...) completions
+   HabitCompletion[] } -- Daily Completions HabitCompletion { id UUID @id
+   @default(uuid()) habitId UUID date String // YYYY-MM-DD completedAt DateTime? note
+   String? habit Habit @relation(...) @@unique([habitId, date]) } -- Prayer Tracking
+   (নেোমোজ) PrayerRecord { id UUID @id @default(uuid()) userId UUID date String fajr
+   Boolean @default(false) dhuhr Boolean @default(false) asr Boolean @default(false)
+   maghrib Boolean @default(false) isha Boolean @default(false) sunnahFajr Boolean
+   @default(false) sunnahOther Boolean @default(false) @@unique([userId, date]) } --
+   Quran Tracking QuranSession { id UUID @id @default(uuid()) userId UUID date String
+   surah Int fromAyah Int toAyah Int pagesRead Int @@unique([userId, date, surah]) } --
+   Achievements Achievement { id UUID @id @default(uuid()) userId UUID badgeId String
+   earnedAt DateTime @default(now()) @@unique([userId, badgeId]) } -- Friends
+   Friendship { id UUID @id @default(uuid()) requesterId UUID addresseeId UUID status
+   String @default("pending") createdAt DateTime @default(now()) }
+
+
+
+
+৪.২ অফিলাইন ডোটো বি (expo-sqlite / device)
+
+অফলাইন ডা া ব স সাভর্ণা রর ম তিাই স্ট র াকচার থোক ব। সঙ্ক স্ট র ্যা                      জ:
+
+
+      ঙ্ক স্র ট ্যা টে জে:
+    ১. প
+       ্র তি টি অ্যাকশেন প
+                         ্র থে ম লাকা ল সভ হ ব (ফাস্ট )
+    ২. ব্যাকগ
+            ্র াউ ন্ সাভর্ণা র সঙ্ক হ ব (eventual consistency)
+    ৩. কন ফ্লি ক্ট হ ল: "last write wins" + conflict resolution UI
+    ৪. অফলাই ন               ক্র য়   করা ডা া পি র সাভর্ণা র আপি লাড
+
+
+
+                                                অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৫. Backend API ডজোইন
+
+
+৫.১ API Endpoints
+
+
+ Method     Endpoint                 বিবিরিণ                                     Auth
+
+
+ POST       /api/auth/register        র জ স্র ট শেন ( ফান/ই মইল)                 ❌
+
+
+ POST       /api/auth/login          লগইন                                        ❌
+
+
+ POST       /api/auth/refresh          া কন র ফ্রে শে                            ✅
+
+
+                                      Habit APIs
+
+
+ GET        /api/habits              সব হ্যা ব (completedToday সহ)               ✅
+
+
+ POST       /api/habits              নতিুন হ্যা ব     তি র                       ✅
+
+
+ PUT        /api/habits/:id          হ্যা ব আপি ড                                ✅
+
+
+ DELETE     /api/habits/:id          হ্যা ব মু ছেুন                              ✅
+
+
+ POST       /api/habits/:id/toggle   আজ কর ক ম্প্
+                                               ল শেন গল                          ✅
+
+
+ GET        /api/habits/stats        সাপ
+                                       ত া হক/মা সক পি রসংখ্যান                  ✅
+
+
+                                     Islamic APIs
+
+
+ GET        /api/prayer/times        আজ কর নামা জর সম য় (location অনু া য় ী)   ✅
+
+
+ POST       /api/prayer/log          নামাজ লগ সভ                                 ✅
+
+
+ POST       /api/quran/session       কুরআন সশেন সভ                               ✅
+
+
+                                     Social APIs
+
+
+ GET        /api/leaderboard         লডার বাডর্ণ ( ল গ্ল াবাল/ ফ্রে ন্ স)        ✅
+
+
+ POST       /api/friends/request      ফ্রে ন্ র কা য় স্ট                        ✅
+
+
+ GET        /api/share/card           সাশে্যাল শে য় ার কাডর্ণ জনা র             ✅
+
+
+                                       Sync API
+
+
+ POST       /api/sync                অফলাইন ডা া সঙ্ক                            ✅
+৫.২ Authentication ফ্ল া
+
+   1. ইউজোর ফোনে নেম্বর দয় 2. OTP (৬ ড জস্ট) পোঠো নেো হেয় (SMS/Voice) 3. OTP                 রফোই → JWT Access Token +
+   Refresh Token 4. Access Token: ৭ দনে ময়োদ 5. Refresh Token: ৩০ দনে ময়োদ 6. পপ্র ত স্ট API Request:
+   Authorization: Bearer {token}
+
+
+
+
+৫.৩ আ কর্কির্স টেকচারি ডো য়ে াগ
+                                ্র াম
+
+
+    Data Flow:
+     মাবাইল অ্যাপি → (Offline: expo-sqlite) → (Online: REST API) → PostgreSQL → Redis Cache
+    পিু শে না টি ফ কশেন: Server → FCM → Device
+    নামাজ সম য় : Aladhan API → Server Cache → Device Cache
+
+
+
+                                        অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৬. Native Module                                   প স ফি কিশন (Kotlin)
+
+
+    ডেস্ক টেপ এ জে ন্ট রি জেন্য: এই সকশে নর সব কাজ শুধু মা Kotlin (Android) দে য় করা লাগ ব। ক্
+                                                                                             ফ্লি াউড
+  এ জন্ট এগু লা কর তি পিার ব না। বস্         ল ম ন্ট শেন গাইড ন চ দেও য় া হ লা।
+                                  ত া রতি ইম প্
+
+
+
+৬.১ Home Screen Widget
+
+  // ফোইল: android/app/src/main/java/com/abhyas/widget/ GlanceAppWidget.kt — মূল উই জস্ট
+  ক ম্পো নেন্ট কোজ: 1. Glance (Jetpack Glance) দ য় Widget UI ত র 2. RemoteViews দ য় লআউস্ট ইনে ফফ্লে স্ট 3.
+  ডোস্টো বস থি ক আজ কর হে্যো বস্ট পডু নে় 4. পপ্র ত স্ট হে্যো ব স্ট স্টক বোস্টনে (PendingIntent) 5. স্টক কফ্লেক → বড
+                                                                                                                   প্র কো স্ট র স োর → ডোস্টো বস আপ ডস্ট
+  6. পপ্র ত ১ ম নে স্ট উই জস্ট র ফপ্রশ (WorkManager) উই জস্ট সোইজ: - 4x1: কমপ্যোক্ট ( পোপ্র গেস
+                                                                                              প্র বোর +                স্টপ্রক কোউন্ট) - 4x2: ড স্টইল
+  (হে্যো বস্ট ল স্ট + স্টক বোস্টনে) - 4x1: নেোমোজ উই জস্ট (পরবতর্ভিী নেোমোজ + কোউন্টডোউনে) XML Layout: - res/layout/
+  widget_compact.xml - res/layout/widget_detail.xml - res/layout/widget_prayer.xml
+
+
+
+
+৬.২ Alarm Manager
+
+  // ফোইল: android/app/src/main/java/com/abhyas/alarm/ AlarmScheduler.kt — অ্যোলোমর্ভি শ ডউ লং
+  কোজ: 1. AlarmManager.setExactAndAllowWhileIdle() ব্যবহেোর 2. DOZE MODE এও কোজ কর ব 3.
+  BroadcastReceiver দ য় অ্যোলোমর্ভি হে্যো ন্ডেল 4. NotificationCompat দ য় নেো স্ট ফ কশনে দখোনে 5. কো স্টম সোউন্ডে (raw/
+  res/ এ অ ডও ফোইল) 6. োই বশপ্র নে প্যোস্টোনের্ভি 7. অ্যোকশনে বোস্টনে: "সম্পন্ন" / "স্নুজ ১৫ ম নেস্ট" বু নেো ফফ্লে ো: App →
+  AlarmScheduler.schedule(habitId, time) → AlarmManager.set (exact time) →
+  BroadcastReceiver.onReceive() → NotificationManager.notify() → User কফ্লেক ক র → Habit
+  toggle API
+
+
+
+
+৬.৩ Deep Notification Service
+
+  // ফোইল: android/app/src/main/java/com/abhyas/notification/ NotificationHelper.kt —
+  নেো স্ট ফ কশনে চ্যো নেল ও স্টোইল কোজ: 1. Notification Channels ত র: - "habits" — হে্যো বস্ট রমোইন্ডেোর (হেোই) -
+  "prayer" — নেোমোজ রমোইন্ডেোর (স বর্ভিোচ্চ) - "social" — ফপ্রন্ডে অ্যো ক্ট স্ট ( ডফল্ট) - "achievement" — ব্যোজ আনেলক
+  ( ডফল্ট) 2. গেুপ্র প নেো স্ট ফ কশনে (Android 7+) 3. অ্যোকশনে বোস্টনে 4. বগে পকচোর স্টোইল (Android নেো স্ট ফ কশনে কো স্টমোই জশনে)
+  5. HEADS UP Notification (তোৎক্ষ ণিক)
+
+
+
+
+                                                 অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৭. ড ভলপ মন্ট ফিজে ও টাইমলাইন
+
+
+ Phase 1: MVP — কারি অ্যাপ (৪-৬ সপ
+                                 ত াহ)
+
+ ফ্লক্াউডে এ জেন্ট (React Native):
+
+   • Expo Router স আপি ও প
+                         ্র জক্ট স্র ট াকচার
+
+   • ৫ টি মূ ল স্্র ক ন (Home, Habits, Stats, Profile, Add Habit)
+
+   • Zustand স্ট ার + expo-sqlite (offline-first)
+
+   • Habit CRUD + গল + স্র ক ক্যালকু লশেন
+
+                                ত া হক চা র্ট
+   • গ হাব-স্ট াইল হ ম্যাপি + সাপ
+
+   • Dark Mode + Haptic Feedback
+
+   • Backend API (Node.js + PostgreSQL)
+
+   • Auth স স্ট ম (OTP + JWT)
+
+   • XP, Level, Badge স স্ট ম
+
+  ডেস্ক টেপ এ জেন্ট (Kotlin):
+
+   • Home Screen Widget (কমপি্যাক্ট + ড ইল)
+
+   • Alarm Manager (অফলাইন রমাইন্ ার)
+
+   • Notification Channels ও স্ট াইল
+
+   • Android Build + Play Store Beta
+
+
+
+
+ Phase 2: ইসলা মিক ফিচারি (২-৩ সপ
+                                ত াহ)
+
+ ফ্লক্াউডে এ জেন্ট :
+
+   • নামাজ সম য় সূ চ স্্র ক ন (Aladhan API ই ন্ গ
+                                                 ্র শেন)
+
+   • নামাজ ্রট ্যা কং UI (৫ ও য় াত্তি্রক + সু ন্াতি)
+
+   • কুরআন ্রট ্যা কং UI (সূ রা, পিৃ ষ্ঠ া, জু জ)
+
+   • দো য় া লাই ফ্রে ব্রে র (সকাল/সন্ধ ্যা/ ব শেষ)
+
+   • রাজা ্রট ্যা কং (রমজান)
+
+   • মু মন্ট াম রমাইন্ ার ( স্র ক ফ্রে ব্রেক সতিকর্ণতিা)
+
+  ডেস্ক টেপ এ জেন্ট :
+
+   • নামাজ উই জ (পিরবতিী নামাজ + কাউন্ট ডাউন)
+
+                       ্র তি টি ও য় া ত্তি্রক র ১৫ ম. আ গ)
+   • নামাজ অ্যালামর্ণ (প
+  • অ া সাউন্ (আজান)
+
+
+
+
+Phase 3: সাশ্যাল ও গ মি ফি কশন (২-৩ সপ
+                                     ত াহ)
+
+ফ্লক্াউডে এ জেন্ট :
+
+  • সাশে্যাল শে য় ার কাডর্ণ জনা র র (Canvas/ViewShot)
+
+  • ফ্রে ন্ স স্ট ম ( র কা য় স্ট /এক সপ্ট /চ্যা লঞ্জ)
+
+  • লডার বাডর্ণ ( ল গ্ল াবাল/ ফ্রে ন্ স)
+
+  • ডই ল চ্যা লঞ্জ
+
+  • ভাইরাল শে য় ার (Facebook, WhatsApp deep link)
+
+ ডেস্ক টেপ এ জেন্ট :
+
+  • শে য় ার কাডর্ণ Image জনা রশেন (Kotlin Canvas)
+
+  • Deep Link হ্যান্ লং (অ্যাপি ও পিন ফর শে য় ারড লংক)
+
+
+
+
+Phase 4: প লশ ও স্ক ল (চলমিান)
+
+  • অ্যা ক্স স ব ল টি (বডয় ফন্ট , ভ য় স গাইড)
+
+  • A/B Testing (Expo OTA)
+
+  • Analytics (Mixpanel/Amplitude)
+
+  • Crash Reporting (Sentry)
+
+  • পিারফরম্যান্সে অ প্ মাই জশেন
+
+  • iOS বল্ (Future)
+
+
+
+
+                                           অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৮. ড প ন্ ন্সি ও প্যা কিজে
+
+
+৮.১ React Native / Expo Packages
+
+  { "dependencies": { "expo": "~52.0.0", "expo-router": "~4.0.0", "expo-sqlite":
+  "~15.0.0", "expo-notifications": "~0.30.0", "expo-secure-store": "~14.0.0", "expo-
+  haptics": "~14.0.0", "expo-screen-orientation": "~7.0.0", "expo-local-
+  authentication": "~15.0.0", "expo-location": "~18.0.0", "expo-image-picker":
+  "~16.0.0", "expo-sharing": "~13.0.0", "expo-linear-gradient": "~14.0.0", "react":
+  "18.3.1", "react-native": "0.76.5", "react-native-reanimated": "~3.16.0", "react-
+  native-gesture-handler": "~2.20.0", "react-native-screens": "~4.4.0", "react-native-
+  safe-area-context": "~5.0.0", "react-native-svg": "~15.8.0", "react-native-chart-
+  kit": "~6.12.0", "react-native-mmkv": "~3.1.0", "react-native-view-shot": "~4.0.0",
+  "@shopify/flash-list": "~1.7.0", "zustand": "~5.0.0", "date-fns": "~4.1.0", "axios":
+  "~1.7.0", "lucide-react-native": "~0.460.0" } }
+
+
+
+
+৮.২ Backend Dependencies
+
+  { "dependencies": { "express": "~4.21.0", "prisma": "~6.1.0", "@prisma/client":
+  "~6.1.0", "jsonwebtoken": "~9.0.0", "bcrypt": "~5.1.0", "cors": "~2.8.0", "helmet":
+  "~8.0.0", "rate-limit": "~7.4.0", "twilio": "~5.5.0", "axios": "~1.7.0", "redis":
+  "~4.7.0" } }
+
+
+
+
+৮.৩ না টি ফি কশন াউন্
+
+
+  কাস্ট ম না টি ফ কশেন সাউন্ Android res/raw/ ফাল্ া র রাখা হ ব:
+  - habit_complete.mp3 — হ্যা ব সম্পিন্
+  - prayer_adhan.mp3 — নামা জর আজান
+  - streak_break.mp3 — স্র ক ফ্রে ব্রেক
+  - level_up.mp3 — ল ভল আপি
+  - achievement.mp3 — ব্যাজ আনলক
+
+
+
+                                  অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+৯. ডজোইন স স্ট ম
+
+
+৯.১ কালারি থিম
+
+
+  রিং                                 Hex               বি্যবিহারি
+
+
+  Primary                             #059669           বা ন, অ্যা টি ভ ্যাব, প
+                                                                              ্র া গ
+                                                                                   ্র স
+
+
+  Primary Light                       #34D399           ্র ্যা ড য় ন্ট , সাক সস
+                                                        গ
+
+
+  Secondary                           #F59E0B            স্র ক ফা য় ার, স্র ক ব্যাজ
+
+
+  Accent                              #0d9488           ্র ্যা ড য় ন্ট , হডার
+                                                        গ
+
+
+  Dark BG                             #1a1a2e           ডাকর্ণ মাড ব্যাকগ
+                                                                        ্র াউন্
+
+
+  Light BG                            #f0fdf4           লাই      মাড ব্যাকগ
+                                                                          ্র াউন্
+
+
+
+৯.২ টোই পাগ
+           ্র া ফি
+
+
+  স্ট াইল            ফিন্ট                                            সাইজ             বি্যবিহারি
+
+
+  Headline           Noto Sans Bengali Bold                           24px             স্্র ক ন াই ল
+
+
+  Title              Noto Sans Bengali SemiBold                       18px              সকশেন হ ডং
+
+
+  Body               Noto Sans Bengali Regular                        14px             বড       ক্স
+
+
+  Caption            Noto Sans Bengali Regular                        12px              ল বল, সাব ক্স
+
+
+  Overline           Noto Sans Bengali Medium                         10px              ্যাগ, ব্যাজ
+
+
+
+৯.৩ ক পা নন্ট স্প            ফি কশন
+
+ • বিাটেন: border-radius: 12px, height: 48px, শে্যা ডা + haptic
+
+ • কাডের্স: border-radius: 16px, padding: 16px, elevation: 2dp
+
+ • ইনপুটে: border-radius: 12px, height: 48px, focus border: primary
+
+ • বিটেম নভ: height: 64px, safe area padding, অ্যা টি ভ ই ন্ ক র
+
+ • চকবিক্স: circular 24px, spring animation, haptic on complete
+
+ • বি্যাজে: rounded 12px, emoji + text, glow effect on earned
+
+ • টে্যাবি: pill-shaped, border-radius: full, smooth scroll
+৯.৪ অ্যা ন মশন াইডেলাইন
+
+ • স্্র ক ন ্রট ান জশেন: spring(300, 30) — slide from right
+
+ • হ্যা ব টি ক: spring(300, 20) — scale bounce + haptic
+
+ • স্র ক ফা য় ার: Lottie বা Reanimated sequence
+
+ • ব্যাজ আনলক: spring(500, 15) — scale + glow + confetti
+
+ • লস্ট আই ম: stagger 50ms delay, fadeInUp
+
+ • পিু ল ু র ফ্রে শে: native spring animation
+
+
+                                   অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+১০. কিা য় া ল টি অ্যা ্য রিন্সি ও সামা রি
+
+
+১০.১ নন-ফিাংশনাল রি কা য়ে ারি মন্ট
+
+  • অ্যাপি সাইজ: 15MB এরি ন চ রাখ তি হ ব
+
+  • কাল্ স্ট া র্ট : ৩   ক ন্ রি ম    ্য অ্যাপি ও পিন হ ব
+
+  • ফ্লি ু ইড অ্যা ন মশেন: 60fps মইন ইন
+
+  • অফলাইন: 100% ফিচারি ইন্ট ার ন ছোডয়া
+
+  • ব্যা া র: ১% এরি ন চ ব্যাকগ
+                              ্র াউন্ ব্যবহার
+
+  • মম র: ১০০MB এরি ন চ RAM ব্যবহার
+
+  • অ্যান্্র য় ড সা পিা র্ট : API 24+ (Android 7.0+)
+
+  • ১০০% বাংলা ইন্ট ার ফস
+
+
+১০.২        কউ রি টি
+
+  • API: JWT Authentication + Rate Limiting
+
+  • ডা া: এন ক্র প্ট ড স্ট া রজ (expo-secure-store)
+
+  • ন ও য় াকর্ণ: HTTPS শুধু মা
+
+  • API Key: Environment variables
+
+  • OTP: ৬ ড জ , ৫ ম ন            ম য় াদে, ৩ বার ্রট াই
+
+
+১০.৩ প্রি   জেক্ট    ামা রি
+
+
+     অভ্যা হ লা বাংলা দে শের প
+                             ্র থেম পিূ র্ণ াঙ্গ বাংলা হ্যা ব ্রট ্যাকার া:
+
+
+     - React Native + Expo দে য়          তি র (Android + iOS)
+     - Custom Kotlin Native Modules (Widget + Alarm)
+     - Offline-First Architecture
+     - ইসলা মক ফচার সহ (নামাজ, কুরআন, দো য় া)
+     - সাশে্যাল গ ম ফ কশেন (XP, Badge, Leaderboard)
+     - সাশে্যাল শে য় া রং (ভাইরাল মা কর্ণ টি ং)
+     - ১৫MB এর ন চ অ্যাপি সাইজ
+     - প্
+       ল - স্ট ার + অ্যাপি স্ট ার র লজ
+
+
+                                          অভ্যাস হ্যা ব ্রট ্যাকার — আ কর্কির্ণ কচার ডকু মন্ট v2.0
+

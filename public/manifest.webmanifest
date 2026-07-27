@@ -1,0 +1,21 @@
+{
+  "name": "অভ্যাস — স্বশাসন ও অভ্যাস ট্র্যাকার",
+  "short_name": "অভ্যাস",
+  "description": "সম্পূর্ণ বাংলা অভ্যাস ট্র্যাকার — নামাজ, কুরআন, স্ট্রিক ও গেমিফিকেশন সহ।",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0fdf4",
+  "theme_color": "#059669",
+  "lang": "bn",
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle", "health"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

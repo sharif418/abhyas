@@ -1,0 +1,136 @@
+// অভ্যাস (Abhyas) — Premium Bengali Habit Tracker
+// Database schema adapted from the architecture proposal (PostgreSQL → SQLite).
+// Multi-user ready; the PWA demo operates on a default local user.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   @default("অতিথি")
+  phone     String?  @unique
+  email     String?  @unique
+  avatar    String?
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  city      String   @default("ঢাকা")
+  settings  String   @default("{}") // JSON: theme, accent, reminders, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  habits       Habit[]
+  completions  HabitCompletion[]
+  prayers      PrayerRecord[]
+  quran        QuranSession[]
+  achievements Achievement[]
+}
+
+model Habit {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  nameEn        String?
+  icon          String   @default("CheckCircle")
+  category      String   @default("স্বাস্থ্য")
+  color         String   @default("#059669")
+  target        String   @default("প্রতিদিন")
+  frequency     String   @default("প্রতিদিন") // প্রতিদিন | নির্দিষ্ট দিন | সপ্তাহে কয়েকবার
+  frequencyDays String   @default("[]") // JSON array of weekday numbers (0=Sun..6=Sat)
+  timesPerWeek  Int      @default(0) // for "সপ্তাহে কয়েকবার"
+  timeOfDay     String   @default("সকাল") // সকাল | দুপুর | বিকাল | রাত
+  reminderTime  String?  // HH:mm
+  streak        Int      @default(0)
+  bestStreak    Int      @default(0)
+  totalDone     Int      @default(0)
+  sortOrder     Int      @default(0)
+  active        Boolean  @default(true)
+  isIslamic     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions HabitCompletion[]
+
+  @@index([userId, active])
+  @@index([userId, timeOfDay])
+}
+
+model HabitCompletion {
+  id          String    @id @default(cuid())
+  habitId     String
+  userId      String
+  date        String // YYYY-MM-DD (Asia/Dhaka)
+  completedAt DateTime  @default(now())
+  note        String?
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+}
+
+model PrayerRecord {
+  id          String  @id @default(cuid())
+  userId      String
+  date        String // YYYY-MM-DD
+  fajr        Boolean @default(false)
+  dhuhr       Boolean @default(false)
+  asr         Boolean @default(false)
+  maghrib     Boolean @default(false)
+  isha        Boolean @default(false)
+  sunnahFajr  Boolean @default(false)
+  sunnahOther Boolean @default(false)
+  tahajjud    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model QuranSession {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD
+  surah     Int
+  fromAyah  Int
+  toAyah    Int
+  pagesRead Int      @default(0)
+  juz       Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model Achievement {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+// Cache for Aladhan prayer-time API responses (reduces external calls).
+model PrayerTimeCache {
+  id        String   @id @default(cuid())
+  date      String // YYYY-MM-DD
+  city      String
+  lat       Float
+  lng       Float
+  method    Int      @default(3) // Aladhan method 3 = Muslim World League
+  times     String   // JSON of prayer times
+  fetchedAt DateTime @default(now())
+
+  @@unique([date, lat, lng, method])
+}
