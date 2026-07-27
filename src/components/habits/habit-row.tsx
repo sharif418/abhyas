@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
+import { Flame, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconTile } from "@/components/shared/icon-renderer";
-import { toBn } from "@/lib/date-bn";
+import { toBn, todayKey } from "@/lib/date-bn";
 import { CATEGORY_MAP } from "@/constants";
+import { useFreezeHabit } from "@/hooks/use-freeze";
 import type { HabitWithMeta } from "@/types";
 
 interface HabitRowProps {
@@ -23,6 +24,11 @@ interface HabitRowProps {
 export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowProps) {
   const cat = CATEGORY_MAP[habit.category];
   const done = habit.completedToday;
+  const freeze = useFreezeHabit();
+  const today = todayKey();
+  const isFrozenToday = habit.frozenDate === today;
+  // show freeze button when: streak at risk (≥3), not done today, not frozen today
+  const canFreeze = !done && !isFrozenToday && habit.streak >= 3;
 
   return (
     <motion.div
@@ -33,7 +39,8 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "group relative flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-colors hover:border-foreground/15",
-        done && "border-primary/30 bg-primary/[0.04]"
+        done && "border-primary/30 bg-primary/[0.04]",
+        isFrozenToday && "border-sky-400/40 bg-sky-50/40 dark:bg-sky-950/20"
       )}
     >
       <button
@@ -58,6 +65,11 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
                 ইসলামিক
               </span>
             )}
+            {isFrozenToday && (
+              <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
+                <Snowflake size={9} /> ফ্রিজ
+              </span>
+            )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
             {habit.streak > 0 ? (
@@ -76,6 +88,23 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
           </div>
         </div>
       </button>
+
+      {/* Freeze button (at-risk habits only) */}
+      {canFreeze && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            freeze.mutate(habit.id);
+          }}
+          disabled={freeze.isPending}
+          title="স্ট্রিক ফ্রিজ করুন (সপ্তাহে ১ বার)"
+          aria-label="স্ট্রিক ফ্রিজ করুন"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-300/50 bg-sky-50 text-sky-600 opacity-0 transition hover:bg-sky-100 group-hover:opacity-100 dark:bg-sky-950/30 dark:text-sky-400 dark:hover:bg-sky-950/50"
+        >
+          <Snowflake size={15} />
+        </button>
+      )}
 
       <CheckButton done={done} color={habit.color} onToggle={onToggle} />
     </motion.div>

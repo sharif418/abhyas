@@ -116,7 +116,7 @@ export function useToggleHabit() {
           const completedDates = new Set(h.completedDates);
           if (willComplete) completedDates.add(key);
           else completedDates.delete(key);
-          const streak = computeCurrentStreak(h, completedDates);
+          const streak = computeCurrentStreak(h, completedDates, new Date(), h.frozenDate);
           const bestStreak = Math.max(h.bestStreak, streak);
           return {
             ...h,

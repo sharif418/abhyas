@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame, Pencil, Trash2, Trophy, Target, TrendingUp } from "lucide-react";
+import { Flame, Pencil, Trash2, Trophy, Target, TrendingUp, Snowflake } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -13,8 +13,9 @@ import { Heatmap } from "@/components/shared/heatmap";
 import { IconTile, IconRenderer } from "@/components/shared/icon-renderer";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { useHabits, useToggleHabit, useDeleteHabit } from "@/hooks/use-habits";
+import { useFreezeHabit } from "@/hooks/use-freeze";
 import { useUIStore } from "@/stores/ui-store";
-import { toBn } from "@/lib/date-bn";
+import { toBn, todayKey } from "@/lib/date-bn";
 import { CATEGORY_MAP } from "@/constants";
 import {
   AlertDialog,
@@ -35,6 +36,7 @@ export function HabitDetailSheet() {
   const { data: habits } = useHabits();
   const toggle = useToggleHabit();
   const del = useDeleteHabit();
+  const freeze = useFreezeHabit();
 
   const habit = habits?.find((h) => h.id === habitId) ?? null;
   const cat = habit ? CATEGORY_MAP[habit.category] : null;
@@ -69,6 +71,20 @@ export function HabitDetailSheet() {
                 >
                   {habit.completedToday ? "✓ সম্পন্ন হয়েছে" : "আজ সম্পন্ন করুন"}
                 </Button>
+                {!habit.completedToday &&
+                  habit.frozenDate !== todayKey() &&
+                  habit.streak >= 3 && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => freeze.mutate(habit.id)}
+                      disabled={freeze.isPending}
+                      title="স্ট্রিক ফ্রিজ করুন"
+                      className="text-sky-600 hover:text-sky-700"
+                    >
+                      <Snowflake size={16} />
+                    </Button>
+                  )}
                 <Button
                   variant="outline"
                   size="icon"

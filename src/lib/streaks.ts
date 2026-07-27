@@ -42,12 +42,14 @@ export function isScheduledOn(habit: Habit, date: Date): boolean {
 export function computeCurrentStreak(
   habit: Habit,
   completed: Set<string>,
-  today: Date = new Date()
+  today: Date = new Date(),
+  frozenDate?: string | null
 ): number {
   let streak = 0;
   let cursor = new Date(today);
   // allow today to be incomplete without breaking
   let allowedTodaySkip = true;
+  const frozen = frozenDate ?? null;
 
   // Cap iterations to avoid infinite loops (1 year max)
   for (let i = 0; i < 366; i++) {
@@ -56,7 +58,12 @@ export function computeCurrentStreak(
 
     if (scheduled) {
       const done = completed.has(key);
+      const isFrozen = key === frozen;
       if (done) {
+        streak++;
+        allowedTodaySkip = false;
+      } else if (isFrozen) {
+        // frozen day: streak preserved (counts as a forgiven day)
         streak++;
         allowedTodaySkip = false;
       } else {

@@ -12,6 +12,7 @@ import { IconRenderer } from "@/components/shared/icon-renderer";
 import { AnimatedNumber } from "@/components/shared/celebration";
 import { StatPill, EmptyState } from "@/components/shared/stat-pill";
 import { HabitRow } from "@/components/habits/habit-row";
+import { AICoachPanel } from "@/components/home/ai-coach-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,11 @@ export function HomeView() {
           </div>
         </div>
       </motion.div>
+
+      {/* AI Coach panel */}
+      <div className="mt-4">
+        <AICoachPanel />
+      </div>
 
       {/* Habits by time of day */}
       <div className="mt-6 space-y-6">

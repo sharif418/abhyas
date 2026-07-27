@@ -31,6 +31,8 @@ export function serializeHabit(h: any): Habit {
     sortOrder: h.sortOrder ?? 0,
     active: h.active ?? true,
     isIslamic: h.isIslamic ?? false,
+    frozenDate: h.frozenDate ?? null,
+    freezeUsedWeek: h.freezeUsedWeek ?? null,
     createdAt: h.createdAt.toISOString(),
     updatedAt: h.updatedAt.toISOString(),
   };
@@ -77,8 +79,8 @@ export async function getHabitsWithMeta(): Promise<HabitWithMeta[]> {
     const set = map.get(h.id) ?? new Set<string>();
     const completedDates = Array.from(set).sort();
     const habit = serializeHabit(h);
-    // recompute streak from data for accuracy
-    const streak = computeCurrentStreak(habit, set);
+    // recompute streak from data for accuracy (respect frozen date)
+    const streak = computeCurrentStreak(habit, set, new Date(), habit.frozenDate);
     const bestStreak = Math.max(h.bestStreak, computeBestStreak(habit, completedDates));
     return {
       ...habit,
@@ -129,7 +131,7 @@ export async function toggleHabit(
     });
     const set = new Set(allCompletions.map((c) => c.date));
     const habit = serializeHabit(habitRow);
-    const streak = computeCurrentStreak(habit, set);
+    const streak = computeCurrentStreak(habit, set, new Date(), habit.frozenDate);
     await db.habit.update({
       where: { id: habitId },
       data: {
@@ -164,7 +166,7 @@ export async function toggleHabit(
       });
       const set2 = new Set(all.map((c) => c.date));
       const habit2 = serializeHabit(habitRow);
-      const streak2 = computeCurrentStreak(habit2, set2);
+      const streak2 = computeCurrentStreak(habit2, set2, new Date(), habit2.frozenDate);
       return {
         completed: true,
         streak: streak2,
@@ -184,7 +186,7 @@ export async function toggleHabit(
   });
   const set = new Set(allCompletions.map((c) => c.date));
   const habit = serializeHabit(habitRow);
-  const streak = computeCurrentStreak(habit, set);
+  const streak = computeCurrentStreak(habit, set, new Date(), habit.frozenDate);
   const bestStreak = Math.max(habitRow.bestStreak, streak);
 
   // XP

@@ -51,6 +51,9 @@ model Habit {
   sortOrder     Int      @default(0)
   active        Boolean  @default(true)
   isIslamic     Boolean  @default(false)
+  // Streak freeze: 1 free freeze per week. frozenDate marks a forgiven day.
+  frozenDate    String?  // YYYY-MM-DD that was frozen (streak preserved)
+  freezeUsedWeek String? // ISO week key (YYYY-Www) when the freeze was used
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

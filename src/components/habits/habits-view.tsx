@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ArrowUpDown, Check } from "lucide-react";
 import { useHabits, useToggleHabit } from "@/hooks/use-habits";
 import { useUIStore } from "@/stores/ui-store";
 import { HabitRow } from "@/components/habits/habit-row";
+import { SortableHabitsList } from "@/components/habits/sortable-habits-list";
 import { EmptyState } from "@/components/shared/stat-pill";
 import { Input } from "@/components/ui/input";
 import { CATEGORIES, TIMES_OF_DAY } from "@/constants";
@@ -23,6 +24,10 @@ export function HabitsView() {
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [reorderMode, setReorderMode] = useState(false);
+
+  // reorder mode only valid when no filter/search applied
+  const canReorder = filter === "all" && !query.trim() && habits && habits.length > 0;
 
   const filtered = useMemo(() => {
     if (!habits) return [];
@@ -58,14 +63,37 @@ export function HabitsView() {
             {habits ? `${toBn(habits.length)} টি অভ্যাস` : "লোড হচ্ছে..."}
           </p>
         </div>
-        <button
-          onClick={openAddHabit}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition hover:scale-105 active:scale-95"
-          aria-label="নতুন অভ্যাস"
-        >
-          <Plus size={22} />
-        </button>
+        <div className="flex items-center gap-2">
+          {canReorder && (
+            <button
+              onClick={() => setReorderMode((v) => !v)}
+              className={cn(
+                "flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium shadow-sm transition active:scale-95",
+                reorderMode
+                  ? "bg-primary text-primary-foreground"
+                  : "border bg-card text-foreground"
+              )}
+              aria-label="ক্রম পরিবর্তন"
+            >
+              {reorderMode ? <Check size={16} /> : <ArrowUpDown size={16} />}
+              <span className="hidden sm:inline">{reorderMode ? "সম্পন্ন" : "সাজান"}</span>
+            </button>
+          )}
+          <button
+            onClick={openAddHabit}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition hover:scale-105 active:scale-95"
+            aria-label="নতুন অভ্যাস"
+          >
+            <Plus size={22} />
+          </button>
+        </div>
       </div>
+
+      {reorderMode && (
+        <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+          ✋ অভ্যাস ধরে টেনে নিয়ে ক্রম পরিবর্তন করুন। প্রতিটি সময়ের (সকাল/দুপুর/বিকাল/রাত) ভেতরে আলাদাভাবে সাজান।
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative mb-3">
@@ -122,41 +150,45 @@ export function HabitsView() {
         />
       )}
 
-      <div className="space-y-6">
-        <AnimatePresence mode="popLayout">
-          {TIMES_OF_DAY.map((tod) => {
-            const list = grouped[tod.key] ?? [];
-            if (list.length === 0) return null;
-            return (
-              <motion.section
-                key={tod.key}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="mb-2 flex items-center gap-2 px-1">
-                  <span className="text-base">{tod.emoji}</span>
-                  <h2 className="font-bold">{tod.label}</h2>
-                  <span className="text-xs text-muted-foreground">
-                    {toBn(list.length)} টি
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {list.map((h) => (
-                    <HabitRow
-                      key={h.id}
-                      habit={h}
-                      onToggle={() => toggle.mutate({ habitId: h.id })}
-                      onOpen={() => openHabitDetail(h.id)}
-                    />
-                  ))}
-                </div>
-              </motion.section>
-            );
-          })}
-        </AnimatePresence>
-      </div>
+      {reorderMode && canReorder && habits ? (
+        <SortableHabitsList habits={habits} />
+      ) : (
+        <div className="space-y-6">
+          <AnimatePresence mode="popLayout">
+            {TIMES_OF_DAY.map((tod) => {
+              const list = grouped[tod.key] ?? [];
+              if (list.length === 0) return null;
+              return (
+                <motion.section
+                  key={tod.key}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="mb-2 flex items-center gap-2 px-1">
+                    <span className="text-base">{tod.emoji}</span>
+                    <h2 className="font-bold">{tod.label}</h2>
+                    <span className="text-xs text-muted-foreground">
+                      {toBn(list.length)} টি
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {list.map((h) => (
+                      <HabitRow
+                        key={h.id}
+                        habit={h}
+                        onToggle={() => toggle.mutate({ habitId: h.id })}
+                        onOpen={() => openHabitDetail(h.id)}
+                      />
+                    ))}
+                  </div>
+                </motion.section>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

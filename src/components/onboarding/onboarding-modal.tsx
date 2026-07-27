@@ -6,7 +6,10 @@ import { Check, Sparkles, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { IconRenderer } from "@/components/shared/icon-renderer";
 import { STARTER_PRESETS } from "@/constants/starter-presets";
@@ -97,6 +100,12 @@ export function OnboardingModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
+        <VisuallyHidden>
+          <DialogTitle>অভ্যাস অনবোর্ডিং</DialogTitle>
+          <DialogDescription>
+            আপনার যাত্রা শুরু করতে স্টার্টার অভ্যাস বাছাই করুন
+          </DialogDescription>
+        </VisuallyHidden>
         {/* Progress header */}
         <div className="flex gap-1 bg-muted/50 px-5 pt-4">
           {[0, 1, 2].map((i) => (

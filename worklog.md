@@ -127,3 +127,66 @@ per the mandatory directives ("more features", "more styling details").
   based on the user's completion patterns.
 - **Social/leaderboard via WebSocket mini-service**: schema ready, UI + realtime layer TBD.
 
+---
+
+## Task ID: R2 (webDevReview Round 2 — AI Coach + Streak Freeze + Drag-Reorder)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R1, the app was stable (lint clean, no runtime errors, all views functional).
+This round delivered three flagship features from the next-phase roadmap plus styling
+polish. All QA-verified via agent-browser on mobile + desktop with zero errors.
+
+### Work Log
+- **AI Coach feature** (flagship): new `/api/ai/coach` endpoint using `z-ai-web-dev-sdk`
+  LLM. Sends a compact context summary (today's progress, active streaks, at-risk habits,
+  weakest/strongest habits) to the LLM with a Bengali system prompt that returns
+  structured JSON: `{encouragement, riskAlert, suggestions[]}`. Graceful deterministic
+  fallback if the LLM is unavailable. New `AICoachPanel` component on the Home view with
+  gradient styling, shimmer loading, animated suggestions, and a refresh button. Verified:
+  LLM returned personalized Bengali coaching (11-day streak praise, risk alert for যোহর
+  17-day + মাগরিব 9-day streaks, 3 specific suggestions).
+- **Streak freeze mechanic**: new schema fields `frozenDate` + `freezeUsedWeek` on Habit.
+  New `/api/habits/[id]/freeze` endpoint enforcing 1-freeze-per-ISO-week-per-habit rule.
+  Streak engine (`computeCurrentStreak`) updated to treat `frozenDate` as a forgiven day
+  (streak preserved). UI: snowflake button appears on at-risk habit rows (streak ≥ 3, not
+  done today) on hover; "ফ্রিজ" badge on frozen habits; freeze button in habit detail
+  drawer. Verified: যোহরের নামাজ frozen → streak preserved at 18 (would have broken).
+- **Habit drag-and-drop reordering**: new `/api/habits/reorder` endpoint (transactional
+  sortOrder update). New `SortableHabitsList` component using `@dnd-kit/core` +
+  `@dnd-kit/sortable` with grip handles, grouped by time-of-day (each group independently
+  sortable). Habits view has a "সাজান/সম্পন্ন" toggle button; reorder mode shows an
+  instruction banner. Only enabled when filter is "all" and no search query. Verified:
+  drag handles appear, instructions banner visible.
+- **Styling polish**: violet gradient theme for AI Coach panel, sky-blue theme for freeze
+  indicators, refined hover states, animated suggestion entrance (staggered), frozen
+  habit row tinting, improved button states.
+
+### Verification results
+- ✅ `bun run lint` clean.
+- ✅ Dev server compiles, all routes 200, no console/runtime errors.
+- ✅ Prisma client regenerated after schema change (fixed initial P2002/Validation errors).
+- ✅ agent-browser QA (mobile 390×844 + desktop 1280×800):
+  - AI Coach panel renders on Home with LLM-generated personalized content.
+  - `/api/ai/coach` returns structured JSON (encouragement + riskAlert + 3 suggestions).
+  - Habits view: reorder toggle works, drag handles + instructions banner appear.
+  - Streak freeze: API returns 200 with frozenDate + weekKey; frozen badge ("ফ্রিজ")
+    displays on habit row; streak preserved (17→18 via freeze forgiveness).
+  - Habit detail drawer: freeze button appears for at-risk habits.
+  - Desktop layout: sidebar + AI Coach + hero all render correctly.
+- Screenshots: `qa-r2-habits-frozen.png`, `qa-r2-desktop-home-coach.png`, `qa-r2-stats.png`,
+  `qa-r2-islamic.png`.
+
+### Unresolved / next-phase recommendations
+- **Service Worker / true offline PWA**: still the top infra gap — app currently works
+  offline via TanStack Query cache + localStorage, but a full SW would enable install +
+  offline boot.
+- **Social/leaderboard via WebSocket mini-service**: schema ready, needs UI + realtime layer.
+- **Bangladesh calendar integration**: Bengali New Year (পহেলা বৈশাখ), Eid, national
+  holidays as special habit targets.
+- **Habit templates library**: pre-made habit bundles (e.g., "রমজান প্রস্তুতি", "ছাত্র
+  রুটিন") that users can install in one tap.
+- **Notifications**: browser notification API for habit reminders (settings toggles exist
+  in Profile but aren't wired to actual notifications yet).
+
+

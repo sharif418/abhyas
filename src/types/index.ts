@@ -41,6 +41,8 @@ export interface Habit {
   sortOrder: number;
   active: boolean;
   isIslamic: boolean;
+  frozenDate?: string | null; // YYYY-MM-DD forgiven by a streak freeze
+  freezeUsedWeek?: string | null; // ISO week key when freeze was used
   createdAt: string;
   updatedAt: string;
 }
