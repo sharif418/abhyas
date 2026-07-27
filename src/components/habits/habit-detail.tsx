@@ -17,6 +17,7 @@ import { ProgressRing } from "@/components/shared/progress-ring";
 import { useHabits, useToggleHabit, useDeleteHabit } from "@/hooks/use-habits";
 import { useFreezeHabit } from "@/hooks/use-freeze";
 import { useSetHabitNote, useHabitNotes } from "@/hooks/use-mood";
+import { ShareButton } from "@/components/habits/share-button";
 import { useUIStore } from "@/stores/ui-store";
 import { toBn, todayKey } from "@/lib/date-bn";
 import { CATEGORY_MAP } from "@/constants";
@@ -88,6 +89,7 @@ export function HabitDetailSheet() {
                       <Snowflake size={16} />
                     </Button>
                   )}
+                <ShareButton habitId={habit.id} />
                 <Button
                   variant="outline"
                   size="icon"

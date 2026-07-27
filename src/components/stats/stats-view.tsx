@@ -69,6 +69,17 @@ interface StatsResponse {
     today: { mood: number; note: string | null } | null;
   };
   moodCorrelations: MoodCorrelation[];
+  badgeStats: {
+    totalCompletions: number;
+    bestStreak: number;
+    currentStreak: number;
+    habitsTracked: number;
+    perfectDays: number;
+    fajrStreak: number;
+    quranPages: number;
+    fastingDays: number;
+    level: number;
+  };
 }
 
 export function StatsView() {
@@ -300,16 +311,20 @@ export function StatsView() {
           subtitle="অর্জনের মাইলফলক"
         />
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {stats.badges.map((b) => (
-            <BadgeTile
-              key={b.id}
-              icon={b.icon}
-              name={b.name}
-              description={b.description}
-              earned={b.earned}
-              tier={b.tier}
-            />
-          ))}
+          {stats.badges.map((b) => {
+            const progress = getBadgeProgress(b.id, stats.badgeStats);
+            return (
+              <BadgeTile
+                key={b.id}
+                icon={b.icon}
+                name={b.name}
+                description={b.description}
+                earned={b.earned}
+                tier={b.tier}
+                progress={b.earned ? 1 : progress}
+              />
+            );
+          })}
         </div>
       </Card>
     </div>
@@ -386,14 +401,17 @@ function BadgeTile({
   description,
   earned,
   tier,
+  progress,
 }: {
   icon: string;
   name: string;
   description: string;
   earned: boolean;
   tier: string;
+  progress?: number; // 0..1 for locked badges
 }) {
   const style = TIER_STYLE[tier] ?? TIER_STYLE.bronze;
+  const pct = Math.round((progress ?? 0) * 100);
   return (
     <motion.div
       whileHover={{ scale: earned ? 1.04 : 1 }}
@@ -401,12 +419,62 @@ function BadgeTile({
         "flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center transition",
         earned
           ? cn("bg-gradient-to-b from-card to-muted/30 ring-2", style.ring, style.glow)
-          : "bg-muted/30 opacity-60"
+          : "bg-muted/30"
       )}
       title={description}
     >
-      <div className={cn("text-2xl", !earned && "grayscale")}>{earned ? icon : "🔒"}</div>
+      <div className={cn("text-2xl", !earned && "grayscale opacity-50")}>
+        {earned ? icon : "🔒"}
+      </div>
       <div className="line-clamp-1 text-[10px] font-semibold leading-tight">{name}</div>
+      {!earned && progress !== undefined && progress > 0 && (
+        <div className="w-full">
+          <div className="h-1 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary/60"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="mt-0.5 tabular text-[8px] text-muted-foreground">
+            {toBn(pct)}%
+          </div>
+        </div>
+      )}
     </motion.div>
   );
+}
+
+/** Compute progress (0..1) toward a badge based on badgeStats. */
+function getBadgeProgress(
+  badgeId: string,
+  s: {
+    totalCompletions: number;
+    bestStreak: number;
+    currentStreak: number;
+    habitsTracked: number;
+    perfectDays: number;
+    fajrStreak: number;
+    quranPages: number;
+    fastingDays: number;
+    level: number;
+  }
+): number {
+  const map: Record<string, number> = {
+    first_step: Math.min(1, s.totalCompletions / 1),
+    streak_7: Math.min(1, s.bestStreak / 7),
+    streak_30: Math.min(1, s.bestStreak / 30),
+    streak_100: Math.min(1, s.bestStreak / 100),
+    streak_365: Math.min(1, s.bestStreak / 365),
+    early_riser: Math.min(1, s.fajrStreak / 14),
+    quran_reader: Math.min(1, s.quranPages / 60),
+    collector: Math.min(1, s.habitsTracked / 5),
+    architect: Math.min(1, s.habitsTracked / 10),
+    perfect_day: Math.min(1, s.perfectDays / 1),
+    perfect_week: Math.min(1, s.perfectDays / 7),
+    century: Math.min(1, s.totalCompletions / 100),
+    champion: Math.min(1, s.totalCompletions / 500),
+    level_5: Math.min(1, s.level / 5),
+    level_10: Math.min(1, s.level / 10),
+  };
+  return map[badgeId] ?? 0;
 }

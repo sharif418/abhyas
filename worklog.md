@@ -658,6 +658,56 @@ powered feature) and a **Focus daily chart**. All QA-verified via agent-browser.
 - **Focus enhancements**: ambient sounds, custom intervals, focus badges.
 - **Habit sharing**: share habit progress cards to social media (WhatsApp/FB).
 
+---
+
+## Task ID: R11 (webDevReview Round 11 — Habit Sharing + Badge Progress)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+After R10, the app was stable with 8 views, Weekly AI Recap, and Focus daily
+chart. This round delivered **Habit Sharing** (WhatsApp + clipboard) and
+**Badge Progress indicators** on the Stats view. All QA-verified.
+
+### Work Log
+- **Share backend** (`/api/habits/[id]/share`): generates a formatted Bengali
+  text summary with habit stats (current streak, best streak, total done,
+  completion rate, Islamic flag). Returns `{text, stats}`. Verified: API
+  returns 230-char text with correct stats.
+- **ShareButton + modal** (`share-button.tsx`): share button added to the habit
+  detail drawer header. Opens a modal with a preview card (gradient bg, 4-stat
+  grid: streak/best/done/rate), share text preview, and two actions: WhatsApp
+  (opens wa.me deep link) + Copy to clipboard. Verified: modal opens, WhatsApp
+  + copy buttons work.
+- **Badge progress indicators** (Stats view): locked badges now show a progress
+  bar + percentage based on `badgeStats` (e.g., streak_7 shows X/7 days, level_5
+  shows X/5 levels). Added `getBadgeProgress()` function mapping each badge ID
+  to its relevant stat + threshold. `BadgeTile` now accepts a `progress` prop.
+  Added `badgeStats` to the StatsResponse type. Verified: progress bars render
+  on locked badges.
+- **Styling polish**: share card with gradient + 4-stat grid, badge progress
+  bars with percentage labels, refined locked-badge opacity.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Habit detail: share button renders, modal opens with preview card +
+    WhatsApp + copy buttons.
+  - Share API: returns 230-char formatted text with correct stats.
+  - Stats: badge progress bars render on locked badges with percentages.
+  - Desktop: all nav items render correctly.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r11-stats-badges.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, custom intervals, focus badges.
+- **Image-based sharing**: generate a PNG image of the share card (not just text).
+
+
 
 
 
