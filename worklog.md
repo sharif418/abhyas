@@ -67,3 +67,63 @@ offline-first persistence + Bengali-first UI + gamification, targeted at Banglad
 - AI coaching (z-ai-web-dev-sdk LLM) for personalized habit suggestions — Phase-2 feature.
 - bKash/Nagad payment integration for premium tier — needs merchant credentials.
 - Bangladesh calendar (Bengali New Year, Eid) special habit targets.
+
+---
+
+## Task ID: R1 (webDevReview Round 1 — Feature + Styling Expansion)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+Foundation stable. Lint clean, dev server healthy, all API routes 200, no runtime errors
+after agent-browser QA on mobile + desktop. 14 habits in DB (10 seed + 4 test), XP 200.
+The app is production-usable; this round focuses on expanding features and styling polish
+per the mandatory directives ("more features", "more styling details").
+
+### Work Log
+- **Confetti celebration system** (`src/lib/confetti.ts` + `celebration.tsx`):
+  zero-dependency canvas engine with gravity, rotation, multi-shape particles, staggered
+  bursts. Wired into the toggle hook to fire on: streak milestones (7/14/30/100/365),
+  level-ups, badge unlocks, and **perfect-day detection** (throttled once/day via
+  localStorage so re-toggling doesn't re-fire).
+- **AnimatedNumber component**: count-up animation with ease-out cubic + Bengali numeral
+  formatting. Applied to Home hero percentage + Stats quick-stat cards for premium feel.
+- **Onboarding flow** (`onboarding-modal.tsx`): 3-step first-run modal (welcome → pick
+  starter habits from 8 curated presets → confirm) with progress bar, spring animations,
+  and confetti on completion. Gated by localStorage so it shows only once. Wired into
+  AppShell as a global overlay.
+- **Weekly insights backend**: extended `/api/stats` to compute best weekday, best
+  time-of-day, momentum delta (last-7-days vs previous-7-days completion rate), weekday
+  distribution series, and time-of-day distribution series.
+- **Weekly insights card** (`weekly-insights.tsx`): momentum hero (up/down/stable with
+  trend icon + color), best-day + best-time insight cards, weekday bar chart with the
+  best day highlighted in primary color. Inserted into Stats view.
+- **Skeleton loaders**: Home + Stats views now show structured shimmer skeletons (hero +
+  grid + cards) instead of plain spinners during load.
+- **Styling polish**: ambient gradient-mesh body background (theme-aware, very subtle),
+  `shimmer` CSS utility, card hover-lift micro-interactions on stat cards, detailed
+  skeleton grids matching real layout.
+
+### Verification results
+- ✅ `bun run lint` clean.
+- ✅ Dev server compiles, all routes 200, no console/runtime errors.
+- ✅ agent-browser QA:
+  - Onboarding modal renders on first visit (cleared flag), 3-step flow navigable,
+    preset picker shows 8 habits with 4 pre-selected.
+  - Stats view renders the new "সাপ্তাহিক অন্তর্দৃষ্টি" card; API returns real insights
+    (bestWeekday: শনি/27, bestTime: রাত/53, momentum: স্থিতিশীল).
+  - Habit toggle awards XP (171→200, +29 with streak bonus); confetti canvas mounts
+    without errors.
+  - Desktop sidebar + mobile bottom nav both render; ambient background visible.
+- Screenshots saved: `qa-stats-after.png`, `qa-desktop-home.png`, `qa-desktop-after.png`.
+
+### Unresolved / next-phase recommendations
+- **Streak freeze mechanic**: schema field + UI to forgive 1 missed day/week
+  (gamification depth — designed but not yet implemented this round).
+- **Habit drag-and-drop reordering**: `@dnd-kit` is already installed; needs wiring to
+  the Habits view + a reorder API endpoint.
+- **Service Worker / true offline PWA**: still the top infra gap for the Bangladesh
+  market (intermittent connectivity).
+- **AI coaching**: use z-ai-web-dev-sdk LLM to generate personalized habit suggestions
+  based on the user's completion patterns.
+- **Social/leaderboard via WebSocket mini-service**: schema ready, UI + realtime layer TBD.
+

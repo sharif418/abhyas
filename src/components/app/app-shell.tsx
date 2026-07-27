@@ -8,16 +8,15 @@ import { TopBar } from "./top-bar";
 import { ViewRouter } from "./view-router";
 import { HabitFormSheet } from "@/components/habits/habit-form";
 import { HabitDetailSheet } from "@/components/habits/habit-detail";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 
 /**
  * Root application shell.
  * Responsive: desktop = sidebar + content; mobile = bottom nav + content.
- * Hosts the global sheets (habit form & detail) once.
+ * Hosts the global sheets (habit form, detail, onboarding) once.
  */
 export function AppShell() {
   useSettingsEffect();
-
-  // lock body scroll when sheets are open is handled by radix; nothing extra.
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -33,6 +32,7 @@ export function AppShell() {
       {/* Global overlays */}
       <HabitFormSheet />
       <HabitDetailSheet />
+      <OnboardingModal />
     </div>
   );
 }

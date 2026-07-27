@@ -118,6 +118,80 @@ export async function GET() {
     _count: true,
   });
 
+  // ---- Weekly insights ----
+  // Best weekday: which day-of-week historically has highest completion count
+  const weekdayCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun..Sat
+  for (const c of completions) {
+    const d = new Date(c.date);
+    weekdayCounts[d.getDay()]++;
+  }
+  const weekdayNames = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"];
+  let bestWeekdayIdx = 0;
+  for (let i = 1; i < 7; i++) {
+    if (weekdayCounts[i] > weekdayCounts[bestWeekdayIdx]) bestWeekdayIdx = i;
+  }
+
+  // Productive time-of-day: which time slot completes most
+  const timeOfDayCounts: Record<string, number> = {
+    সকাল: 0,
+    দুপুর: 0,
+    বিকাল: 0,
+    রাত: 0,
+  };
+  for (const h of habits) {
+    for (const d of h.completedDates) {
+      timeOfDayCounts[h.timeOfDay] = (timeOfDayCounts[h.timeOfDay] ?? 0) + 1;
+    }
+  }
+  let bestTime = "সকাল";
+  for (const t of ["সকাল", "দুপুর", "বিকাল", "রাত"]) {
+    if ((timeOfDayCounts[t] ?? 0) > (timeOfDayCounts[bestTime] ?? 0)) bestTime = t;
+  }
+
+  // Momentum: completion rate trend — last 7 days vs previous 7 days
+  const prev7 = lastNDays(14, today).slice(0, 7);
+  let last7Done = 0;
+  let last7Sched = 0;
+  let prev7Done = 0;
+  let prev7Sched = 0;
+  for (const h of habits) {
+    for (const k of last7) {
+      const d = new Date(k);
+      if (isScheduledOn(h, d)) {
+        last7Sched++;
+        if (h.completedDates.includes(k)) last7Done++;
+      }
+    }
+    for (const k of prev7) {
+      const d = new Date(k);
+      if (isScheduledOn(h, d)) {
+        prev7Sched++;
+        if (h.completedDates.includes(k)) prev7Done++;
+      }
+    }
+  }
+  const last7Rate = last7Sched ? last7Done / last7Sched : 0;
+  const prev7Rate = prev7Sched ? prev7Done / prev7Sched : 0;
+  const momentumDelta = last7Rate - prev7Rate; // -1..1
+  const momentumLabel =
+    momentumDelta > 0.1
+      ? "বাড়ছে 📈"
+      : momentumDelta < -0.1
+      ? "কমছে 📉"
+      : "স্থিতিশীল ➡️";
+
+  // Weekday distribution for chart
+  const weekdaySeries = weekdayNames.map((name, i) => ({
+    name,
+    count: weekdayCounts[i],
+  }));
+
+  // Time-of-day distribution
+  const timeOfDaySeries = Object.entries(timeOfDayCounts).map(([k, v]) => ({
+    name: k,
+    count: v,
+  }));
+
   return NextResponse.json({
     user: {
       name: user.name,
@@ -146,5 +220,17 @@ export async function GET() {
     quranPages: quranAgg._sum.pagesRead ?? 0,
     quranSessions: quranAgg._count,
     habitsCount: habits.length,
+    insights: {
+      bestWeekday: weekdayNames[bestWeekdayIdx],
+      bestWeekdayCount: weekdayCounts[bestWeekdayIdx],
+      bestTime,
+      bestTimeCount: timeOfDayCounts[bestTime] ?? 0,
+      momentumDelta,
+      momentumLabel,
+      last7Rate,
+      prev7Rate,
+      weekdaySeries,
+      timeOfDaySeries,
+    },
   });
 }

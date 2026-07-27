@@ -9,8 +9,10 @@ import { toBn, bnDayFirst } from "@/lib/date-bn";
 import { TIMES_OF_DAY } from "@/constants";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { IconRenderer } from "@/components/shared/icon-renderer";
+import { AnimatedNumber } from "@/components/shared/celebration";
 import { StatPill, EmptyState } from "@/components/shared/stat-pill";
 import { HabitRow } from "@/components/habits/habit-row";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +36,20 @@ export function HomeView() {
   const openAddHabit = useUIStore((s) => s.openAddHabit);
 
   const { done, total, pct, byTime } = useTodayProgress(habits);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-5 px-4 py-5">
+        <Skeleton className="h-28 rounded-3xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-24" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoading && habits && habits.length === 0) {
     return (
@@ -70,9 +86,11 @@ export function HomeView() {
         <div className="relative flex items-center gap-5">
           <ProgressRing value={pct} size={108} stroke={11} showGlow>
             <div className="text-center">
-              <div className="tabular text-2xl font-extrabold">
-                {toBn(Math.round(pct * 100))}%
-              </div>
+              <AnimatedNumber
+                value={Math.round(pct * 100)}
+                className="tabular text-2xl font-extrabold"
+                format={(n) => `${toBn(n)}%`}
+              />
               <div className="text-[10px] text-muted-foreground">আজকের অগ্রগতি</div>
             </div>
           </ProgressRing>

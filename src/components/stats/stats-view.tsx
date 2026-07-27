@@ -21,6 +21,11 @@ import { toBn } from "@/lib/date-bn";
 import { CATEGORY_MAP } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  WeeklyInsights,
+  type InsightsData,
+} from "@/components/stats/weekly-insights";
+import { AnimatedNumber } from "@/components/shared/celebration";
 
 interface StatsResponse {
   user: { name: string; xp: number; level: number; levelTitle: string; city: string };
@@ -44,6 +49,7 @@ interface StatsResponse {
   quranPages: number;
   quranSessions: number;
   habitsCount: number;
+  insights: InsightsData;
 }
 
 export function StatsView() {
@@ -55,8 +61,18 @@ export function StatsView() {
   if (isLoading || !stats) {
     return (
       <div className="mx-auto max-w-5xl space-y-4 px-4 py-5">
+        <div className="space-y-1.5">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-3 w-48" />
+        </div>
         <Skeleton className="h-28 rounded-3xl" />
-        <Skeleton className="h-64 rounded-3xl" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-56 rounded-3xl" />
+        <Skeleton className="h-48 rounded-3xl" />
         <Skeleton className="h-48 rounded-3xl" />
       </div>
     );
@@ -133,6 +149,9 @@ export function StatsView() {
           color="var(--primary)"
         />
       </div>
+
+      {/* Weekly insights (new) */}
+      <WeeklyInsights insights={stats.insights} />
 
       {/* Weekly completion chart */}
       <Card>
@@ -279,7 +298,10 @@ function QuickStat({
   sub?: string;
 }) {
   return (
-    <div className="rounded-2xl border bg-card p-3">
+    <motion.div
+      whileHover={{ y: -2 }}
+      className="rounded-2xl border bg-card p-3 transition-shadow hover:shadow-md"
+    >
       <div
         className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg"
         style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
@@ -287,11 +309,14 @@ function QuickStat({
         <IconRenderer name={icon} size={16} />
       </div>
       <div className="flex items-baseline gap-0.5">
-        <span className="tabular text-xl font-extrabold leading-none">{toBn(value)}</span>
+        <AnimatedNumber
+          value={value}
+          className="tabular text-xl font-extrabold leading-none"
+        />
         {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
       </div>
       <div className="mt-0.5 text-[10px] text-muted-foreground">{label}</div>
-    </div>
+    </motion.div>
   );
 }
 

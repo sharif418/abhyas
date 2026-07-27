@@ -12,6 +12,7 @@ import { xpForCompletion, gamificationState } from "@/lib/gamification";
 import { todayKey, toDateKey } from "@/lib/date-bn";
 import { useSettingsStore } from "@/stores/settings-store";
 import { toast } from "sonner";
+import { fireConfetti } from "@/lib/confetti";
 import type { Habit, HabitWithMeta } from "@/types";
 
 /** Fetch all habits (server-aggregated with completions). */
@@ -147,11 +148,13 @@ export function useToggleHabit() {
           toast.success(`🔥 ${res.streak} দিনের স্ট্রিক!`, {
             description: "অসাধারণ চালিয়ে যান!",
           });
+          fireConfetti({ count: 120, duration: 900 });
         } else if (res.leveledUp) {
           const g = gamificationState(res.totalXp);
           toast.success(`⭐ লেভেল আপ! এখন লেভেল ${g.level}`, {
             description: `+${res.xpAwarded} XP অর্জন`,
           });
+          fireConfetti({ count: 100, duration: 800 });
         } else {
           toast.success(`+${res.xpAwarded} XP`, {
             description: `স্ট্রিক: ${res.streak} দিন`,
@@ -161,7 +164,12 @@ export function useToggleHabit() {
           toast.success("🏅 নতুন ব্যাজ আনলক!", {
             description: res.newBadgeIds.join(", "),
           });
+          fireConfetti({ count: 90, duration: 700 });
         }
+
+        // Perfect day: if this completion made ALL scheduled habits done,
+        // check optimistic cache. Detect via the invalidated query result.
+        checkPerfectDay(qc);
       }
       // silence unused var
       void vars;
@@ -199,3 +207,42 @@ export function useTodayProgress(habits: HabitWithMeta[] | undefined) {
 }
 
 export { computeBestStreak, computeCurrentStreak, todayKey, toDateKey };
+
+/**
+ * Detects a "perfect day" (all scheduled habits completed) right after a toggle
+ * and fires a celebratory confetti burst + toast. Throttled to once per day via
+ * localStorage so re-toggling doesn't re-fire.
+ */
+const PERFECT_DAY_KEY = "abhyas-perfect-day-fired";
+function checkPerfectDay(qc: ReturnType<typeof useQueryClient>) {
+  const habits = qc.getQueryData<HabitWithMeta[]>(["habits"]);
+  if (!habits) return;
+  const today = new Date();
+  const scheduled = habits.filter((h) => {
+    if (!h.active) return false;
+    if (h.frequency === "নির্দিষ্ট দিন") {
+      const days = h.frequencyDays ?? [];
+      if (days.length && !days.includes(today.getDay())) return false;
+    }
+    return true;
+  });
+  if (scheduled.length === 0) return;
+  const allDone = scheduled.every((h) => h.completedToday);
+  if (!allDone) return;
+
+  const todayStr = todayKey();
+  try {
+    const fired = localStorage.getItem(PERFECT_DAY_KEY);
+    if (fired === todayStr) return; // already celebrated today
+    localStorage.setItem(PERFECT_DAY_KEY, todayStr);
+  } catch {
+    /* ignore */
+  }
+  setTimeout(() => {
+    toast.success("🎉 নিখুঁত দিন!", {
+      description: "আজকের সব অভ্যাস সম্পন্ন! অসাধারণ!",
+    });
+    fireConfetti({ count: 160, duration: 1200 });
+  }, 250);
+}
+
