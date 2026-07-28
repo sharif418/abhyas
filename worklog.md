@@ -1064,3 +1064,31 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Stats tab navigation
 - Zod enum validation
 - Stats endpoint N+1 fix
+
+---
+
+## Task ID: R20 (Bottom Nav 5-tab + Emoji→Icon Cleanup)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- Bottom nav reduced from 8 tabs to 5 (হোম/অভ্যাস/ফোকাস/পরিসংখ্যান/আরও)
+- "More" dropdown menu for secondary views (ইসলামিক/জার্নাল/সোশ্যাল/প্রোফাইল)
+- Sidebar updated with separator between primary/secondary items
+- Mood selector: emoji faces → lucide icons (Frown/Meh/Smile/Laugh)
+- Badges: all emoji icons → lucide icon names (Flame/Trophy/Crown/Star/Gem/Target/Brain/etc)
+- BadgeTile: uses IconRenderer with Lock icon for unearned badges
+- TopBar "💡" removed from sidebar tip
+- "✓" removed from mood saved confirmation
+
+### Verified
+- Lint clean, no runtime errors
+- 5-tab bottom nav works on mobile
+- More menu opens, navigates to secondary views
+- Mood selector renders with lucide icons
+- Badges render with IconRenderer
+
+### Next priorities
+- Card header unification (Prayer/Tasbih/Quran/Dua → IconTile pattern)
+- Stats view tab navigation (8 cards → 4 tabs)
+- Auth system (NextAuth)
+- Zod enum validation

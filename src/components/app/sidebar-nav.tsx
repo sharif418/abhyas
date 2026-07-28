@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { IconRenderer } from "@/components/shared/icon-renderer";
-import { NAV_ITEMS } from "./nav-config";
+import { NAV_ITEMS, MORE_ITEMS } from "./nav-config";
 import { useUIStore } from "@/stores/ui-store";
 
 /** Desktop vertical sidebar navigation. */
@@ -24,7 +24,38 @@ export function SidebarNav() {
       </div>
 
       <nav className="flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((i) => i.key !== "more").map((item) => {
+          const active = view === item.key;
+          return (
+            <button
+              key={item.key}
+              onClick={() => setView(item.key)}
+              className={cn(
+                "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                active
+                  ? "text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              {active && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 rounded-xl bg-sidebar-primary"
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                />
+              )}
+              <span className="relative z-10">
+                <IconRenderer name={item.icon} size={18} />
+              </span>
+              <span className="relative z-10">{item.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Separator */}
+        <div className="my-2 border-t" />
+
+        {MORE_ITEMS.map((item) => {
           const active = view === item.key;
           return (
             <button
@@ -54,7 +85,7 @@ export function SidebarNav() {
       </nav>
 
       <div className="mt-auto rounded-2xl bg-gradient-to-br from-primary/10 to-[#0d9488]/10 p-4 text-xs">
-        <div className="font-semibold">💡 আজকের পরামর্শ</div>
+        <div className="font-semibold">আজকের পরামর্শ</div>
         <p className="mt-1 text-muted-foreground">
           ছোট অভ্যাস দিয়ে শুরু করুন। ধারাবাহিকতাই আসল শক্তি।
         </p>

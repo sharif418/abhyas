@@ -442,8 +442,12 @@ function BadgeTile({
       )}
       title={description}
     >
-      <div className={cn("text-2xl", !earned && "grayscale opacity-50")}>
-        {earned ? icon : "🔒"}
+      <div className={cn(!earned && "opacity-40")}>
+        <IconRenderer
+          name={earned ? icon : "Lock"}
+          size={24}
+          className={cn(!earned && "grayscale")}
+        />
       </div>
       <div className="line-clamp-1 text-[10px] font-semibold leading-tight">{name}</div>
       {!earned && progress !== undefined && progress > 0 && (

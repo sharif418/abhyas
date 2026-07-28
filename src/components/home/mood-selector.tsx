@@ -2,15 +2,16 @@
 
 import { motion } from "framer-motion";
 import { useMood, useSetMood } from "@/hooks/use-mood";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 import { toBn } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
 
 const MOODS = [
-  { value: 1, emoji: "😞", label: "খুব খারাপ", color: "#dc2626" },
-  { value: 2, emoji: "😕", label: "খারাপ", color: "#ea580c" },
-  { value: 3, emoji: "😐", label: "মোটামুটি", color: "#ca8a04" },
-  { value: 4, emoji: "🙂", label: "ভালো", color: "#16a34a" },
-  { value: 5, emoji: "😄", label: "খুব ভালো", color: "#059669" },
+  { value: 1, icon: "Frown", label: "খুব খারাপ", color: "#dc2626" },
+  { value: 2, icon: "Frown", label: "খারাপ", color: "#ea580c" },
+  { value: 3, icon: "Meh", label: "মোটামুটি", color: "#ca8a04" },
+  { value: 4, icon: "Smile", label: "ভালো", color: "#16a34a" },
+  { value: 5, icon: "Laugh", label: "খুব ভালো", color: "#059669" },
 ];
 
 /**
@@ -40,8 +41,11 @@ export function MoodSelector() {
         </div>
         {data && data.total > 0 && (
           <div className="text-right">
-            <div className="text-base">
-              {MOODS.find((m) => Math.round(data.average) === m.value)?.emoji ?? "—"}
+            <div className="flex items-center justify-end text-primary">
+              <IconRenderer
+                name={MOODS.find((m) => Math.round(data.average) === m.value)?.icon ?? "Meh"}
+                size={18}
+              />
             </div>
             <div className="text-[9px] text-muted-foreground">
               গড় ({toBn(data.total)} দিন)
@@ -73,8 +77,8 @@ export function MoodSelector() {
               }
               aria-label={m.label}
             >
-              <span className={cn("text-2xl transition", !active && "opacity-70")}>
-                {m.emoji}
+              <span className={cn("transition", !active && "opacity-60")}>
+                <IconRenderer name={m.icon} size={24} strokeWidth={2} />
               </span>
               <span
                 className={cn(
@@ -95,9 +99,9 @@ export function MoodSelector() {
           animate={{ opacity: 1, height: "auto" }}
           className="mt-2 text-center text-[11px] text-muted-foreground"
         >
-          ✓ আজকের মুড সংরক্ষিত:{" "}
+          আজকের মুড সংরক্ষিত:{" "}
           <span className="font-medium" style={{ color: MOODS[todayMood - 1].color }}>
-            {MOODS[todayMood - 1].emoji} {MOODS[todayMood - 1].label}
+            {MOODS[todayMood - 1].label}
           </span>
         </motion.div>
       )}

@@ -166,7 +166,8 @@ export type ViewKey =
   | "social"
   | "journal"
   | "focus"
-  | "profile";
+  | "profile"
+  | "more"; // virtual — opens the More menu, not a real view
 
 /** Bengali weekday names (0=Sunday … 6=Saturday). */
 export const BENGALI_WEEKDAYS = [
