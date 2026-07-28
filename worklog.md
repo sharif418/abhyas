@@ -905,3 +905,50 @@ notes. All QA-verified and pushed to GitHub.
 
 
 
+
+---
+
+## Task ID: R16 (Autonomous Agent — UI/UX Bug Fixes + Git Workflow)
+**Agent**: Z.ai Code (Autonomous Execution Mode)
+
+### Current project status (assessment)
+Cloned fresh from GitHub (15 rounds of work). App was stable with 8 views.
+This round fixed reported UI/UX flaws: Appearance section title/overflow,
+Add New Habit modal cut-off, and Habit Detail sheet layout. All QA-verified.
+
+### Work Log
+- **Git workflow**: cleared sandbox, cloned from GitHub, installed deps,
+  pushed Prisma schema, started dev + social servers. All data persisted.
+- **Appearance section fix** (Profile view): the section title was " appearance"
+  (English with leading space) — changed to "রূপ ও থিম" (Bengali). Changed
+  Section component from `overflow-hidden` to `overflow-visible` to prevent
+  content clipping (accent color picker, theme buttons).
+- **Add New Habit modal fix** (habit-form.tsx): the sheet was getting cut off
+  at the bottom because `HabitFormBody` returned a React fragment (`<>`)
+  which doesn't participate in flex layout. Fixed by:
+  - Wrapping the body in `<div className="flex flex-1 flex-col min-h-0 overflow-hidden">`
+  - Adding `shrink-0` to SheetHeader and SheetFooter
+  - Adding `min-h-0` to ScrollArea (critical for flex scrolling)
+  - Adding `max-h-[100dvh]` to SheetContent
+  Verified: footer ("যোগ করুন" + "বাতিল") is now fully visible.
+- **Habit Detail sheet fix** (habit-detail.tsx): same fragment→div fix applied.
+  Changed `<>` to `<div className="flex flex-1 flex-col min-h-0 overflow-hidden">`,
+  added `shrink-0` to SheetHeader, `min-h-0` to the scroll container,
+  `max-h-[100dvh]` to SheetContent.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA:
+  - Habit form: opens, footer visible ("যোগ করুন" + "বাতিল" accessible).
+  - Profile: Appearance section shows "রূপ ও থিম" (Bengali), no overflow.
+  - No console errors / no dev.log errors.
+- Screenshots: `qa-r16-habit-form-fixed.png`, `qa-r16-profile-appearance.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+- **Image-based sharing**: generate a PNG image of the share card.

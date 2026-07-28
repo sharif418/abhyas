@@ -47,10 +47,10 @@ export function HabitDetailSheet() {
 
   return (
     <Sheet open={!!habitId} onOpenChange={(o) => !o && close()}>
-      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md max-h-[100dvh]">
         {habit && (
-          <>
-            <SheetHeader className="border-b px-5 pb-4 pt-5">
+          <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+            <SheetHeader className="border-b px-5 pb-4 pt-5 shrink-0">
               <div className="flex items-start gap-3">
                 <IconTile name={habit.icon} color={habit.color} size={48} />
                 <div className="min-w-0 flex-1">
@@ -129,7 +129,7 @@ export function HabitDetailSheet() {
               </div>
             </SheetHeader>
 
-            <div className="fancy-scroll flex-1 overflow-y-auto px-5 py-4">
+            <div className="fancy-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">
               {/* Stats trio */}
               <div className="grid grid-cols-3 gap-2">
                 <StatBox
@@ -219,7 +219,7 @@ export function HabitDetailSheet() {
               {/* Notes / Journal */}
               <NotesSection habitId={habit.id} completedToday={habit.completedToday} />
             </div>
-          </>
+          </div>
         )}
       </SheetContent>
     </Sheet>

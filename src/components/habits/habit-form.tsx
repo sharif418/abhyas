@@ -45,7 +45,7 @@ export function HabitFormSheet() {
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && close()}>
-      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md max-h-[100dvh]">
         {/* Only mount the form body when open so each open starts fresh */}
         {open && (
           <HabitFormBody
@@ -111,15 +111,15 @@ function HabitFormBody({
   };
 
   return (
-    <>
-      <SheetHeader className="border-b px-5 py-4">
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+      <SheetHeader className="border-b px-5 py-4 shrink-0">
         <SheetTitle>{editingId ? "অভ্যাস সম্পাদনা" : "নতুন অভ্যাস"}</SheetTitle>
         <SheetDescription>
           আপনার অভ্যাসের বিস্তারিত নির্ধারণ করুন
         </SheetDescription>
       </SheetHeader>
 
-      <ScrollArea className="fancy-scroll flex-1 px-5 py-4">
+      <ScrollArea className="fancy-scroll min-h-0 flex-1 px-5 py-4">
         <div className="space-y-5">
           {/* Name */}
           <div className="space-y-1.5">
@@ -367,7 +367,7 @@ function HabitFormBody({
         </div>
       </ScrollArea>
 
-      <SheetFooter className="border-t px-5 py-3">
+      <SheetFooter className="shrink-0 border-t px-5 py-3">
         <Button variant="ghost" onClick={onClose} className="flex-1">
           বাতিল
         </Button>
@@ -379,7 +379,7 @@ function HabitFormBody({
           {editingId ? "সংরক্ষণ" : "যোগ করুন"}
         </Button>
       </SheetFooter>
-    </>
+    </div>
   );
 }
 

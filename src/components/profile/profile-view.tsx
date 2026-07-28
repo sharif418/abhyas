@@ -99,7 +99,7 @@ export function ProfileView() {
       </motion.div>
 
       {/* Appearance */}
-      <Section title=" appearance" icon="Palette">
+      <Section title="রূপ ও থিম" icon="Palette">
         <div className="space-y-4">
           <div>
             <div className="mb-2 text-xs font-medium text-muted-foreground">থিম</div>
@@ -297,7 +297,7 @@ function Section({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="overflow-hidden rounded-3xl border bg-card shadow-sm"
+      className="overflow-visible rounded-3xl border bg-card shadow-sm"
     >
       <div className="border-b px-4 py-3 text-sm font-bold">{title}</div>
       <div>{children}</div>
