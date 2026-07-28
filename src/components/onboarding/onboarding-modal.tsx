@@ -136,15 +136,15 @@ export function OnboardingModal() {
               >
                 অ
               </motion.div>
-              <h2 className="text-xl font-bold">অভ্যাসে স্বাগতম! 👋</h2>
+              <h2 className="text-xl font-bold">অভ্যাসে স্বাগতম!</h2>
               <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
                 ছোট অভ্যাস দিয়ে বড় পরিবর্তন। আসুন আপনার যাত্রা শুরু করি —
                 প্রতিদিন এক ধাপ এগিয়ে।
               </p>
               <div className="mt-5 grid grid-cols-3 gap-2 text-center text-[11px]">
-                <Feature emoji="🔥" label="স্ট্রিক ট্র্যাক" />
-                <Feature emoji="🕌" label="ইসলামিক" />
-                <Feature emoji="🏆" label="ব্যাজ ও XP" />
+                <Feature icon="Flame" label="স্ট্রিক ট্র্যাক" />
+                <Feature icon="Moon" label="ইসলামিক" />
+                <Feature icon="Trophy" label="ব্যাজ ও XP" />
               </div>
               <Button
                 className="mt-6 w-full"
@@ -252,9 +252,9 @@ export function OnboardingModal() {
                 initial={{ scale: 0, rotate: -30 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-                className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#0d9488] text-4xl shadow-lg"
+                className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#0d9488] text-white shadow-lg"
               >
-                🎯
+                <IconRenderer name="Target" size={36} />
               </motion.div>
               <h2 className="text-xl font-bold">প্রস্তুত!</h2>
               <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
@@ -273,7 +273,7 @@ export function OnboardingModal() {
                 disabled={submitting}
                 size="lg"
               >
-                {submitting ? "যোগ হচ্ছে..." : "চলুন শুরু করি! 🚀"}
+                {submitting ? "যোগ হচ্ছে..." : "চলুন শুরু করি!"}
               </Button>
             </motion.div>
           )}
@@ -283,10 +283,12 @@ export function OnboardingModal() {
   );
 }
 
-function Feature({ emoji, label }: { emoji: string; label: string }) {
+function Feature({ icon, label }: { icon: string; label: string }) {
   return (
     <div className="rounded-xl bg-muted/50 p-2.5">
-      <div className="text-lg">{emoji}</div>
+      <div className="flex justify-center text-primary">
+        <IconRenderer name={icon} size={18} />
+      </div>
       <div className="mt-0.5 font-medium">{label}</div>
     </div>
   );

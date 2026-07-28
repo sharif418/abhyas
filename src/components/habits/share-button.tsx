@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Share2, Copy, Check, MessageCircle } from "lucide-react";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -99,8 +100,9 @@ export function ShareButton({ habitId }: { habitId: string }) {
               <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4">
                 <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
                 <div className="relative">
-                  <div className="mb-2 text-[10px] font-medium text-muted-foreground">
-                    📚 অভ্যাস অ্যাপ
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+                    <IconRenderer name="BookOpen" size={12} />
+                    অভ্যাস অ্যাপ
                   </div>
                   <h3 className="text-base font-bold">{stats.name}</h3>
                   {stats.isIslamic && (
@@ -111,32 +113,36 @@ export function ShareButton({ habitId }: { habitId: string }) {
 
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="rounded-xl bg-card/60 p-2 text-center">
-                      <div className="tabular text-lg font-bold text-streak">
-                        🔥 {toBn(stats.currentStreak)}
+                      <div className="flex items-center justify-center gap-1 tabular text-lg font-bold text-streak">
+                        <IconRenderer name="Flame" size={14} />
+                        {toBn(stats.currentStreak)}
                       </div>
                       <div className="text-[9px] text-muted-foreground">
                         বর্তমান স্ট্রিক
                       </div>
                     </div>
                     <div className="rounded-xl bg-card/60 p-2 text-center">
-                      <div className="tabular text-lg font-bold text-primary">
-                        🏆 {toBn(stats.bestStreak)}
+                      <div className="flex items-center justify-center gap-1 tabular text-lg font-bold text-primary">
+                        <IconRenderer name="Trophy" size={14} />
+                        {toBn(stats.bestStreak)}
                       </div>
                       <div className="text-[9px] text-muted-foreground">
                         সেরা স্ট্রিক
                       </div>
                     </div>
                     <div className="rounded-xl bg-card/60 p-2 text-center">
-                      <div className="tabular text-lg font-bold">
-                        ✅ {toBn(stats.totalDone)}
+                      <div className="flex items-center justify-center gap-1 tabular text-lg font-bold">
+                        <IconRenderer name="CheckCircle2" size={14} />
+                        {toBn(stats.totalDone)}
                       </div>
                       <div className="text-[9px] text-muted-foreground">
                         মোট সম্পন্ন
                       </div>
                     </div>
                     <div className="rounded-xl bg-card/60 p-2 text-center">
-                      <div className="tabular text-lg font-bold text-primary">
-                        📊 {toBn(stats.completionRate)}%
+                      <div className="flex items-center justify-center gap-1 tabular text-lg font-bold text-primary">
+                        <IconRenderer name="BarChart3" size={14} />
+                        {toBn(stats.completionRate)}%
                       </div>
                       <div className="text-[9px] text-muted-foreground">
                         সম্পন্নের হার

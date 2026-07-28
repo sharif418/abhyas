@@ -25,7 +25,7 @@ export function IslamicView() {
       <DuaLibrary />
 
       <div className="rounded-2xl border border-islamic/20 bg-islamic/[0.04] p-4 text-center text-xs text-muted-foreground">
-        💚 ইসলামিক ফিচারগুলো বাংলাদেশের ব্যবহারকারীদের জন্য বিশেষভাবে তৈরি —
+        ইসলামিক ফিচারগুলো বাংলাদেশের ব্যবহারকারীদের জন্য বিশেষভাবে তৈরি —
         নামাজ, কুরআন, দোয়া ও তাসবিহ একসাথে।
       </div>
     </div>

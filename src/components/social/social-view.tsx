@@ -6,6 +6,7 @@ import { api } from "@/lib/api-client";
 import { gamificationState } from "@/lib/gamification";
 import { toBn } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 import { useSocial, type ActivityEvent } from "@/hooks/use-social";
 import { Crown, Flame, Trophy, Users, Wifi, WifiOff } from "lucide-react";
 import { useMemo } from "react";
@@ -195,7 +196,7 @@ export function SocialView() {
       </div>
 
       <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-3 text-center text-xs text-muted-foreground">
-        🌟 অন্যদের সাথে একসাথে অগ্রগতি করুন। প্রতিদিন অভ্যাস সম্পন্ন করে লিডারবোর্ডে উপরে উঠুন!
+        অন্যদের সাথে একসাথে অগ্রগতি করুন। প্রতিদিন অভ্যাস সম্পন্ন করে লিডারবোর্ডে উপরে উঠুন!
       </div>
     </div>
   );
@@ -232,7 +233,9 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
       exit={{ opacity: 0, scale: 0.96 }}
       className="flex items-start gap-2.5 rounded-2xl bg-muted/30 p-2.5"
     >
-      <div className="mt-0.5 text-base">{activityEmoji(event.type)}</div>
+      <div className="mt-0.5">
+        <ActivityIcon type={event.type} />
+      </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs leading-snug">{text}</p>
         <span className="text-[9px] text-muted-foreground">
@@ -250,20 +253,20 @@ function formatActivity(e: ActivityEvent): string {
         <>
           <span className="font-semibold">{e.userName}</span> «
           {e.habitName}» সম্পন্ন করেছেন
-          {e.streak ? ` (🔥 ${toBn(e.streak)} দিন)` : ""}
+          {e.streak ? ` (${toBn(e.streak)} দিন)` : ""}
         </>
       ) as unknown as string;
     case "streak":
       return (
         <>
           <span className="font-semibold">{e.userName}</span> এর «
-          {e.habitName}» এ {toBn(e.streak || 0)} দিনের স্ট্রিক! 🎉
+          {e.habitName}» এ {toBn(e.streak || 0)} দিনের স্ট্রিক!
         </>
       ) as unknown as string;
     case "levelup":
       return (
         <>
-          <span className="font-semibold">{e.userName}</span> লেভেল {toBn(e.level || 0)} এ উন্নীত হয়েছেন! ⭐
+          <span className="font-semibold">{e.userName}</span> লেভেল {toBn(e.level || 0)} এ উন্নীত হয়েছেন!
         </>
       ) as unknown as string;
     case "join":
@@ -277,19 +280,19 @@ function formatActivity(e: ActivityEvent): string {
   }
 }
 
-function activityEmoji(type: ActivityEvent["type"]): string {
-  switch (type) {
-    case "completion":
-      return "✅";
-    case "streak":
-      return "🔥";
-    case "levelup":
-      return "⭐";
-    case "join":
-      return "👋";
-    default:
-      return "•";
-  }
+function ActivityIcon({ type }: { type: ActivityEvent["type"] }) {
+  const icons: Record<string, { icon: string; color: string; bg: string }> = {
+    completion: { icon: "CheckCircle2", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    streak: { icon: "Flame", color: "text-amber-500", bg: "bg-amber-500/10" },
+    levelup: { icon: "Star", color: "text-violet-500", bg: "bg-violet-500/10" },
+    join: { icon: "UserPlus", color: "text-sky-500", bg: "bg-sky-500/10" },
+  };
+  const cfg = icons[type] ?? icons.join;
+  return (
+    <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${cfg.bg}`}>
+      <IconRenderer name={cfg.icon} size={14} className={cfg.color} />
+    </div>
+  );
 }
 
 function timeAgo(ts: number): string {

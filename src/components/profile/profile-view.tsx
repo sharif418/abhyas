@@ -232,7 +232,7 @@ export function ProfileView() {
       </Section>
 
       <div className="pb-4 text-center text-[10px] text-muted-foreground">
-        💚 ধৈর্য ও ধারাবাহিকতার সাথে তৈরি
+        ধৈর্য ও ধারাবাহিকতার সাথে তৈরি
       </div>
     </div>
   );

@@ -1125,3 +1125,31 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Zod enum validation
 - Stats endpoint N+1 fix
 - Remaining emoji cleanup (onboarding, share card, social activity)
+
+---
+
+## Task ID: R22 (Final Emoji Cleanup + Activity Icons)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- Social activity feed: emoji icons → ActivityIcon component with semantic lucide icons (CheckCircle2/Flame/Star/UserPlus) in tinted tiles
+- Social footer: 🌟 removed
+- Islamic footer: 💚 removed
+- Focus custom preset: ⚙️ removed
+- Profile footer: 💚 removed
+- Onboarding modal: 👋🔥🕌🏆🎯🚀 emojis → lucide icons (Flame/Moon/Trophy/Target)
+- Onboarding Feature component: emoji props → icon props with IconRenderer
+- Share card: 📚🔥🏆✅📊 → IconRenderer (BookOpen/Flame/Trophy/CheckCircle2/BarChart3)
+- Share card stat tiles: now use flex+gap layout with icon+number
+
+### Verified
+- Lint clean, no runtime errors
+- Social feed renders with lucide activity icons
+- All major emoji-as-UI eliminated across the app
+- GitHub committed and pushed
+
+### Next priorities
+- Auth system (NextAuth)
+- Zod enum validation
+- Stats endpoint N+1 fix
+- Remaining inline emojis in copy text (journal notes, etc.)

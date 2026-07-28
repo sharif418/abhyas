@@ -237,7 +237,7 @@ export function FocusView() {
               : "text-muted-foreground hover:border-foreground/20"
           )}
         >
-          <div className="font-bold">⚙️ কাস্টম</div>
+          <div className="font-bold">কাস্টম</div>
           <div className="text-[10px]">
             {isCustom
               ? `${toBn(customWork)}মি / ${toBn(customBreak)}মি`
