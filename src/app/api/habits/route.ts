@@ -12,18 +12,34 @@ export async function GET() {
   return NextResponse.json(habits);
 }
 
+const CATEGORIES = [
+  "প্রার্থনা ও ইবাদত",
+  "স্বাস্থ্য ও ফিটনেস",
+  "পড়াশোনা ও জ্ঞান",
+  "কাজ ও পেশা",
+  "পরিবার ও সম্পর্ক",
+  "অর্থনীতি ও সঞ্চয়",
+  "মানসিক সুস্থতা",
+  "জীবনধারা",
+] as const;
+
+const FREQUENCIES = ["প্রতিদিন", "নির্দিষ্ট দিন", "সপ্তাহে কয়েকবার", "মাসে একবার"] as const;
+const TIMES_OF_DAY = ["সকাল", "দুপুর", "বিকাল", "রাত"] as const;
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const TIME_FORMAT = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const HabitCreateSchema = z.object({
   name: z.string().min(1).max(80),
   nameEn: z.string().max(80).optional().nullable(),
-  icon: z.string().default("CheckCircle"),
-  category: z.string().default("জীবনধারা"),
-  color: z.string().default("#059669"),
-  target: z.string().default("প্রতিদিন"),
-  frequency: z.string().default("প্রতিদিন"),
-  frequencyDays: z.array(z.number()).default([]),
-  timesPerWeek: z.number().default(0),
-  timeOfDay: z.string().default("সকাল"),
-  reminderTime: z.string().nullable().optional(),
+  icon: z.string().min(1).max(60).default("CheckCircle"),
+  category: z.enum(CATEGORIES).default("জীবনধারা"),
+  color: z.string().regex(HEX_COLOR).default("#059669"),
+  target: z.string().max(40).default("প্রতিদিন"),
+  frequency: z.enum(FREQUENCIES).default("প্রতিদিন"),
+  frequencyDays: z.array(z.number().int().min(0).max(6)).default([]),
+  timesPerWeek: z.number().int().min(0).max(7).default(0),
+  timeOfDay: z.enum(TIMES_OF_DAY).default("সকাল"),
+  reminderTime: z.string().regex(TIME_FORMAT).nullable().optional(),
   isIslamic: z.boolean().default(false),
 });
 

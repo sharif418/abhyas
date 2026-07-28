@@ -5,9 +5,11 @@ import type { UserSettings } from "@/types";
 
 export const dynamic = "force-dynamic";
 
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
 const SettingsSchema = z.object({
   theme: z.enum(["light", "dark", "system"]).optional(),
-  accent: z.string().optional(),
+  accent: z.string().regex(HEX_COLOR).optional(),
   weekStartsOn: z.union([z.literal(0), z.literal(6)]).optional(),
   haptics: z.boolean().optional(),
   sound: z.boolean().optional(),

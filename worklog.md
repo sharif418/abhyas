@@ -1153,3 +1153,29 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Zod enum validation
 - Stats endpoint N+1 fix
 - Remaining inline emojis in copy text (journal notes, etc.)
+
+---
+
+## Task ID: R23 (Zod Enum Validation + Final Inline Emoji Cleanup)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Zod enum validation** (CTO audit H2):
+  - `habits/route.ts` POST: category → `z.enum(CATEGORIES)`, frequency → `z.enum(FREQUENCIES)`, timeOfDay → `z.enum(TIMES_OF_DAY)`, color → `z.string().regex(HEX_COLOR)`, reminderTime → `z.string().regex(TIME_FORMAT)`, frequencyDays → `z.array(z.number().int().min(0).max(6))`, timesPerWeek → `z.number().int().min(0).max(7)`
+  - `habits/[id]/route.ts` PUT: same enums applied to all optional fields
+  - `me/settings/route.ts`: accent → `z.string().regex(HEX_COLOR)` (prevents CSS injection)
+  - Verified: invalid category "INVALID" + invalid color "not-a-color" → rejected with 400
+- **Inline emoji cleanup** (journal + heatmap):
+  - Journal: "✨ নিখুঁত!" → "নিখুঁত!", "💭 {note}" → "{note}", "📝 {note}" → "{note}"
+  - Yearly heatmap popover: "📝 {note}" → "{note}"
+
+### Verified
+- Lint clean, no runtime errors
+- Zod validation rejects invalid inputs (tested with curl)
+- App renders correctly with no console errors
+- GitHub committed and pushed
+
+### Next priorities
+- Auth system (NextAuth) — the last critical CTO audit item
+- Stats endpoint N+1 fix
+- Production build test

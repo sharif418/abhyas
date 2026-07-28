@@ -6,18 +6,34 @@ import { serializeHabit } from "@/lib/habits-server";
 
 export const dynamic = "force-dynamic";
 
+const CATEGORIES = [
+  "প্রার্থনা ও ইবাদত",
+  "স্বাস্থ্য ও ফিটনেস",
+  "পড়াশোনা ও জ্ঞান",
+  "কাজ ও পেশা",
+  "পরিবার ও সম্পর্ক",
+  "অর্থনীতি ও সঞ্চয়",
+  "মানসিক সুস্থতা",
+  "জীবনধারা",
+] as const;
+
+const FREQUENCIES = ["প্রতিদিন", "নির্দিষ্ট দিন", "সপ্তাহে কয়েকবার", "মাসে একবার"] as const;
+const TIMES_OF_DAY = ["সকাল", "দুপুর", "বিকাল", "রাত"] as const;
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const TIME_FORMAT = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const HabitUpdateSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   nameEn: z.string().max(80).nullable().optional(),
-  icon: z.string().optional(),
-  category: z.string().optional(),
-  color: z.string().optional(),
-  target: z.string().optional(),
-  frequency: z.string().optional(),
-  frequencyDays: z.array(z.number()).optional(),
-  timesPerWeek: z.number().optional(),
-  timeOfDay: z.string().optional(),
-  reminderTime: z.string().nullable().optional(),
+  icon: z.string().min(1).max(60).optional(),
+  category: z.enum(CATEGORIES).optional(),
+  color: z.string().regex(HEX_COLOR).optional(),
+  target: z.string().max(40).optional(),
+  frequency: z.enum(FREQUENCIES).optional(),
+  frequencyDays: z.array(z.number().int().min(0).max(6)).optional(),
+  timesPerWeek: z.number().int().min(0).max(7).optional(),
+  timeOfDay: z.enum(TIMES_OF_DAY).optional(),
+  reminderTime: z.string().regex(TIME_FORMAT).nullable().optional(),
   isIslamic: z.boolean().optional(),
   active: z.boolean().optional(),
 });

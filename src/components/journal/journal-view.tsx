@@ -223,7 +223,7 @@ function JournalDayCard({
             </div>
             <div className="text-[10px] text-muted-foreground">
               {toBn(day.completedHabits.length)}/{toBn(day.totalScheduled)} সম্পন্ন
-              {completionPct === 1 && " • ✨ নিখুঁত!"}
+              {completionPct === 1 && " • নিখুঁত!"}
             </div>
           </div>
           {day.mood && (
@@ -244,7 +244,7 @@ function JournalDayCard({
         {day.mood?.note && (
           <div className="mb-2 rounded-xl bg-muted/40 p-2.5">
             <p className="text-xs italic leading-snug text-muted-foreground">
-              💭 {day.mood.note}
+              {day.mood.note}
             </p>
           </div>
         )}
@@ -262,7 +262,7 @@ function JournalDayCard({
                   <div className="text-xs font-semibold">{h.name}</div>
                   {h.note && (
                     <p className="mt-0.5 text-[11px] italic leading-snug text-muted-foreground">
-                      📝 {h.note}
+                      {h.note}
                     </p>
                   )}
                 </div>

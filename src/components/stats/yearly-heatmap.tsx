@@ -290,7 +290,7 @@ function DayDetailPopover({
                         <div className="text-xs font-semibold">{c.name}</div>
                         {c.note && (
                           <p className="text-[10px] italic text-muted-foreground">
-                            📝 {c.note}
+                            {c.note}
                           </p>
                         )}
                       </div>
