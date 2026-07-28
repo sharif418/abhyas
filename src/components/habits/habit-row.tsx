@@ -84,7 +84,18 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
               </span>
             )}
             <span className="opacity-40">•</span>
-            <span>{toBn(Math.round(habit.completionRate * 100))}%</span>
+            <div className="flex items-center gap-1">
+              <div className="h-1 w-12 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.round(habit.completionRate * 100)}%`,
+                    background: habit.color,
+                  }}
+                />
+              </div>
+              <span className="tabular">{toBn(Math.round(habit.completionRate * 100))}%</span>
+            </div>
           </div>
         </div>
       </button>

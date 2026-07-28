@@ -1318,3 +1318,27 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Consolidate getHabitsWithMeta + completions fetch
 - Offline write queue (Service Worker background sync)
 - Real push notifications (Web Push API + VAPID)
+
+---
+
+## Task ID: R29 (Habit Row Mini Progress Bar)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Habit row mini progress bar**: replaced plain text percentage with a visual mini progress bar + percentage. Each habit row now shows:
+  - A 12px-wide colored progress bar (using the habit's own color) showing 30-day completion rate
+  - The percentage number next to the bar
+  - Smooth transition animation on width change
+- This gives users instant visual feedback on their consistency at a glance, without needing to open the detail drawer
+
+### Verified
+- Lint clean, no runtime errors
+- Habit rows render with mini progress bars
+- App stable across all views
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Consolidate getHabitsWithMeta + completions fetch
+- Offline write queue (Service Worker background sync)
+- Real push notifications (Web Push API + VAPID)
