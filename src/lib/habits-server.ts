@@ -48,8 +48,18 @@ function safeJsonArray(raw: string | null | undefined): number[] {
   }
 }
 
-/** Fetch all active habits for the local user, enriched with completions. */
+/** Fetch all active habits for the local user, enriched with completions.
+ *  Also returns raw completions for reuse by callers (avoids redundant DB queries). */
 export async function getHabitsWithMeta(): Promise<HabitWithMeta[]> {
+  const { habits: meta } = await getHabitsAndCompletions();
+  return meta;
+}
+
+/** Fetch habits + raw completions in a single pass. Returns both for reuse. */
+export async function getHabitsAndCompletions(): Promise<{
+  habits: HabitWithMeta[];
+  rawCompletions: { habitId: string; date: string }[];
+}> {
   const user = await getOrCreateUser();
   const habits = await db.habit.findMany({
     where: { userId: user.id, active: true },
@@ -75,7 +85,7 @@ export async function getHabitsWithMeta(): Promise<HabitWithMeta[]> {
 
   const today = todayKey();
 
-  return habits.map((h) => {
+  const result = habits.map((h) => {
     const set = map.get(h.id) ?? new Set<string>();
     const completedDates = Array.from(set).sort();
     const habit = serializeHabit(h);
@@ -91,6 +101,8 @@ export async function getHabitsWithMeta(): Promise<HabitWithMeta[]> {
       completionRate: completionRate(habit, set, 30),
     };
   });
+
+  return { habits: result, rawCompletions: completions };
 }
 
 /**

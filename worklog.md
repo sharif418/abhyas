@@ -1367,3 +1367,36 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Consolidate getHabitsWithMeta + completions fetch
 - Offline write queue (Service Worker background sync)
 - Real push notifications (Web Push API + VAPID)
+
+---
+
+## Task ID: R31 (Query Consolidation + Offline Write Queue)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Consolidated getHabitsWithMeta + completions fetch** (CTO audit H3):
+  - New `getHabitsAndCompletions()` function returns both `habits: HabitWithMeta[]` and `rawCompletions: { habitId, date }[]` in a single DB pass
+  - `getHabitsWithMeta()` now delegates to `getHabitsAndCompletions()` (backward compatible)
+  - Stats endpoint uses `getHabitsAndCompletions()` and reuses `rawCompletions` instead of re-querying the DB
+  - Eliminates 1 redundant DB query per stats request
+  - Verified: stats API returns correct data (31 habits, 365 heatmap days, 164 completions)
+
+- **Offline write queue (Service Worker Background Sync)**:
+  - SW now intercepts POST requests to `/api/habits/*/toggle`
+  - When online: passes through normally
+  - When offline: queues mutation in IndexedDB, registers for Background Sync, returns synthetic success (so optimistic UI doesn't roll back)
+  - `sync` event listener: processes queued mutations when connectivity restores
+  - Notifies all clients via `postMessage` when sync completes
+  - IndexedDB store: `abhyas-mutation-queue` → `mutations` (auto-increment key)
+  - Note: Background Sync API only works in production (SW registered in production mode)
+
+### Verified
+- Lint clean, no runtime errors
+- Stats API returns correct data with consolidated query
+- App renders correctly
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Real push notifications (Web Push API + VAPID)
+- Account migration: move guest data to authenticated user on first login

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/user";
-import { getHabitsWithMeta } from "@/lib/habits-server";
+import { getHabitsWithMeta, getHabitsAndCompletions } from "@/lib/habits-server";
 import { gamificationState, levelTitle, levelFromXp } from "@/lib/gamification";
 import { todayKey, toDateKey, addDays, lastNDays } from "@/lib/date-bn";
 import { isScheduledOn } from "@/lib/streaks";
@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 /** GET /api/stats — aggregate dashboard stats */
 export async function GET() {
   const user = await getOrCreateUser();
-  const habits = await getHabitsWithMeta();
+  // Single fetch: habits + all completions (reused throughout the endpoint)
+  const { habits, rawCompletions } = await getHabitsAndCompletions();
 
   const today = new Date();
   const todayStr = todayKey();
@@ -21,12 +22,8 @@ export async function GET() {
   const last30 = lastNDays(30, today);
   const last7 = lastNDays(7, today);
 
-  // daily completion counts across habits (fetch full year for yearly heatmap)
-  const yearAgo = lastNDays(365, today)[0];
-  const completions = await db.habitCompletion.findMany({
-    where: { userId: user.id, date: { gte: yearAgo } },
-    select: { date: true, habitId: true },
-  });
+  // Reuse rawCompletions instead of re-querying the DB
+  const completions = rawCompletions;
   const byDate = new Map<string, number>();
   for (const c of completions) {
     byDate.set(c.date, (byDate.get(c.date) ?? 0) + 1);
