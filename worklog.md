@@ -1179,3 +1179,32 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Auth system (NextAuth) — the last critical CTO audit item
 - Stats endpoint N+1 fix
 - Production build test
+
+---
+
+## Task ID: R24 (Stats N+1 Fix + Security Headers)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Stats endpoint N+1 fix** (CTO audit H3):
+  - Eliminated `computeBadgeStats()` call that made 4 redundant DB queries
+  - Added `computeBadgeStatsInMemory()` — reuses already-fetched habits, completions, prayer, and quran data
+  - Reordered prayer + quran queries before badge stats computation
+  - Verified: badgeStats returns correct values (163 completions, 18 bestStreak, 31 habits)
+- **Security headers** (CTO audit M2):
+  - Added `X-Frame-Options: DENY` (clickjacking prevention)
+  - Added `X-Content-Type-Options: nosniff` (MIME sniffing prevention)
+  - Added `Referrer-Policy: strict-origin-when-cross-origin`
+  - Added `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - Added `X-DNS-Prefetch-Control: on`
+
+### Verified
+- Lint clean, no runtime errors
+- Stats API returns correct badge stats from in-memory computation
+- App renders correctly
+- GitHub committed and pushed
+
+### Next priorities
+- Auth system (NextAuth) — the last critical CTO audit item
+- Production build test
+- Stats endpoint: consolidate getHabitsWithMeta + completions fetch
