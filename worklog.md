@@ -952,3 +952,46 @@ Add New Habit modal cut-off, and Habit Detail sheet layout. All QA-verified.
 - **Social depth**: friend challenges, group leaderboards, direct messages.
 - **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
 - **Image-based sharing**: generate a PNG image of the share card.
+
+---
+
+## Task ID: R17 (webDevReview — Sound Effects + Git Workflow)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+Cloned fresh from GitHub (16 rounds of work). Fixed a stale Turbopack cache
+issue in habit-detail.tsx. App was stable across all 8 views. This round added
+a **premium sound effects system** using the Web Audio API — no external files
+needed. Sounds fire on habit completion, streak milestones, level-ups, badge
+unlocks, and perfect days, respecting the user's sound setting.
+
+### Work Log
+- **Git workflow**: cleared sandbox, cloned from GitHub, installed deps,
+  pushed Prisma schema, started dev + social servers.
+- **Sound effects system** (`src/lib/sounds.ts`): zero-dependency Web Audio API
+  implementation with 4 distinct sounds:
+  - `playCompletionSound()`: rising two-note chime (C5 → G5)
+  - `playStreakSound()`: triumphant three-note arpeggio (C5 → E5 → G5)
+  - `playLevelUpSound()`: celebratory four-note fanfare (C5 → E5 → G5 → C6)
+  - `playPerfectDaySound()`: warm three-note chord (C5 + E5 + G5 simultaneously)
+  Each tone uses envelope shaping (quick attack, exponential decay) for a
+  premium feel. AudioContext auto-resumes if suspended (autoplay policy).
+- **Integration**: wired into `useToggleHabit`'s onSuccess handler. Respects
+  the user's `sound` setting from the settings store. Sounds fire alongside
+  existing confetti + toast feedback. Verified: toggle works, no errors.
+- **Stale cache fix**: cleared `.next` directory to resolve a stale Turbopack
+  cache showing a non-existent parse error in habit-detail.tsx.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA: habit toggle works, no console errors.
+- ✅ Git: committed and pushed to GitHub.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+- **Image-based sharing**: generate a PNG image of the share card.

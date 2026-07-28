@@ -13,6 +13,12 @@ import { todayKey, toDateKey } from "@/lib/date-bn";
 import { useSettingsStore } from "@/stores/settings-store";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
+import {
+  playCompletionSound,
+  playStreakSound,
+  playLevelUpSound,
+  playPerfectDaySound,
+} from "@/lib/sounds";
 import type { Habit, HabitWithMeta } from "@/types";
 
 /** Fetch all habits (server-aggregated with completions). */
@@ -161,33 +167,39 @@ export function useToggleHabit() {
       }
 
       if (res.completed) {
+        const soundEnabled = useSettingsStore.getState().sound;
+
         // Streak milestone feedback
         if ([7, 14, 30, 100, 365].includes(res.streak)) {
           toast.success(`🔥 ${res.streak} দিনের স্ট্রিক!`, {
             description: "অসাধারণ চালিয়ে যান!",
           });
           fireConfetti({ count: 120, duration: 900 });
+          if (soundEnabled) playStreakSound();
         } else if (res.leveledUp) {
           const g = gamificationState(res.totalXp);
           toast.success(`⭐ লেভেল আপ! এখন লেভেল ${g.level}`, {
             description: `+${res.xpAwarded} XP অর্জন`,
           });
           fireConfetti({ count: 100, duration: 800 });
+          if (soundEnabled) playLevelUpSound();
         } else {
           toast.success(`+${res.xpAwarded} XP`, {
             description: `স্ট্রিক: ${res.streak} দিন`,
           });
+          if (soundEnabled) playCompletionSound();
         }
         if (res.newBadgeIds.length > 0) {
           toast.success("🏅 নতুন ব্যাজ আনলক!", {
             description: res.newBadgeIds.join(", "),
           });
           fireConfetti({ count: 90, duration: 700 });
+          if (soundEnabled) playLevelUpSound();
         }
 
         // Perfect day: if this completion made ALL scheduled habits done,
         // check optimistic cache. Detect via the invalidated query result.
-        checkPerfectDay(qc);
+        checkPerfectDay(qc, soundEnabled);
       }
       // silence unused var
       void vars;
@@ -232,7 +244,10 @@ export { computeBestStreak, computeCurrentStreak, todayKey, toDateKey };
  * localStorage so re-toggling doesn't re-fire.
  */
 const PERFECT_DAY_KEY = "abhyas-perfect-day-fired";
-function checkPerfectDay(qc: ReturnType<typeof useQueryClient>) {
+function checkPerfectDay(
+  qc: ReturnType<typeof useQueryClient>,
+  soundEnabled?: boolean
+) {
   const habits = qc.getQueryData<HabitWithMeta[]>(["habits"]);
   if (!habits) return;
   const today = new Date();
@@ -261,6 +276,7 @@ function checkPerfectDay(qc: ReturnType<typeof useQueryClient>) {
       description: "আজকের সব অভ্যাস সম্পন্ন! অসাধারণ!",
     });
     fireConfetti({ count: 160, duration: 1200 });
+    if (soundEnabled) playPerfectDaySound();
   }, 250);
 }
 
