@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ArrowUpDown, Check, LayoutGrid } from "lucide-react";
+import { Plus, Search, ArrowUpDown, Check, LayoutGrid, Flame, TrendingUp, Target } from "lucide-react";
 import { useHabits, useToggleHabit } from "@/hooks/use-habits";
 import { useUIStore } from "@/stores/ui-store";
 import { HabitRow } from "@/components/habits/habit-row";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { CATEGORIES, TIMES_OF_DAY } from "@/constants";
 import { cn } from "@/lib/utils";
 import { toBn } from "@/lib/date-bn";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 import type { HabitCategory } from "@/types";
 
 type Filter = "all" | "active" | "done" | HabitCategory;
@@ -98,6 +99,34 @@ export function HabitsView() {
           </button>
         </div>
       </div>
+
+      {/* Quick stats summary */}
+      {habits && habits.length > 0 && !reorderMode && (
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border bg-card p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 tabular text-base font-bold text-streak">
+              <Flame size={14} fill="currentColor" />
+              {toBn(habits.filter(h => h.streak > 0).length)}
+            </div>
+            <div className="text-[9px] text-muted-foreground">সক্রিয় স্ট্রিক</div>
+          </div>
+          <div className="rounded-2xl border bg-card p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 tabular text-base font-bold text-primary">
+              <TrendingUp size={14} />
+              {toBn(habits.filter(h => h.completedToday).length)}
+              <span className="text-[10px] text-muted-foreground">/{toBn(habits.length)}</span>
+            </div>
+            <div className="text-[9px] text-muted-foreground">আজ সম্পন্ন</div>
+          </div>
+          <div className="rounded-2xl border bg-card p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 tabular text-base font-bold" style={{ color: "#7c3aed" }}>
+              <Target size={14} />
+              {toBn(Math.max(...habits.map(h => h.bestStreak), 0))}
+            </div>
+            <div className="text-[9px] text-muted-foreground">সেরা স্ট্রিক</div>
+          </div>
+        </div>
+      )}
 
       {reorderMode && (
         <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">

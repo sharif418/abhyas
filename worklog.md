@@ -1269,3 +1269,25 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Consolidate getHabitsWithMeta + completions fetch
 - Offline write queue (Service Worker background sync)
 - Real push notifications (Web Push API + VAPID)
+
+---
+
+## Task ID: R27 (Habits Quick Stats + Styling Polish)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Habits view quick stats card**: 3-column grid showing active streaks (Flame icon), today's completion rate (TrendingUp icon, X/Y format), and best streak (Target icon). Hidden in reorder mode. Uses semantic colors (streak=amber, primary=emerald, violet=best).
+- **Fixed duplicate button block**: removed accidental duplication of the reorder button that was introduced during editing.
+- **IconRenderer import**: added to habits-view.tsx for future icon usage.
+
+### Verified
+- Lint clean, no runtime errors
+- Quick stats card renders with correct values
+- App stable across all views
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Consolidate getHabitsWithMeta + completions fetch
+- Offline write queue (Service Worker background sync)
+- Real push notifications (Web Push API + VAPID)
