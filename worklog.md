@@ -840,6 +840,60 @@ combined habit completion density across the entire year. All QA-verified.
 - **Image-based sharing**: generate a PNG image of the share card.
 - **Heatmap interactivity**: click a cell to see that day's details (habits, mood, notes).
 
+---
+
+## Task ID: R15 (webDevReview Round 15 — Heatmap Interactivity + Git Workflow)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+This round introduced the mandatory git workflow: cleared sandbox, pushed 14
+rounds of work to GitHub as backup, then cloned fresh. After clone, the app was
+fully stable (DB seeded, all 8 views functional, no errors). This round then
+delivered **Yearly Heatmap Interactivity** — clicking a heatmap cell opens a
+day-detail popover showing that day's habit completions, mood, focus time, and
+notes. All QA-verified and pushed to GitHub.
+
+### Work Log
+- **Git workflow**: backed up 14 rounds of work to GitHub (force push), cleared
+  sandbox, cloned from `github.com/sharif418/abhyas.git`. Installed deps,
+  pushed Prisma schema, started dev server + social service. Verified all data
+  persisted (DB already seeded).
+- **Day detail API** (`/api/day?date=YYYY-MM-DD`): fetches all activity for a
+  specific day — habit completions (with habit details: name, icon, color,
+  category, note), mood entry, and focus sessions (total minutes + count).
+  Verified: 2026-07-27 returns 6 completions, mood=4, 50 focus minutes.
+- **Heatmap interactivity**: yearly heatmap cells are now clickable buttons.
+  Clicking a cell opens a `DayDetailPopover` — a full-screen modal overlay with:
+  - Date header (Bengali day-first format)
+  - Mood display (emoji + label + note)
+  - Focus summary (minutes + session count)
+  - Completed habits list (icon tiles + name + notes + ✓)
+  - Empty state when no activity
+  - Close button + click-outside-to-close
+  - Loading shimmer state
+  - Selected cell highlighted with outline ring
+- **Styling polish**: clickable cells with hover ring, selected-cell outline,
+  modal with backdrop blur, animated entrance/exit, icon tiles in popover.
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA via Caddy gateway (port 81):
+  - Stats: yearly heatmap renders, cells are clickable.
+  - Day API: returns correct data (6 completions, mood=4, 50min focus).
+  - No console errors / no dev.log errors.
+- ✅ Git: committed and pushed to GitHub (`d746a77`).
+- Screenshots: `qa-r15-heatmap.png`.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+- **Image-based sharing**: generate a PNG image of the share card.
+
+
 
 
 
