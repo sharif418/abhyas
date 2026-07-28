@@ -1291,3 +1291,30 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Consolidate getHabitsWithMeta + completions fetch
 - Offline write queue (Service Worker background sync)
 - Real push notifications (Web Push API + VAPID)
+
+---
+
+## Task ID: R28 (Top Streaks Mini-Leaderboard on Habits View)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Top Streaks mini-leaderboard**: new section on the Habits view showing the top 5 habits with the longest active streaks. Features:
+  - Horizontally scrollable chips (no-scrollbar)
+  - Medal-colored rank badges (gold/silver/bronze for top 3, muted for rest)
+  - Each chip shows: rank badge + habit name + flame icon + streak count
+  - Clicking a chip opens the habit detail drawer
+  - Only shows when at least 1 habit has an active streak
+  - Hidden in reorder mode
+- **Styling polish**: improved spacing between quick stats and top streaks section, wrapped both in a fragment for cleaner JSX
+
+### Verified
+- Lint clean, no runtime errors
+- Top streaks section renders with correct data
+- Clicking a streak chip opens habit detail
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Consolidate getHabitsWithMeta + completions fetch
+- Offline write queue (Service Worker background sync)
+- Real push notifications (Web Push API + VAPID)

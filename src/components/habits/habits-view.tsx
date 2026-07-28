@@ -102,7 +102,8 @@ export function HabitsView() {
 
       {/* Quick stats summary */}
       {habits && habits.length > 0 && !reorderMode && (
-        <div className="mb-4 grid grid-cols-3 gap-2">
+        <>
+        <div className="mb-3 grid grid-cols-3 gap-2">
           <div className="rounded-2xl border bg-card p-2.5 text-center">
             <div className="flex items-center justify-center gap-1 tabular text-base font-bold text-streak">
               <Flame size={14} fill="currentColor" />
@@ -126,6 +127,41 @@ export function HabitsView() {
             <div className="text-[9px] text-muted-foreground">সেরা স্ট্রিক</div>
           </div>
         </div>
+        {/* Top streaks mini-leaderboard */}
+        {habits.filter(h => h.streak > 0).length > 0 && (
+          <div className="mb-4 rounded-2xl border bg-card p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+              <Flame size={12} className="text-streak" />
+              শীর্ষ স্ট্রিক
+            </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {habits
+                .filter(h => h.streak > 0)
+                .sort((a, b) => b.streak - a.streak)
+                .slice(0, 5)
+                .map((h, i) => (
+                  <button
+                    key={h.id}
+                    onClick={() => openHabitDetail(h.id)}
+                    className="flex shrink-0 items-center gap-2 rounded-xl bg-muted/40 px-2.5 py-1.5 transition hover:bg-muted/70"
+                  >
+                    <span className={cn(
+                      "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
+                      i === 0 ? "bg-amber-400 text-amber-950" : i === 1 ? "bg-slate-300 text-slate-800" : i === 2 ? "bg-orange-400 text-orange-950" : "bg-muted text-muted-foreground"
+                    )}>
+                      {toBn(i + 1)}
+                    </span>
+                    <span className="text-xs font-medium">{h.name}</span>
+                    <span className="flex items-center gap-0.5 tabular text-xs font-bold text-streak">
+                      <Flame size={10} fill="currentColor" />
+                      {toBn(h.streak)}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {reorderMode && (
