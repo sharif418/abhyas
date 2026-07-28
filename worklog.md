@@ -1092,3 +1092,36 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Stats view tab navigation (8 cards → 4 tabs)
 - Auth system (NextAuth)
 - Zod enum validation
+
+---
+
+## Task ID: R21 (Card Header Unification + Stats Tab Navigation)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- Card headers unified to IconTile pattern:
+  - Prayer card: 🕌 → Moon icon in islamic-tinted tile
+  - Tasbih counter: 📿 → RotateCw icon in islamic-tinted tile
+  - Quran tracker: 📖 → BookOpen icon in islamic-tinted tile
+  - Dua library: 🤲 → HeartHandshake icon in islamic-tinted tile
+  - Calendar panel: 📅 → CalendarDays icon in primary-tinted tile
+  - Mood selector: 💭 → Smile icon in primary-tinted tile
+- Stats view: 8+ cards split into 4 tabs (সারসংক্ষেপ/ধারা/মুড/ব্যাজ)
+  - Overview: Weekly insights + Category breakdown
+  - Trends: Yearly heatmap + 30-day chart + Monthly trend
+  - Mood: Mood trend chart + Mood-habit correlation
+  - Badges: Badge grid with progress bars
+  - Segmented control with pill-style tab switching
+  - Removed duplicate category breakdown block
+
+### Verified
+- Lint clean, no runtime errors
+- Stats tabs render and switch correctly
+- All card headers use IconTile pattern (no emoji)
+- GitHub committed and pushed
+
+### Next priorities
+- Auth system (NextAuth)
+- Zod enum validation
+- Stats endpoint N+1 fix
+- Remaining emoji cleanup (onboarding, share card, social activity)

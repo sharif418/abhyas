@@ -30,8 +30,10 @@ export function MoodSelector() {
       className="relative overflow-hidden rounded-3xl border bg-card p-4 shadow-sm"
     >
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-base">💭</span>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary shadow-sm">
+            <IconRenderer name="Smile" size={16} />
+          </div>
           <div>
             <h2 className="text-sm font-bold leading-tight">আজকের মুড</h2>
             <p className="text-[10px] text-muted-foreground">

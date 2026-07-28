@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Check } from "lucide-react";
+import { RotateCcw, Check, RotateCw } from "lucide-react";
 import { useTasbihStore } from "@/stores/tasbih-store";
 import { TASBIH_PRESETS } from "@/constants";
 import { toBn } from "@/lib/date-bn";
@@ -19,8 +19,10 @@ export function TasbihCounter() {
       <div className="absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-islamic/15 blur-3xl" />
       <div className="relative">
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📿</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-islamic text-islamic-foreground shadow-sm">
+              <RotateCw size={18} />
+            </div>
             <div>
               <h2 className="font-bold leading-tight">তাসবিহ কাউন্টার</h2>
               <p className="text-[11px] text-muted-foreground">যিকর গণনা করুন</p>

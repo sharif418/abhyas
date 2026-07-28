@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { HeartHandshake } from "lucide-react";
 import { DUAS, type Dua } from "@/constants";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +16,10 @@ export function DuaLibrary() {
 
   return (
     <div className="rounded-3xl border bg-card p-5 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-xl">🤲</span>
+      <div className="mb-3 flex items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-islamic text-islamic-foreground shadow-sm">
+          <HeartHandshake size={18} />
+        </div>
         <div>
           <h2 className="font-bold leading-tight">দোয়া সংগ্রহ</h2>
           <p className="text-[11px] text-muted-foreground">দৈনন্দিন জীবনের গুরুত্বপূর্ণ দোয়া</p>

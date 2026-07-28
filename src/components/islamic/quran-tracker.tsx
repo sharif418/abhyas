@@ -47,8 +47,10 @@ export function QuranTracker() {
   return (
     <div className="rounded-3xl border bg-card p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">📖</span>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-islamic text-islamic-foreground shadow-sm">
+            <BookOpen size={18} />
+          </div>
           <div>
             <h2 className="font-bold leading-tight">কুরআন তিলাওয়াত</h2>
             <p className="text-[11px] text-muted-foreground">আপনার পাঠের অগ্রগতি</p>

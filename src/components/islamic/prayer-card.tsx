@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Moon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { usePrayerTimes, usePrayerRecord, useTogglePrayer } from "@/hooks/use-prayer";
@@ -44,8 +44,10 @@ export function PrayerCard() {
       <div className="relative">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🕌</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-islamic text-islamic-foreground shadow-sm">
+              <Moon size={18} />
+            </div>
             <div>
               <h2 className="font-bold leading-tight">নামাজের সময়সূচি</h2>
               <div className="flex items-center gap-1 text-[11px] text-muted-foreground">

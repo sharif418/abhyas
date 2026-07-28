@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -84,7 +85,10 @@ interface StatsResponse {
   };
 }
 
+type StatsTab = "overview" | "trends" | "mood" | "badges";
+
 export function StatsView() {
+  const [activeTab, setActiveTab] = useState<StatsTab>("overview");
   const { data: stats, isLoading } = useQuery<StatsResponse>({
     queryKey: ["stats"],
     queryFn: () => api.get<StatsResponse>("/api/stats"),
@@ -182,15 +186,107 @@ export function StatsView() {
         />
       </div>
 
-      {/* Weekly insights (new) */}
-      <WeeklyInsights insights={stats.insights} />
+      {/* Tab navigation */}
+      <div className="flex gap-1 rounded-2xl bg-muted/50 p-1">
+        {([
+          { key: "overview", label: "সারসংক্ষেপ" },
+          { key: "trends", label: "ধারা" },
+          { key: "mood", label: "মুড" },
+          { key: "badges", label: "ব্যাজ" },
+        ] as const).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              "flex-1 rounded-xl py-2 text-xs font-medium transition",
+              activeTab === tab.key
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Yearly heatmap */}
-      {stats.yearlyHeatmap && stats.yearlyHeatmap.length > 0 && (
-        <YearlyHeatmap data={stats.yearlyHeatmap} />
+      {/* Overview tab */}
+      {activeTab === "overview" && (
+        <>
+          <WeeklyInsights insights={stats.insights} />
+          {stats.categories.length > 0 && (
+            <Card>
+              <CardHeader title="ক্যাটেগরি বিশ্লেষণ" subtitle="কোন ক্ষেত্রে বেশি মনোযোগ" />
+              <div className="flex items-center gap-4">
+                <div className="h-36 w-36 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.categories.map((c) => ({
+                          name: c.category,
+                          value: c.habits,
+                          color: CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP]?.color ?? "#999",
+                        }))}
+                        dataKey="value"
+                        innerRadius={36}
+                        outerRadius={62}
+                        paddingAngle={2}
+                      >
+                        {stats.categories.map((c, i) => (
+                          <Cell
+                            key={i}
+                            fill={CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP]?.color ?? "#999"}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-2">
+                  {stats.categories.slice(0, 6).map((c) => {
+                    const meta = CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP];
+                    const rate = c.habits > 0 ? c.doneToday / c.habits : 0;
+                    return (
+                      <div key={c.category} className="space-y-0.5">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: meta?.color }}
+                          />
+                          <span className="flex-1 truncate">
+                            {meta?.emoji} {c.category}
+                          </span>
+                          <span className="tabular font-medium text-muted-foreground">
+                            {toBn(c.doneToday)}/{toBn(c.habits)}
+                          </span>
+                        </div>
+                        <div className="h-1 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${rate * 100}%`,
+                              background: meta?.color ?? "var(--primary)",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* Weekly completion chart */}
+      {/* Trends tab */}
+      {activeTab === "trends" && (
+        <>
+          {/* Yearly heatmap */}
+          {stats.yearlyHeatmap && stats.yearlyHeatmap.length > 0 && (
+            <YearlyHeatmap data={stats.yearlyHeatmap} />
+          )}
+
+          {/* Weekly completion chart */}
       <Card>
         <CardHeader
           title="গত ৩০ দিনের কার্যকলাপ"
@@ -250,7 +346,12 @@ export function StatsView() {
       {stats.monthlyTrend && stats.monthlyTrend.length > 0 && (
         <MonthlyTrendChart data={stats.monthlyTrend} />
       )}
+        </>
+      )}
 
+      {/* Mood tab */}
+      {activeTab === "mood" && (
+        <>
       {/* Mood trend chart */}
       {stats.mood && <MoodTrendChart data={stats.mood.series} />}
 
@@ -258,94 +359,34 @@ export function StatsView() {
       {stats.moodCorrelations && (
         <MoodCorrelationCard correlations={stats.moodCorrelations} />
       )}
+        </>
+      )}
 
-      {/* Category breakdown */}
-      {stats.categories.length > 0 && (
+      {/* Badges tab */}
+      {activeTab === "badges" && (
         <Card>
-          <CardHeader title="ক্যাটেগরি বিশ্লেষণ" subtitle="কোন ক্ষেত্রে বেশি মনোযোগ" />
-          <div className="flex items-center gap-4">
-            <div className="h-36 w-36 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats.categories.map((c) => ({
-                      name: c.category,
-                      value: c.habits,
-                      color: CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP]?.color ?? "#999",
-                    }))}
-                    dataKey="value"
-                    innerRadius={36}
-                    outerRadius={62}
-                    paddingAngle={2}
-                  >
-                    {stats.categories.map((c, i) => (
-                      <Cell
-                        key={i}
-                        fill={CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP]?.color ?? "#999"}
-                      />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-2">
-              {stats.categories.slice(0, 6).map((c) => {
-                const meta = CATEGORY_MAP[c.category as keyof typeof CATEGORY_MAP];
-                const rate = c.habits > 0 ? c.doneToday / c.habits : 0;
-                return (
-                  <div key={c.category} className="space-y-0.5">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ background: meta?.color }}
-                      />
-                      <span className="flex-1 truncate">
-                        {meta?.emoji} {c.category}
-                      </span>
-                      <span className="tabular font-medium text-muted-foreground">
-                        {toBn(c.doneToday)}/{toBn(c.habits)}
-                      </span>
-                    </div>
-                    <div className="h-1 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${rate * 100}%`,
-                          background: meta?.color ?? "var(--primary)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <CardHeader
+            title={`ব্যাজ (${toBn(earnedBadges.length)}/${toBn(stats.badges.length)})`}
+            subtitle="অর্জনের মাইলফলক"
+          />
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {stats.badges.map((b) => {
+              const progress = getBadgeProgress(b.id, stats.badgeStats);
+              return (
+                <BadgeTile
+                  key={b.id}
+                  icon={b.icon}
+                  name={b.name}
+                  description={b.description}
+                  earned={b.earned}
+                  tier={b.tier}
+                  progress={b.earned ? 1 : progress}
+                />
+              );
+            })}
           </div>
         </Card>
       )}
-
-      {/* Badges */}
-      <Card>
-        <CardHeader
-          title={`ব্যাজ (${toBn(earnedBadges.length)}/${toBn(stats.badges.length)})`}
-          subtitle="অর্জনের মাইলফলক"
-        />
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {stats.badges.map((b) => {
-            const progress = getBadgeProgress(b.id, stats.badgeStats);
-            return (
-              <BadgeTile
-                key={b.id}
-                icon={b.icon}
-                name={b.name}
-                description={b.description}
-                earned={b.earned}
-                tier={b.tier}
-                progress={b.earned ? 1 : progress}
-              />
-            );
-          })}
-        </div>
-      </Card>
     </div>
   );
 }
