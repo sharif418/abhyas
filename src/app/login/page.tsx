@@ -35,7 +35,13 @@ export default function LoginPage() {
         if (result?.error) {
           toast.error("রেজিস্টার সফল কিন্তু লগইন করতে সমস্যা");
         } else {
-          toast.success("স্বাগতম! আপনার অ্যাকাউন্ট তৈরি হয়েছে");
+          // Migrate guest data to new account
+          try {
+            await api.post("/api/auth/migrate");
+            toast.success("স্বাগতম! আপনার ডেটা স্থানান্তর সম্পন্ন");
+          } catch {
+            toast.success("স্বাগতম! আপনার অ্যাকাউন্ট তৈরি হয়েছে");
+          }
           router.push("/");
         }
       } else {
@@ -47,6 +53,12 @@ export default function LoginPage() {
         if (result?.error) {
           toast.error("ভুল ইমেইল বা পাসওয়ার্ড");
         } else {
+          // Migrate guest data on first login
+          try {
+            await api.post("/api/auth/migrate");
+          } catch {
+            // Migration is best-effort — don't block login
+          }
           toast.success("লগইন সফল");
           router.push("/");
         }

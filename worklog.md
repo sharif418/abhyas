@@ -1400,3 +1400,29 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Production build test
 - Real push notifications (Web Push API + VAPID)
 - Account migration: move guest data to authenticated user on first login
+
+---
+
+## Task ID: R32 (Guest Data Migration)
+**Agent**: Z.ai Code (Autonomous)
+
+### New Feature
+- **Guest data migration** (`/api/auth/migrate`):
+  - When a guest user (local-default-user) logs in or registers, their data is migrated to the new authenticated account
+  - Migrates: habits (with new IDs), completions, prayer records, quran sessions, achievements, mood entries, focus sessions
+  - Transfers XP, level, city, and settings from guest to new user
+  - Idempotent: skips if target user already has data or guest has no data
+  - All in a single transaction for atomicity
+  - Habit ID mapping maintained so completions link to new habit IDs
+  - Login page: calls migrate API after successful login/register (best-effort, doesn't block login)
+
+### Verified
+- Lint clean, no runtime errors
+- Login page renders correctly
+- App stable
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Real push notifications (Web Push API + VAPID)
+- ESLint rule cleanup (CTO audit C3)
