@@ -1208,3 +1208,24 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Auth system (NextAuth) — the last critical CTO audit item
 - Production build test
 - Stats endpoint: consolidate getHabitsWithMeta + completions fetch
+
+---
+
+## Task ID: R25 (Loading + Error States)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **Root loading state** (CTO audit C5): new `loading.tsx` — branded skeleton with animated "অ" logo during initial route load
+- **Home error state**: added `isError` branch with WifiOff icon, error message, and retry button
+- **Stats error state**: same error UI pattern with Bengali messaging and retry CTA
+- Both views now have proper 3-state UI: loading → error → data (previously: loading → data with silent permanent skeleton on error)
+
+### Verified
+- Lint clean, no runtime errors
+- App renders correctly
+- GitHub committed and pushed
+
+### Next priorities
+- Auth system (NextAuth)
+- Production build test
+- Consolidate getHabitsWithMeta + completions fetch

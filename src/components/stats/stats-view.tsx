@@ -89,10 +89,34 @@ type StatsTab = "overview" | "trends" | "mood" | "badges";
 
 export function StatsView() {
   const [activeTab, setActiveTab] = useState<StatsTab>("overview");
-  const { data: stats, isLoading } = useQuery<StatsResponse>({
+  const { data: stats, isLoading, isError } = useQuery<StatsResponse>({
     queryKey: ["stats"],
     queryFn: () => api.get<StatsResponse>("/api/stats"),
   });
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/50 p-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <IconRenderer name="WifiOff" size={26} />
+          </div>
+          <div>
+            <h3 className="font-semibold">পরিসংখ্যান লোড করতে সমস্যা</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              ডেটা লোড করা যায়নি। আবার চেষ্টা করুন।
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            আবার চেষ্টা করুন
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !stats) {
     return (

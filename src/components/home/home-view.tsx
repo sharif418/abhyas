@@ -28,7 +28,7 @@ interface StatsLite {
 }
 
 export function HomeView() {
-  const { data: habits, isLoading } = useHabits();
+  const { data: habits, isLoading, isError } = useHabits();
   const { data: stats } = useQuery<StatsLite>({
     queryKey: ["stats"],
     queryFn: () => api.get<StatsLite>("/api/stats"),
@@ -50,6 +50,30 @@ export function HomeView() {
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-16 rounded-2xl" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/50 p-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <IconRenderer name="WifiOff" size={26} />
+          </div>
+          <div>
+            <h3 className="font-semibold">ডেটা লোড করতে সমস্যা</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              অভ্যাস ডেটা লোড করা যায়নি। আবার চেষ্টা করুন।
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            আবার চেষ্টা করুন
+          </button>
         </div>
       </div>
     );
