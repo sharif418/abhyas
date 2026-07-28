@@ -1,12 +1,18 @@
 import { db } from "./db";
 import { DEFAULT_SETTINGS } from "@/constants/settings";
 import type { User, UserSettings } from "@/types";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 /**
  * Server-side user helpers.
  *
- * The PWA demo operates on a single local "default" user so the experience
- * is instant and auth-free, while the schema remains multi-user ready.
+ * Supports two modes:
+ * 1. Authenticated: reads the user ID from the NextAuth session
+ * 2. Fallback (demo/guest): uses a single "local-default-user"
+ *
+ * This allows the app to work without auth (for demo) while supporting
+ * real multi-user accounts when users register/login.
  */
 
 const DEFAULT_USER_ID = "local-default-user";
@@ -19,13 +25,17 @@ export async function getOrCreateUser(): Promise<{
   city: string;
   settings: UserSettings;
 }> {
-  // upsert is race-safe: concurrent requests won't collide on the fixed id.
+  // Try to get the session user first
+  const session = await getServerSession(authOptions).catch(() => null);
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? DEFAULT_USER_ID;
+
   const user = await db.user.upsert({
-    where: { id: DEFAULT_USER_ID },
+    where: { id: userId },
     update: {},
     create: {
-      id: DEFAULT_USER_ID,
-      name: "অতিথি",
+      id: userId,
+      name: userId === DEFAULT_USER_ID ? "অতিথি" : (session?.user?.name ?? "ব্যবহারকারী"),
+      email: userId === DEFAULT_USER_ID ? undefined : (session?.user?.email ?? undefined),
       city: "ঢাকা",
       settings: JSON.stringify(DEFAULT_SETTINGS),
     },

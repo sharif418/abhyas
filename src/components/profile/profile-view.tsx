@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -29,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ProgressRing } from "@/components/shared/progress-ring";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -52,6 +54,7 @@ interface MeResponse {
 }
 
 export function ProfileView() {
+  const { data: session } = useSession();
   const { data: me } = useQuery<MeResponse>({
     queryKey: ["me"],
     queryFn: () => api.get<MeResponse>("/api/me"),
@@ -228,6 +231,40 @@ export function ProfileView() {
             নামাজ, কুরআন, স্ট্রিক ও গেমিফিকেশন সহ।
           </p>
           <div className="mt-2 text-[10px] text-muted-foreground">ভার্সন ১.০.০</div>
+        </div>
+      </Section>
+
+      {/* Auth */}
+      <Section title="অ্যাকাউন্ট" icon="ShieldCheck">
+        <div className="p-4">
+          {session?.user ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm">
+                <IconRenderer name="CheckCircle2" size={16} className="text-emerald-500" />
+                <span>লগইন করা: <strong>{session.user.email}</strong></span>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full gap-2 text-destructive"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                <IconRenderer name="LogOut" size={16} />
+                লগআউট করুন
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3 text-center">
+              <p className="text-xs text-muted-foreground">
+                অ্যাকাউন্ট তৈরি করে আপনার ডেটা সুরক্ষিত রাখুন এবং যেকোনো ডিভাইস থেকে অ্যাক্সেস করুন।
+              </p>
+              <Button
+                className="w-full"
+                onClick={() => window.location.href = "/login"}
+              >
+                লগইন / নিবন্ধন
+              </Button>
+            </div>
+          )}
         </div>
       </Section>
 

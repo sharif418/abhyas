@@ -1229,3 +1229,43 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Auth system (NextAuth)
 - Production build test
 - Consolidate getHabitsWithMeta + completions fetch
+
+---
+
+## Task ID: R26 (NextAuth Authentication + Focus Error State)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- **NextAuth authentication system** (CTO audit C1 — the last critical item):
+  - Added `passwordHash` field to User Prisma schema (bcrypt hash, nullable)
+  - Created NextAuth config with Credentials provider (email/password, bcrypt verification)
+  - JWT-based sessions (30-day maxAge), custom callbacks to inject user ID
+  - `/api/auth/register` endpoint: name + email + password + city, bcrypt hash, duplicate email check (409)
+  - `/api/auth/[...nextauth]` route: handles login/logout/session
+  - `/login` page: Bengali login/register toggle, form validation, auto-login after register, guest access link
+  - SessionProvider added to root Providers component
+  - `getOrCreateUser()` updated: reads NextAuth session first, falls back to `local-default-user` for guest mode
+  - Profile view: new "অ্যাকাউন্ট" section with login/logout buttons, shows session email when authenticated
+  - `.env`: added NEXTAUTH_SECRET + NEXTAUTH_URL
+  - Verified: register creates user (200), duplicate rejected (409), login page renders, guest fallback works
+- **Focus view error state**: added `isError` branch with fallback message for focus data load failure
+
+### Architecture
+- Backward compatible: existing guest data (local-default-user) is preserved
+- New users register → get their own user ID → all data scoped to their account
+- Guest users can continue without login (data stays on local-default-user)
+- All API routes automatically use the session user ID via `getOrCreateUser()`
+
+### Verified
+- Lint clean, no runtime errors
+- Register API: creates user (200), rejects duplicates (409)
+- Login page: renders with Bengali login/register toggle
+- Guest fallback: app works without login (local-default-user)
+- Home renders correctly
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Consolidate getHabitsWithMeta + completions fetch
+- Offline write queue (Service Worker background sync)
+- Real push notifications (Web Push API + VAPID)

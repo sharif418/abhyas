@@ -12,17 +12,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String   @default("অতিথি")
-  phone     String?  @unique
-  email     String?  @unique
-  avatar    String?
-  xp        Int      @default(0)
-  level     Int      @default(1)
-  city      String   @default("ঢাকা")
-  settings  String   @default("{}") // JSON: theme, accent, reminders, etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String   @default("অতিথি")
+  phone        String?  @unique
+  email        String?  @unique
+  passwordHash String?  // bcrypt hash for NextAuth credentials provider
+  avatar       String?
+  xp           Int      @default(0)
+  level        Int      @default(1)
+  city         String   @default("ঢাকা")
+  settings     String   @default("{}") // JSON: theme, accent, reminders, etc.
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   habits       Habit[]
   completions  HabitCompletion[]

@@ -79,7 +79,7 @@ export function FocusView() {
   const totalSeconds = (mode === "work" ? preset.work : preset.break) * 60;
   const qc = useQueryClient();
   const { data: habits } = useHabits();
-  const { data: focusData, isLoading } = useQuery<FocusData>({
+  const { data: focusData, isLoading, isError: focusError } = useQuery<FocusData>({
     queryKey: ["focus"],
     queryFn: () => api.get<FocusData>("/api/focus?days=7"),
   });
@@ -426,6 +426,10 @@ export function FocusView() {
       {/* Today stats */}
       {isLoading ? (
         <Skeleton className="h-28 rounded-3xl" />
+      ) : focusError ? (
+        <div className="rounded-2xl border border-dashed bg-card/50 p-4 text-center text-xs text-muted-foreground">
+          ফোকাস ডেটা লোড করা যায়নি।
+        </div>
       ) : (
         focusData && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
