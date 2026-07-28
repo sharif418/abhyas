@@ -1426,3 +1426,30 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Production build test
 - Real push notifications (Web Push API + VAPID)
 - ESLint rule cleanup (CTO audit C3)
+
+---
+
+## Task ID: R33 (Habit Archive + Restore)
+**Agent**: Z.ai Code (Autonomous)
+
+### New Feature
+- **Habit archive API** (`/api/habits/archive`):
+  - GET: lists all soft-deleted (active=false) habits
+  - POST: restores an archived habit (sets active=true)
+- **Archive section in Profile view**:
+  - Collapsible "আর্কাইভ" section with Archive icon
+  - Shows "মুছে ফেলা অভ্যাসসমূহ" header with expand/collapse
+  - Lists archived habits with icon tile, name (dimmed), best streak
+  - "ফিরিয়ে আনুন" (restore) button per habit
+  - Empty state: "কোনো আর্কাইভ করা অভ্যাস নেই"
+  - Lazy fetches archive data only when expanded (enabled: false on useQuery)
+
+### Verified
+- Lint clean, no runtime errors
+- Archive section renders in Profile view
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Real push notifications (Web Push API + VAPID)
+- ESLint rule cleanup (CTO audit C3)

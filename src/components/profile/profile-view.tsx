@@ -234,6 +234,9 @@ export function ProfileView() {
         </div>
       </Section>
 
+      {/* Archived habits */}
+      <ArchiveSection />
+
       {/* Auth */}
       <Section title="অ্যাকাউন্ট" icon="ShieldCheck">
         <div className="p-4">
@@ -575,5 +578,79 @@ function ResetButton() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+/** Archived habits section — list and restore soft-deleted habits. */
+function ArchiveSection() {
+  const [expanded, setExpanded] = useState(false);
+  const { data: archived, refetch } = useQuery({
+    queryKey: ["archived-habits"],
+    queryFn: () => api.get<any[]>("/api/habits/archive"),
+    enabled: false, // only fetch when expanded
+  });
+  const restore = useMutation({
+    mutationFn: (id: string) => api.post("/api/habits/archive", { id }),
+    onSuccess: () => {
+      toast.success("অভ্যাস ফিরিয়ে আনা হয়েছে");
+      refetch();
+    },
+  });
+
+  const handleExpand = () => {
+    setExpanded((v) => !v);
+    if (!expanded) refetch();
+  };
+
+  return (
+    <Section title="আর্কাইভ" icon="Archive">
+      <div className="p-4">
+        <button
+          onClick={handleExpand}
+          className="flex w-full items-center justify-between text-sm font-medium"
+        >
+          <span>মুছে ফেলা অভ্যাসসমূহ</span>
+          <IconRenderer name={expanded ? "ChevronUp" : "ChevronDown"} size={16} className="text-muted-foreground" />
+        </button>
+        {expanded && (
+          <div className="mt-3 space-y-2">
+            {!archived || archived.length === 0 ? (
+              <p className="text-center text-xs text-muted-foreground py-3">
+                কোনো আর্কাইভ করা অভ্যাস নেই
+              </p>
+            ) : (
+              archived.map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-center gap-2.5 rounded-xl bg-muted/30 p-2"
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
+                    style={{ background: h.color }}
+                  >
+                    <IconRenderer name={h.icon} size={14} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-semibold opacity-60">{h.name}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      সেরা স্ট্রিক: {toBn(h.bestStreak)}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => restore.mutate(h.id)}
+                    disabled={restore.isPending}
+                    className="h-7 px-2 text-[11px]"
+                  >
+                    ফিরিয়ে আনুন
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }
