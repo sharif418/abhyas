@@ -20,16 +20,24 @@ export function fromBn(input: string): number {
   return Number(mapped);
 }
 
-/** Today's date as YYYY-MM-DD in Asia/Dhaka. */
+/** Today's date as YYYY-MM-DD in Asia/Dhaka timezone. */
 export function todayKey(date: Date = new Date()): string {
   return toDateKey(date);
 }
 
-/** Format a Date → YYYY-MM-DD (local, stable, timezone-safe-ish). */
+/** Format a Date → YYYY-MM-DD anchored to Asia/Dhaka timezone. */
 export function toDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
+  // Use Intl.DateTimeFormat to get the date in Asia/Dhaka timezone
+  // This prevents silent data corruption when the server runs in UTC
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const y = parts.find((p) => p.type === "year")?.value ?? "";
+  const m = parts.find((p) => p.type === "month")?.value ?? "";
+  const d = parts.find((p) => p.type === "day")?.value ?? "";
   return `${y}-${m}-${d}`;
 }
 

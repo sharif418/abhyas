@@ -38,7 +38,7 @@ export function TopBar() {
             animate={{ opacity: 1, y: 0 }}
             className="text-sm font-semibold"
           >
-            {bnGreeting()}, {me?.name ?? "অতিথি"} 👋
+            {bnGreeting()}, {me?.name ?? "অতিথি"}
           </motion.div>
           <div className="text-[11px] text-muted-foreground">
             {bnDayFirst()}

@@ -1,0 +1,1038 @@
+     1→# অভ্যাস (Abhyas) — Project Worklog
+     2→
+     3→## Project Overview
+     4→**অভ্যাস** is a premium, fully-Bengali self-discipline / habit-tracking Progressive Web App
+     5→(PWA) built with Next.js 16. It is the web adaptation of a mobile-app proposal
+     6→(React Native + Kotlin) — the proposal explicitly allowed a Next.js PWA path, which is
+     7→the senior-architect choice for this environment.
+     8→
+     9→**Core USP**: Deep Islamic integration (prayer tracking, Quran reading, duas, tasbih) +
+    10→offline-first persistence + Bengali-first UI + gamification, targeted at Bangladesh users.
+    11→
+    12→---
+    13→
+    14→## Task ID: 1–12 (Foundation → Verification)
+    15→**Agent**: Z.ai Code (Principal Architect)
+    16→
+    17→### Work Log
+    18→- Read & internalized both PDFs (`habit_app_proposal.pdf`, `abhyas-architecture.pdf`):
+    19→  extracted the full feature set (habit CRUD, streak engine, Islamic features, gamification,
+    20→  social, notifications) and the proposed tech stack (React Native/Kotlin → adapted to Next.js PWA).
+    21→- **Architecture decision**: Delivered as a single-route (`/`) Next.js 16 PWA with a
+    22→  client-side view router (Home / Habits / Stats / Islamic / Profile), backed by Next.js
+    23→  API routes + Prisma/SQLite, with optimistic UI via TanStack Query and persisted settings
+    24→  via Zustand. Multi-user-ready schema; demo operates on a single local user.
+    25→- **Foundation**: Premium design tokens (emerald/teal palette per proposal, Bengali Noto
+    26→  Sans Bengali font, dark/light/system themes), PWA manifest + icon, Prisma schema
+    27→  (User, Habit, HabitCompletion, PrayerRecord, QuranSession, Achievement, PrayerTimeCache).
+    28→- **Core libs**: `date-bn` (Bengali numerals/dates), `streaks` (schedule-aware streak engine),
+    29→  `gamification` (XP/level curve), `prayer` (next-prayer/countdown), `api-client`, server
+    30→  helpers (`habits-server`, `badge-stats`, `user`).
+    31→- **Stores**: `ui-store` (view router + modals), `settings-store` (persisted theme/accent),
+    32→  `tasbih-store` (persisted counter).
+    33→- **API routes**: `/api/me` (GET/PUT), `/api/me/settings` (POST), `/api/habits` (GET/POST),
+    34→  `/api/habits/[id]` (PUT/DELETE), `/api/habits/[id]/toggle` (POST), `/api/prayer/times`
+    35→  (Aladhan API + DB cache), `/api/prayer/log` (GET/POST), `/api/quran` (GET/POST),
+    36→  `/api/stats` (aggregated dashboard), `/api/seed` (idempotent sample data).
+    37→- **UI**: Responsive shell (desktop sidebar nav + mobile bottom nav), top bar with level
+    38→  ring + XP, Home dashboard (progress ring + habits grouped by time-of-day), Habits view
+    39→  (search/filter + add/edit sheet + detail drawer with GitHub-style heatmap), Stats view
+    40→  (level card, 30-day bar chart, category pie, badges grid), Islamic view (prayer card with
+    41→  live Aladhan times, Quran tracker with khatm progress, dua library, tasbih counter),
+    42→  Profile (theme/accent/toggles/export/reset).
+    43→- **Race-safety fixes**: `getOrCreateUser` now uses `upsert` (was colliding on the fixed
+    44→  default-user id under concurrent requests); habit toggle + prayer log made idempotent
+    45→  against P2002 unique-constraint races.
+    46→
+    47→### Stage Summary
+    48→- ✅ Lint passes clean (`bun run lint`).
+    49→- ✅ Dev server runs on port 3000, all API routes return 200.
+    50→- ✅ Agent-browser verified end-to-end (mobile + desktop viewports):
+    51→  - Home renders seeded habits grouped by সকাল/দুপুর/বিকাল/রাত.
+    52→  - Habit toggle awards XP (32→44) and updates streaks; no console/runtime errors.
+    53→  - Islamic view fetches real Aladhan prayer times for ঢাকা (Fajr 4:02 … Isha 8:03);
+    54→    prayer toggles + tasbih tap work.
+    55→  - Stats view renders charts + 6/15 badges earned from seeded history.
+    56→  - Profile view: theme toggle (dark mode), accent picker, toggles, export all functional.
+    57→  - Add-habit sheet creates habits (verified via API: 10 seed → 12 after test creates).
+    58→  - Habit detail drawer renders 6-month heatmap + milestones.
+    59→  - Desktop sidebar layout + mobile bottom nav both render responsively.
+    60→- No fresh errors in dev.log after race-safety fixes.
+    61→
+    62→### Unresolved / Next-phase recommendations
+    63→- Add Service Worker for true offline PWA caching (currently offline-first via TanStack
+    64→  Query cache + localStorage settings; a full SW would enable install + offline boot).
+    65→- Real-time social features (leaderboard, friend challenges) via the WebSocket mini-service
+    66→  pattern — schema is ready, UI not yet built.
+    67→- AI coaching (z-ai-web-dev-sdk LLM) for personalized habit suggestions — Phase-2 feature.
+    68→- bKash/Nagad payment integration for premium tier — needs merchant credentials.
+    69→- Bangladesh calendar (Bengali New Year, Eid) special habit targets.
+    70→
+    71→---
+    72→
+    73→## Task ID: R1 (webDevReview Round 1 — Feature + Styling Expansion)
+    74→**Agent**: Z.ai Code (webDevReview cron)
+    75→
+    76→### Current project status (assessment)
+    77→Foundation stable. Lint clean, dev server healthy, all API routes 200, no runtime errors
+    78→after agent-browser QA on mobile + desktop. 14 habits in DB (10 seed + 4 test), XP 200.
+    79→The app is production-usable; this round focuses on expanding features and styling polish
+    80→per the mandatory directives ("more features", "more styling details").
+    81→
+    82→### Work Log
+    83→- **Confetti celebration system** (`src/lib/confetti.ts` + `celebration.tsx`):
+    84→  zero-dependency canvas engine with gravity, rotation, multi-shape particles, staggered
+    85→  bursts. Wired into the toggle hook to fire on: streak milestones (7/14/30/100/365),
+    86→  level-ups, badge unlocks, and **perfect-day detection** (throttled once/day via
+    87→  localStorage so re-toggling doesn't re-fire).
+    88→- **AnimatedNumber component**: count-up animation with ease-out cubic + Bengali numeral
+    89→  formatting. Applied to Home hero percentage + Stats quick-stat cards for premium feel.
+    90→- **Onboarding flow** (`onboarding-modal.tsx`): 3-step first-run modal (welcome → pick
+    91→  starter habits from 8 curated presets → confirm) with progress bar, spring animations,
+    92→  and confetti on completion. Gated by localStorage so it shows only once. Wired into
+    93→  AppShell as a global overlay.
+    94→- **Weekly insights backend**: extended `/api/stats` to compute best weekday, best
+    95→  time-of-day, momentum delta (last-7-days vs previous-7-days completion rate), weekday
+    96→  distribution series, and time-of-day distribution series.
+    97→- **Weekly insights card** (`weekly-insights.tsx`): momentum hero (up/down/stable with
+    98→  trend icon + color), best-day + best-time insight cards, weekday bar chart with the
+    99→  best day highlighted in primary color. Inserted into Stats view.
+   100→- **Skeleton loaders**: Home + Stats views now show structured shimmer skeletons (hero +
+   101→  grid + cards) instead of plain spinners during load.
+   102→- **Styling polish**: ambient gradient-mesh body background (theme-aware, very subtle),
+   103→  `shimmer` CSS utility, card hover-lift micro-interactions on stat cards, detailed
+   104→  skeleton grids matching real layout.
+   105→
+   106→### Verification results
+   107→- ✅ `bun run lint` clean.
+   108→- ✅ Dev server compiles, all routes 200, no console/runtime errors.
+   109→- ✅ agent-browser QA:
+   110→  - Onboarding modal renders on first visit (cleared flag), 3-step flow navigable,
+   111→    preset picker shows 8 habits with 4 pre-selected.
+   112→  - Stats view renders the new "সাপ্তাহিক অন্তর্দৃষ্টি" card; API returns real insights
+   113→    (bestWeekday: শনি/27, bestTime: রাত/53, momentum: স্থিতিশীল).
+   114→  - Habit toggle awards XP (171→200, +29 with streak bonus); confetti canvas mounts
+   115→    without errors.
+   116→  - Desktop sidebar + mobile bottom nav both render; ambient background visible.
+   117→- Screenshots saved: `qa-stats-after.png`, `qa-desktop-home.png`, `qa-desktop-after.png`.
+   118→
+   119→### Unresolved / next-phase recommendations
+   120→- **Streak freeze mechanic**: schema field + UI to forgive 1 missed day/week
+   121→  (gamification depth — designed but not yet implemented this round).
+   122→- **Habit drag-and-drop reordering**: `@dnd-kit` is already installed; needs wiring to
+   123→  the Habits view + a reorder API endpoint.
+   124→- **Service Worker / true offline PWA**: still the top infra gap for the Bangladesh
+   125→  market (intermittent connectivity).
+   126→- **AI coaching**: use z-ai-web-dev-sdk LLM to generate personalized habit suggestions
+   127→  based on the user's completion patterns.
+   128→- **Social/leaderboard via WebSocket mini-service**: schema ready, UI + realtime layer TBD.
+   129→
+   130→---
+   131→
+   132→## Task ID: R2 (webDevReview Round 2 — AI Coach + Streak Freeze + Drag-Reorder)
+   133→**Agent**: Z.ai Code (webDevReview cron)
+   134→
+   135→### Current project status (assessment)
+   136→After R1, the app was stable (lint clean, no runtime errors, all views functional).
+   137→This round delivered three flagship features from the next-phase roadmap plus styling
+   138→polish. All QA-verified via agent-browser on mobile + desktop with zero errors.
+   139→
+   140→### Work Log
+   141→- **AI Coach feature** (flagship): new `/api/ai/coach` endpoint using `z-ai-web-dev-sdk`
+   142→  LLM. Sends a compact context summary (today's progress, active streaks, at-risk habits,
+   143→  weakest/strongest habits) to the LLM with a Bengali system prompt that returns
+   144→  structured JSON: `{encouragement, riskAlert, suggestions[]}`. Graceful deterministic
+   145→  fallback if the LLM is unavailable. New `AICoachPanel` component on the Home view with
+   146→  gradient styling, shimmer loading, animated suggestions, and a refresh button. Verified:
+   147→  LLM returned personalized Bengali coaching (11-day streak praise, risk alert for যোহর
+   148→  17-day + মাগরিব 9-day streaks, 3 specific suggestions).
+   149→- **Streak freeze mechanic**: new schema fields `frozenDate` + `freezeUsedWeek` on Habit.
+   150→  New `/api/habits/[id]/freeze` endpoint enforcing 1-freeze-per-ISO-week-per-habit rule.
+   151→  Streak engine (`computeCurrentStreak`) updated to treat `frozenDate` as a forgiven day
+   152→  (streak preserved). UI: snowflake button appears on at-risk habit rows (streak ≥ 3, not
+   153→  done today) on hover; "ফ্রিজ" badge on frozen habits; freeze button in habit detail
+   154→  drawer. Verified: যোহরের নামাজ frozen → streak preserved at 18 (would have broken).
+   155→- **Habit drag-and-drop reordering**: new `/api/habits/reorder` endpoint (transactional
+   156→  sortOrder update). New `SortableHabitsList` component using `@dnd-kit/core` +
+   157→  `@dnd-kit/sortable` with grip handles, grouped by time-of-day (each group independently
+   158→  sortable). Habits view has a "সাজান/সম্পন্ন" toggle button; reorder mode shows an
+   159→  instruction banner. Only enabled when filter is "all" and no search query. Verified:
+   160→  drag handles appear, instructions banner visible.
+   161→- **Styling polish**: violet gradient theme for AI Coach panel, sky-blue theme for freeze
+   162→  indicators, refined hover states, animated suggestion entrance (staggered), frozen
+   163→  habit row tinting, improved button states.
+   164→
+   165→### Verification results
+   166→- ✅ `bun run lint` clean.
+   167→- ✅ Dev server compiles, all routes 200, no console/runtime errors.
+   168→- ✅ Prisma client regenerated after schema change (fixed initial P2002/Validation errors).
+   169→- ✅ agent-browser QA (mobile 390×844 + desktop 1280×800):
+   170→  - AI Coach panel renders on Home with LLM-generated personalized content.
+   171→  - `/api/ai/coach` returns structured JSON (encouragement + riskAlert + 3 suggestions).
+   172→  - Habits view: reorder toggle works, drag handles + instructions banner appear.
+   173→  - Streak freeze: API returns 200 with frozenDate + weekKey; frozen badge ("ফ্রিজ")
+   174→    displays on habit row; streak preserved (17→18 via freeze forgiveness).
+   175→  - Habit detail drawer: freeze button appears for at-risk habits.
+   176→  - Desktop layout: sidebar + AI Coach + hero all render correctly.
+   177→- Screenshots: `qa-r2-habits-frozen.png`, `qa-r2-desktop-home-coach.png`, `qa-r2-stats.png`,
+   178→  `qa-r2-islamic.png`.
+   179→
+   180→### Unresolved / next-phase recommendations
+   181→- **Service Worker / true offline PWA**: still the top infra gap — app currently works
+   182→  offline via TanStack Query cache + localStorage, but a full SW would enable install +
+   183→  offline boot.
+   184→- **Social/leaderboard via WebSocket mini-service**: schema ready, needs UI + realtime layer.
+   185→- **Bangladesh calendar integration**: Bengali New Year (পহেলা বৈশাখ), Eid, national
+   186→  holidays as special habit targets.
+   187→- **Habit templates library**: pre-made habit bundles (e.g., "রমজান প্রস্তুতি", "ছাত্র
+   188→  রুটিন") that users can install in one tap.
+   189→- **Notifications**: browser notification API for habit reminders (settings toggles exist
+   190→  in Profile but aren't wired to actual notifications yet).
+   191→
+   192→---
+   193→
+   194→## Task ID: R3 (webDevReview Round 3 — PWA Offline + Templates + Notifications + a11y)
+   195→**Agent**: Z.ai Code (webDevReview cron)
+   196→
+   197→### Current project status (assessment)
+   198→After R2, the app was stable with 3 flagship features (AI Coach, streak freeze,
+   199→drag-reorder). QA via agent-browser surfaced 6 accessibility console warnings
+   200→(DialogContent missing Title/Description) — a real bug worth fixing. This round
+   201→fixed those + delivered the top three roadmap items: Service Worker (offline
+   202→PWA), Habit Templates Library, and Browser Notifications.
+   203→
+   204→### Work Log
+   205→- **Accessibility fix (bug)**: onboarding modal's `DialogContent` lacked
+   206→  `DialogTitle`/`DialogDescription` (used motion headings). Added
+   207→  `VisuallyHidden`-wrapped title+description. Added `DialogDescription` to the
+   208→  Quran tracker dialog. Verified: a11y console warnings dropped 6 → 0 after
+   209→  fresh reload.
+   210→- **Service Worker / offline PWA**: new `public/sw.js` with three caching
+   211→  strategies — precache app shell, network-first for `/api/*` (fresh data
+   212→  online, cache fallback offline), stale-while-revalidate for same-origin
+   213→  assets. New `public/offline.html` Bengali fallback page. New
+   214→  `ServiceWorkerRegister` component (production-only, avoids HMR conflicts).
+   215→  Wired into AppShell.
+   216→- **Habit Templates Library**: new `TEMPLATE_BUNDLES` constant with 6 curated
+   217→  bundles (রমজান প্রস্তুতি, ছাত্র রুটিন, সকাল রুটিন, স্বাস্থ্য ও ফিটনেস, মানসিক
+   218→  সুস্থতা, উৎপাদনশীলতা) — 32 habits total. New `/api/habits/templates`
+   219→  endpoint installs a bundle's habits transactionally. New `TemplatesModal`
+   220→  component with browse → detail → install flow (animated, gradient-themed
+   221→  cards per bundle). New `LayoutGrid` button in Habits view header opens it.
+   222→  Verified: installed "সকাল রুটিন" → habits 25 → 30, no errors.
+   223→- **Browser Notifications**: new `useNotifications` hook wires the
+   224→  `notificationsEnabled` + `remindersEnabled` settings toggles to the browser
+   225→  Notification API. Requests permission when enabled, checks every 15 min for
+   226→  habits with `reminderTime` matching the current hour (not completed today,
+   227→  not yet notified today → fires OS notification with habit name + streak).
+   228→  Per-day localStorage dedup. New `TestNotificationButton` in Profile view
+   229→  (next to the notifications toggle) lets users verify permission + send a test.
+   230→- **Styling polish**: refined toggle row with optional `extra` slot, gradient
+   231→  bundle cards, animated bundle-detail habit list (staggered entrance).
+   232→
+   233→### Verification results
+   234→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   235→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   236→- ✅ a11y console warnings: 6 → 0 after fresh reload.
+   237→- ✅ agent-browser QA (mobile 390×844 + desktop 1280×800):
+   238→  - Templates modal: 6 bundles render, bundle detail shows habits, install
+   239→    works (25 → 30 habits, toast confirmation).
+   240→  - Profile: "পরীক্ষা" test-notification button renders next to toggle.
+   241→  - Desktop: AI Coach + hero + sidebar all render correctly.
+   242→  - No console errors / no dev.log errors.
+   243→- Screenshots: `qa-r3-profile-notifications.png`, `qa-r3-desktop-home.png`.
+   244→
+   245→### Unresolved / next-phase recommendations
+   246→- **SW in production only**: the SW registration is gated to
+   247→  `NODE_ENV === "production"` to avoid HMR conflicts; a production build test
+   248→  would confirm offline behavior end-to-end.
+   249→- **Social/leaderboard via WebSocket mini-service**: schema ready, needs UI +
+   250→  realtime layer — the last major feature gap.
+   251→- **Bangladesh calendar integration**: Bengali New Year (পহেলা বৈশাখ), Eid,
+   252→  national holidays as special habit targets.
+   253→- **Habit statistics depth**: monthly trend lines, year-over-year comparison,
+   254→  best-time-of-day heatmap.
+   255→- **Data sync**: server-side persistence of offline changes (currently the
+   256→  local SQLite is the single source of truth; a sync API would enable
+   257→  multi-device).
+   258→
+   259→---
+   260→
+   261→## Task ID: R4 (webDevReview Round 4 — Analytics + BD Calendar + CSV Export)
+   262→**Agent**: Z.ai Code (webDevReview cron)
+   263→
+   264→### Current project status (assessment)
+   265→After R3, the app was stable (lint clean, a11y fixed, PWA SW + templates +
+   266→notifications shipped). This round delivered the remaining analytics + cultural
+   267→features from the roadmap: 12-month trend chart, Bangladesh calendar panel,
+   268→and CSV export. All QA-verified via agent-browser on mobile + desktop.
+   269→
+   270→### Work Log
+   271→- **12-month trend analytics**: extended `/api/stats` to compute a 12-month
+   272→  completion-rate series (`monthlyTrend[]` with done/scheduled/rate per month).
+   273→  New `MonthlyTrendChart` component — gradient-filled area chart with X-axis
+   274→  month labels (Bengali), Y-axis percentage, average-rate summary, and
+   275→  best-month stat. Inserted into Stats view after the 30-day bar chart.
+   276→  Verified: API returns 12 months (July shows 18% rate from seeded data).
+   277→- **Bangladesh calendar panel**: new `bangladesh-calendar.ts` constants with
+   278→  10 curated special days (Bengali: পহেলা বৈশাখ; Islamic: Eid ul-Fitr, Eid
+   279→  ul-Adha, Shab-e-Barat, Shab-e-Qadr, Ashura, Mawlid; National: Language
+   280→  Martyrs Day, Independence Day, Victory Day). New `/api/calendar` endpoint
+   281→  returns upcoming events within 60 days. New `CalendarPanel` component on the
+   282→  Home view with category-colored cards (amber=bengali, teal=islamic,
+   283→  rose=national), days-until countdown, and habit-theme suggestions.
+   284→  Verified: ঈদে মিলাদুন্নবী (40 days) renders on Home.
+   285→- **CSV export**: new `/api/export?format=csv` endpoint exports all habits +
+   286→  completion dates as a well-formed CSV (Bengali-escaped, semicolon-delimited
+   287→  date lists). Profile view now has two export rows: JSON + CSV. Verified:
+   288→  CSV downloads correctly with Bengali content (6KB, 30 rows).
+   289→- **Styling polish**: gradient area chart with defs, CartesianGrid, active
+   290→  dots; calendar cards with colored rings + emoji date tiles; category chips
+   291→  on calendar entries.
+   292→
+   293→### Verification results
+   294→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   295→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   296→- ✅ agent-browser QA (mobile 390×844 + desktop 1280×800):
+   297→  - Home: Calendar panel ("আসন্ন বিশেষ দিন") renders with ঈদে মিলাদুন্নবী.
+   298→  - Stats: Monthly trend chart ("বার্ষিক ধারা") renders with 12-month data.
+   299→  - Profile: CSV export button ("CSV") renders next to JSON export.
+   300→  - CSV API returns 200 with well-formed CSV (verified content).
+   301→  - Calendar API returns 1 upcoming day within 60 days.
+   302→  - Desktop: calendar + AI coach + hero all render correctly.
+   303→- Screenshots: `qa-r4-stats-with-trend.png`, `qa-r4-profile-csv.png`,
+   304→  `test-export.csv`.
+   305→
+   306→### Unresolved / next-phase recommendations
+   307→- **Social/leaderboard via WebSocket mini-service**: the last major feature
+   308→  gap — schema ready, needs a socket.io mini-service + UI.
+   309→- **Data sync / multi-device**: server-side persistence of offline changes.
+   310→- **Habit statistics depth**: year-over-year comparison, best-time-of-day
+   311→  heatmap (the monthly trend is done; these would add more depth).
+   312→- **Production build test**: confirm the Service Worker offline behavior
+   313→  end-to-end in a production build.
+   314→- **Bangladesh calendar Hijri accuracy**: the Islamic dates are approximate;
+   315→  a proper Hijri→Gregorian conversion would make them exact per year.
+   316→
+   317→---
+   318→
+   319→## Task ID: R5 (webDevReview Round 5 — Social/Leaderboard WebSocket Mini-Service)
+   320→**Agent**: Z.ai Code (webDevReview cron)
+   321→
+   322→### Current project status (assessment)
+   323→After R4, the app was stable with all prior features (habit tracking, Islamic,
+   324→gamification, AI coach, templates, PWA SW, notifications, analytics, BD
+   325→calendar, CSV export). The last major roadmap gap was the **social/leaderboard
+   326→via WebSocket mini-service** — this round delivered it in full.
+   327→
+   328→### Work Log
+   329→- **WebSocket mini-service** (`mini-services/social/index.ts`): independent bun
+   330→  project on port 3003, socket.io server with `path: "/"`. Maintains an
+   331→  in-memory leaderboard seeded with 10 demo users (আরিফ, সাবরিনা, তানভীর… with
+   332→  XP/level/streak), plus a live activity feed (max 30 events). Emits periodic
+   333→  demo activity every 18s so the feed feels alive. Events: `join`, `activity`,
+   334→  `update-xp`, `leaderboard`, `presence`, `activity`.
+   335→- **Social hook** (`use-social.ts`): socket.io-client wrapper with auto-join,
+   336→  XP sync, and a custom-event bridge — habit toggles dispatch a
+   337→  `window.CustomEvent("abhyas-activity")` which the hook forwards to the
+   338→  socket. Critical fix: `path: "/"` + `transports: ["polling", "websocket"]`
+   339→  to work through the Caddy gateway (port 81). Connecting via port 3000
+   340→  directly fails because the gateway proxy is required for `XTransformPort`.
+   341→- **Social view** (`social-view.tsx`): global leaderboard with rank badges
+   342→  (gold/silver/bronze for top 3), your-rank hero card with crown for top-3,
+   343→  live activity feed with animated entries (completion/streak/levelup/join
+   344→  events), online-count indicator, connection status pill. Added "social" to
+   345→  the ViewKey type + nav config + view router.
+   346→- **Activity broadcasting**: the toggle hook now dispatches a custom DOM event
+   347→  on habit completion → the social hook forwards it to the socket → all
+   348→  connected clients see it in the live feed. Streak milestones broadcast as
+   349→  "streak" type; regular completions as "completion".
+   350→
+   351→### Verification results
+   352→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   353→- ✅ Social mini-service running on port 3003 (verified via `mini-services/social.log`).
+   354→- ✅ agent-browser QA via Caddy gateway (port 81):
+   355→  - Social view connects: "অতিথি joined (xp=268)" logged server-side.
+   356→  - Leaderboard renders with 10 demo users + your entry.
+   357→  - Live activity feed shows demo activities (আরিফ completed ফজরের নামাজ, etc.).
+   358→  - Habit toggle broadcasts: XP updated 268 → 285, reconnected with new XP.
+   359→  - Online count + connection status pill render correctly.
+   360→  - Desktop layout: sidebar nav includes সোশ্যাল tab.
+   361→- Screenshots: `qa-r5-social-connected.png`, `qa-r5-social-final.png`.
+   362→
+   363→### Key technical note
+   364→The social WebSocket requires accessing the app through the Caddy gateway
+   365→(port 81), not directly via port 3000. The `XTransformPort=3003` query param
+   366→only works through Caddy's reverse proxy. The `path: "/"` setting on both
+   367→server and client is essential to avoid Next.js intercepting `/socket.io/`.
+   368→
+   369→### Unresolved / next-phase recommendations
+   370→- **Habit notes/journal**: the toggle hook now supports activity broadcasting,
+   371→  but the habit notes feature (add note to a completion) was scoped out this
+   372→  round — schema field exists, UI not yet built.
+   373→- **Production build test**: confirm the Service Worker + social socket work
+   374→  end-to-end in a production build.
+   375→- **Data sync / multi-device**: server-side persistence of offline changes.
+   376→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+   377→  Hijri→Gregorian conversion.
+   378→- **Social depth**: friend challenges, group leaderboards, direct messages —
+   379→  the current social is global-only.
+   380→
+   381→---
+   382→
+   383→## Task ID: R6 (webDevReview Round 6 — Mood Tracking + Habit Notes/Journal)
+   384→**Agent**: Z.ai Code (webDevReview cron)
+   385→
+   386→### Current project status (assessment)
+   387→After R5, the app was stable with all major roadmap features shipped (habit
+   388→tracking, Islamic, gamification, AI coach, templates, PWA SW, notifications,
+   389→analytics, BD calendar, CSV export, social/leaderboard). This round added
+   390→emotional intelligence: daily mood tracking + habit notes/journal — a Phase-2
+   391→feature from the original proposal ("মুড ট্র্যাকিং").
+   392→
+   393→### Work Log
+   394→- **Mood tracking backend**: new `MoodEntry` Prisma model (userId, date, mood
+   395→  1-5, note). New `/api/mood` endpoint (GET returns 30-day series + average +
+   396→  today's entry; POST upserts mood for a date). Extended `/api/stats` to
+   397→  include `mood.series`, `mood.average`, `mood.today`.
+   398→- **Mood selector UI** (`mood-selector.tsx`): 5-emoji mood picker on the Home
+   399→  view (😞😕😐🙂😄 with Bengali labels). Active mood gets a colored background
+   400→  matching the mood value. Shows average mood + entry count. Haptic feedback
+   401→  on selection. Verified: mood=4 (ভালো) saved → API returns `today.mood: 4`.
+   402→- **Mood trend chart** (`mood-trend-chart.tsx`): line chart on the Stats view
+   403→  showing 30-day mood trend with emoji Y-axis labels, average mood summary,
+   404→  and an empty state when no mood entries exist. Connected with `connectNulls`
+   405→  to handle gaps.
+   406→- **Habit notes/journal backend**: new `/api/habits/[id]/notes` endpoint
+   407→  (POST upserts a note on a completion; GET returns last 30 notes). The
+   408→  existing `note` field on `HabitCompletion` was already in the schema.
+   409→- **Habit notes UI**: `NotesSection` component in the habit detail drawer
+   410→  with a "+ নতুন নোট" button that expands a textarea, save/cancel buttons,
+   411→  and a timeline of past notes (date + relative time + note text, max 5 shown
+   412→  with "আরও N টি" overflow). Verified: note "আজ ভোরে উঠে নামাজ পড়তে পেরে
+   413→  ভালো লাগলো।" saved and displayed.
+   414→- **Styling polish**: mood-colored active states, animated note input
+   415→  expansion, border-left accent on note cards, emoji-based mood chart axis.
+   416→
+   417→### Verification results
+   418→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   419→- ✅ Dev server compiles, all routes 200, no runtime errors (after restart to
+   420→  pick up Prisma client regeneration for MoodEntry).
+   421→- ✅ agent-browser QA via Caddy gateway (port 81):
+   422→  - Home: MoodSelector renders with 5 emoji buttons; clicking "ভালো" saves
+   423→    mood=4 (verified via API: `today.mood: 4`).
+   424→  - Stats: Mood trend chart ("মুড ধারা") renders with the saved entry.
+   425→  - Habit detail: NotesSection renders with "+ নতুন নোট" button; adding a
+   426→    note saves it (verified via API: 1 note returned); note displays in the
+   427→    timeline.
+   428→  - Desktop: all Home features (AI Coach, Calendar, Mood, habits) render.
+   429→- Screenshots: `qa-r6-stats-mood.png`.
+   430→
+   431→### Unresolved / next-phase recommendations
+   432→- **Journal timeline view**: a dedicated view combining all habit completions
+   433→  + notes + mood entries into a unified daily journal timeline (the notes UI
+   434→  exists per-habit, but a cross-habit journal view would be more powerful).
+   435→- **Production build test**: confirm SW + social socket + mood/notes work
+   436→  end-to-end in a production build.
+   437→- **Data sync / multi-device**: server-side persistence of offline changes.
+   438→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+   439→  Hijri→Gregorian conversion.
+   440→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   441→- **Mood-habit correlation**: analytics showing which habits correlate with
+   442→  better moods (e.g., "days you pray Fajr, your average mood is 4.2 vs 3.1").
+   443→
+   444→---
+   445→
+   446→## Task ID: R7 (webDevReview Round 7 — Journal Timeline + Mood-Habit Correlation)
+   447→**Agent**: Z.ai Code (webDevReview cron)
+   448→
+   449→### Current project status (assessment)
+   450→After R6, the app was stable with mood tracking + habit notes shipped. This
+   451→round delivered the two top R6 recommendations: a unified Journal timeline
+   452→view and mood-habit correlation analytics. All QA-verified via agent-browser
+   453→on mobile + desktop with zero errors.
+   454→
+   455→### Work Log
+   456→- **Journal API** (`/api/journal?days=30`): unified timeline endpoint that
+   457→  merges mood entries + habit completions + notes into a per-day timeline.
+   458→  Only includes days with activity (mood or completions). Returns up to 60
+   459→  days. Verified: 14 days returned with today showing mood=4, 8 habits.
+   460→- **Journal view** (`journal-view.tsx`): new 7th nav tab ("জার্নাল" 📔).
+   461→  Premium timeline UI with a vertical line + colored mood dots, day cards
+   462→  showing mood emoji + label, mood notes, completed habits with icon tiles +
+   463→  notes, "নিখুঁত!" badge for 100% days, "আজ" highlight for today. Empty
+   464→  state when no entries. Animated entrance with staggered delays.
+   465→- **Mood-habit correlation** (backend): extended `/api/stats` to compute
+   466→  avg mood when a habit was done vs not done. Returns top 5 habits by mood
+   467→  impact (requires ≥2 mood entries with that habit done). Added
+   468→  `moodCorrelations` to the stats response.
+   469→- **Mood-habit correlation card** (`mood-correlation-card.tsx`): Stats view
+   470→  card showing each habit with dual progress bars (done vs not-done mood),
+   471→  emoji labels, sample size, and a colored impact-delta badge (+/-). Empty
+   472→  state when insufficient data. Insight footer.
+   473→- **Styling polish**: compacted bottom nav for 7 items (w-10 pills, 19px
+   474→  icons, 9px labels), timeline animations, correlation bar charts with
+   475→  gradient fills.
+   476→
+   477→### Verification results
+   478→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   479→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   480→- ✅ agent-browser QA via Caddy gateway (port 81):
+   481→  - Journal view: renders with 14 days of activity; today's entry shows
+   482→    mood=4 (ভালো) + 8 completed habits; timeline dots + day cards visible.
+   483→  - Stats: mood-habit correlation card renders (empty state since only 1
+   484→    mood entry — requires ≥2 for correlation; correct behavior).
+   485→  - Bottom nav: all 7 items render compactly on mobile (390×844).
+   486→  - Desktop: sidebar shows all 7 nav items including Journal.
+   487→  - No console errors / no dev.log errors.
+   488→- Screenshots: `qa-r7-journal.png`, `qa-r7-stats-correlation.png`.
+   489→
+   490→### Unresolved / next-phase recommendations
+   491→- **Production build test**: confirm SW + social socket + journal + mood
+   492→  correlation work end-to-end in a production build.
+   493→- **Data sync / multi-device**: server-side persistence of offline changes.
+   494→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+   495→  Hijri→Gregorian conversion.
+   496→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   497→- **Journal search/filter**: filter by habit, mood, or date range.
+   498→- **More mood data needed**: the correlation feature needs ≥2 mood entries
+   499→  per habit to show data — will populate naturally as the user logs moods.
+   500→
+   501→---
+   502→
+   503→## Task ID: R8 (webDevReview Round 8 — Focus/Pomodoro Timer)
+   504→**Agent**: Z.ai Code (webDevReview cron)
+   505→
+   506→### Current project status (assessment)
+   507→After R7, the app was stable with 7 views (Home/Habits/Stats/Islamic/Journal/
+   508→Social/Profile). This round added the **Focus/Pomodoro Timer** — a productivity
+   509→feature that lets users do deep-work sessions with configurable work/break
+   510→intervals, linked to habits, with session logging and stats. Fixed a lint error
+   511→(`react-hooks/immutability` — `handleComplete` used before declaration) that
+   512→was introduced mid-round.
+   513→
+   514→### Work Log
+   515→- **FocusSession model**: new Prisma model (userId, habitId?, date, durationMin,
+   516→  type "work"|"break", completed). Pushed to DB.
+   517→- **Focus API** (`/api/focus`): GET returns 7-day sessions + today's minutes +
+   518→  total stats + daily series. POST logs a completed session. Verified: 25-min
+   519→  work session logged → todayMinutes=25, totalSessions=1.
+   520→- **Focus view** (`focus-view.tsx`): new 8th nav tab ("ফোকাস" 🎯). Premium
+   521→  Pomodoro timer UI with:
+   522→  - 3 presets (পোমোডোরো 25/5, গভীর কাজ 50/10, ছোট 15/3)
+   523→  - Work/Break mode toggle with color-coded theming (primary for work, amber for break)
+   524→  - Large circular timer with ProgressRing (200px, animated, glow when running)
+   525→  - Play/Pause/Reset controls with spring animations
+   526→  - Habit linking via Select dropdown (optional)
+   527→  - Today/week/session stats grid
+   528→  - Recent sessions list with habit names
+   529→  - Auto mode-switch on completion + toast notification + session logging
+   530→- **Bug fix**: moved `handleComplete` useCallback before the timer `useEffect`
+   531→  to resolve `react-hooks/immutability` error (variable used before declaration).
+   532→- **Bottom nav update**: made horizontally scrollable (`no-scrollbar` + `overflow-x-auto`)
+   533→  with `min-w-[3.25rem]` items to handle 8 tabs gracefully on mobile.
+   534→
+   535→### Verification results
+   536→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   537→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   538→- ✅ agent-browser QA via Caddy gateway (port 81):
+   539→  - Focus view renders with 3 presets, mode toggle, circular timer.
+   540→  - Timer starts (Play button → "বিরতি" pause appears, countdown 25:00 → 24:46).
+   541→  - Focus API: POST logs session, GET returns correct stats.
+   542→  - All 8 nav items render compactly on mobile (390×844) with horizontal scroll.
+   543→  - Desktop sidebar shows all 8 nav items including Focus.
+   544→  - Full tour of all 8 views: no errors in dev.log.
+   545→- Screenshots: `qa-r8-focus-running.png`.
+   546→
+   547→### Unresolved / next-phase recommendations
+   548→- **Production build test**: confirm SW + social socket + focus timer work
+   549→  end-to-end in a production build.
+   550→- **Data sync / multi-device**: server-side persistence of offline changes.
+   551→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper
+   552→  Hijri→Gregorian conversion.
+   553→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   554→- **Journal search/filter**: filter by habit, mood, or date range.
+   555→- **Focus enhancements**: ambient sounds, custom intervals, focus streaks,
+   556→  integration with XP (award XP for focus sessions).
+   557→
+   558→---
+   559→
+   560→## Task ID: R9 (webDevReview Round 9 — Focus XP + Journal Search/Filter)
+   561→**Agent**: Z.ai Code (webDevReview cron)
+   562→
+   563→### Current project status (assessment)
+   564→After R8, the app was stable with 8 views including the new Focus/Pomodoro
+   565→timer. This round connected the Focus timer to the gamification system (XP
+   566→awards + level-ups) and added focus streaks, plus implemented journal
+   567→search/filter (a top R7 recommendation). All QA-verified via agent-browser.
+   568→
+   569→### Work Log
+   570→- **Focus XP integration**: `/api/focus` POST now awards 2 XP per minute for
+   571→  completed work sessions (e.g., 25-min session → +50 XP). Updates the user's
+   572→  XP + level, returns `xpAwarded`, `totalXp`, `level`, `leveledUp`. The Focus
+   573→  view's `logSession` mutation handles XP toast feedback (regular XP toast +
+   574→  special level-up toast) and invalidates `["me"]` + `["stats"]` queries.
+   575→  Verified: 25-min session → +50 XP, totalXp 302→352.
+   576→- **Focus streak**: `/api/focus` GET now computes `focusStreak` — consecutive
+   577→  days (ending today or yesterday) with ≥1 work session. Added to the Focus
+   578→  view's stats grid as a 4th stat box with a Flame icon (streak-glow animation).
+   579→  Verified: focusStreak=1 after today's session.
+   580→- **Confetti on focus completion**: the timer's `handleComplete` now fires
+   581→  confetti (60 particles) on work-session completion, replacing the redundant
+   582→  toast (the logSession onSuccess now handles the XP toast).
+   583→- **Journal search/filter** (`journal-view.tsx`): added a search input
+   584→  (filters by habit name, habit note, or mood note) + mood filter chips
+   585→  (5 emoji-labeled chips: খুব খারাপ → খুব ভালো). Filter logic runs
+   586→  client-side via `useMemo`. Empty state differentiates "no entries" vs
+   587→  "no results found" (when a filter is active). Verified: searching "নামাজ"
+   588→  finds matching entries; mood filter chips work.
+   589→
+   590→### Verification results
+   591→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   592→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   593→- ✅ agent-browser QA via Caddy gateway (port 81):
+   594→  - Focus view renders; XP API returns `xpAwarded=50, totalXp=352, leveledUp=false`.
+   595→  - Focus streak stat renders (focusStreak=1) with Flame icon.
+   596→  - Journal view: search input + mood filter chips render; search "নামাজ" finds
+   597→    results; mood filter chips toggle correctly.
+   598→  - Desktop: all 8 nav items render correctly.
+   599→  - No console errors / no dev.log errors.
+   600→- Screenshots: `qa-r9-journal-filter.png`.
+   601→
+   602→### Unresolved / next-phase recommendations
+   603→- **Production build test**: confirm all features work end-to-end in production.
+   604→- **Data sync / multi-device**: server-side persistence of offline changes.
+   605→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   606→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   607→- **Focus enhancements**: ambient sounds, custom intervals, focus badges.
+   608→- **Weekly AI recap**: AI-generated weekly summary using z-ai-web-dev-sdk.
+   609→
+   610→---
+   611→
+   612→## Task ID: R10 (webDevReview Round 10 — Weekly AI Recap + Focus Daily Chart)
+   613→**Agent**: Z.ai Code (webDevReview cron)
+   614→
+   615→### Current project status (assessment)
+   616→After R9, the app was stable with 8 views, Focus XP integration, and journal
+   617→search/filter. This round delivered the **Weekly AI Recap** (a flagship LLM-
+   618→powered feature) and a **Focus daily chart**. All QA-verified via agent-browser.
+   619→
+   620→### Work Log
+   621→- **Weekly AI Recap backend** (`/api/ai/recap`): uses `z-ai-web-dev-sdk` LLM to
+   622→  generate a structured weekly summary. Gathers: completion count/rate, avg
+   623→  mood, focus minutes, active streaks, best streak, prayers done, Quran pages,
+   624→  XP/level. LLM returns `{headline, highlights[], improvement, nextWeekFocus}`
+   625→  in Bengali. Graceful deterministic fallback if LLM unavailable. Verified: LLM
+   626→  returned personalized recap with specific numbers (58 completions, 14 prayers,
+   627→  28% rate, 210 scheduled).
+   628→- **WeeklyRecapCard** (`weekly-recap-card.tsx`): collapsible card on the Home
+   629→  view with violet gradient theme, Sparkles icon, refresh button. Shows:
+   630→  headline (emerald box), highlights (✓ list with staggered animation),
+   631→  improvement (amber box with 📈), next-week focus (violet box with Target icon).
+   632→  Loading shimmer state. Verified: renders with AI content on Home.
+   633→- **FocusDailyChart** (`focus-daily-chart.tsx`): 7-day focus minutes bar chart on
+   634→  the Focus view. Bengali weekday labels (রবি/সোম/মঙ্গল...), colored bars
+   635→  (primary for active days, muted for zero days), total minutes summary.
+   636→  Inserted between the stats grid and recent sessions.
+   637→- **Styling polish**: violet gradient theme for recap card, staggered highlight
+   638→  animations, colored insight boxes (emerald/amber/violet), chart with
+   639→  weekday labels.
+   640→
+   641→### Verification results
+   642→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   643→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   644→- ✅ agent-browser QA via Caddy gateway (port 81):
+   645→  - Home: WeeklyRecapCard renders with AI-generated content (headline +
+   646→    highlights + improvement + nextWeekFocus).
+   647→  - Focus: daily chart ("দৈনিক ফোকাস") renders with 7-day data.
+   648→  - Recap API returns structured Bengali JSON with specific metrics.
+   649→  - Desktop: all features render correctly.
+   650→  - No console errors / no dev.log errors.
+   651→- Screenshots: `qa-r10-home-recap.png`, `qa-r10-focus-chart.png`.
+   652→
+   653→### Unresolved / next-phase recommendations
+   654→- **Production build test**: confirm all features work end-to-end in production.
+   655→- **Data sync / multi-device**: server-side persistence of offline changes.
+   656→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   657→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   658→- **Focus enhancements**: ambient sounds, custom intervals, focus badges.
+   659→- **Habit sharing**: share habit progress cards to social media (WhatsApp/FB).
+   660→
+   661→---
+   662→
+   663→## Task ID: R11 (webDevReview Round 11 — Habit Sharing + Badge Progress)
+   664→**Agent**: Z.ai Code (webDevReview cron)
+   665→
+   666→### Current project status (assessment)
+   667→After R10, the app was stable with 8 views, Weekly AI Recap, and Focus daily
+   668→chart. This round delivered **Habit Sharing** (WhatsApp + clipboard) and
+   669→**Badge Progress indicators** on the Stats view. All QA-verified.
+   670→
+   671→### Work Log
+   672→- **Share backend** (`/api/habits/[id]/share`): generates a formatted Bengali
+   673→  text summary with habit stats (current streak, best streak, total done,
+   674→  completion rate, Islamic flag). Returns `{text, stats}`. Verified: API
+   675→  returns 230-char text with correct stats.
+   676→- **ShareButton + modal** (`share-button.tsx`): share button added to the habit
+   677→  detail drawer header. Opens a modal with a preview card (gradient bg, 4-stat
+   678→  grid: streak/best/done/rate), share text preview, and two actions: WhatsApp
+   679→  (opens wa.me deep link) + Copy to clipboard. Verified: modal opens, WhatsApp
+   680→  + copy buttons work.
+   681→- **Badge progress indicators** (Stats view): locked badges now show a progress
+   682→  bar + percentage based on `badgeStats` (e.g., streak_7 shows X/7 days, level_5
+   683→  shows X/5 levels). Added `getBadgeProgress()` function mapping each badge ID
+   684→  to its relevant stat + threshold. `BadgeTile` now accepts a `progress` prop.
+   685→  Added `badgeStats` to the StatsResponse type. Verified: progress bars render
+   686→  on locked badges.
+   687→- **Styling polish**: share card with gradient + 4-stat grid, badge progress
+   688→  bars with percentage labels, refined locked-badge opacity.
+   689→
+   690→### Verification results
+   691→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   692→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   693→- ✅ agent-browser QA via Caddy gateway (port 81):
+   694→  - Habit detail: share button renders, modal opens with preview card +
+   695→    WhatsApp + copy buttons.
+   696→  - Share API: returns 230-char formatted text with correct stats.
+   697→  - Stats: badge progress bars render on locked badges with percentages.
+   698→  - Desktop: all nav items render correctly.
+   699→  - No console errors / no dev.log errors.
+   700→- Screenshots: `qa-r11-stats-badges.png`.
+   701→
+   702→### Unresolved / next-phase recommendations
+   703→- **Production build test**: confirm all features work end-to-end in production.
+   704→- **Data sync / multi-device**: server-side persistence of offline changes.
+   705→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   706→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   707→- **Focus enhancements**: ambient sounds, custom intervals, focus badges.
+   708→- **Image-based sharing**: generate a PNG image of the share card (not just text).
+   709→
+   710→---
+   711→
+   712→## Task ID: R12 (webDevReview Round 12 — Custom Focus Intervals + Focus Badges)
+   713→**Agent**: Z.ai Code (webDevReview cron)
+   714→
+   715→### Current project status (assessment)
+   716→After R11, the app was stable with habit sharing + badge progress. This round
+   717→delivered **Custom Focus Intervals** (user-configurable work/break durations)
+   718→and **Focus Badges** (gamification for focus sessions). All QA-verified.
+   719→
+   720→### Work Log
+   721→- **Custom focus intervals**: added a 4th preset button "⚙️ কাস্টম" that opens
+   722→  an animated interval picker with two number inputs (work 1-180 min, break
+   723→  0-60 min). Custom interval persists in localStorage (`abhyas-focus-custom`).
+   724→  When the custom preset is active, the timer uses the custom durations.
+   725→  Verified: picker opens, inputs work, custom button shows current values.
+   726→- **Focus badges**: added 2 new badges to the BADGES constant — "ফোকাস শুরু"
+   727→  (🎯 bronze, first focus session) and "ফোকাস মাস্টার" (🧠 gold, 50+ sessions).
+   728→  These appear on the Stats view badge grid with progress bars (using the
+   729→  existing `getBadgeProgress` function).
+   730→- **Styling polish**: custom interval picker with animated entrance, ⚙️ emoji
+   731→  on the custom button, refined preset selector (4 buttons), custom durations
+   732→  displayed on the button when active.
+   733→
+   734→### Verification results
+   735→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   736→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   737→- ✅ agent-browser QA via Caddy gateway (port 81):
+   738→  - Focus view: custom preset button renders, clicking opens the picker with
+   739→    work/break inputs, "প্রয়োগ করুন" button applies the custom interval.
+   740→  - Desktop: all nav items render correctly.
+   741→  - No console errors (429 LLM rate-limit on AI recap is expected, not a bug).
+   742→- Screenshots: `qa-r12-focus-custom.png`.
+   743→
+   744→### Unresolved / next-phase recommendations
+   745→- **Production build test**: confirm all features work end-to-end in production.
+   746→- **Data sync / multi-device**: server-side persistence of offline changes.
+   747→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   748→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   749→- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+   750→- **Image-based sharing**: generate a PNG image of the share card.
+   751→- **AI recap rate limiting**: the LLM 429 errors suggest adding a client-side
+   752→  cooldown or caching the recap for longer.
+   753→
+   754→---
+   755→
+   756→## Task ID: R13 (webDevReview Round 13 — AI Recap Cooldown + Category Analytics)
+   757→**Agent**: Z.ai Code (webDevReview cron)
+   758→
+   759→### Current project status (assessment)
+   760→After R12, the app was stable with custom focus intervals + focus badges.
+   761→This round fixed the **AI recap rate limiting** (429 errors from R12) and
+   762→enhanced **Category Analytics** with per-category completion progress bars.
+   763→All QA-verified.
+   764→
+   765→### Work Log
+   766→- **AI recap cooldown fix**: added a 30-minute client-side cooldown to the
+   767→  WeeklyRecapCard. The refresh button is disabled during cooldown and shows a
+   768→  countdown timer ("৩০মি"). Last-fetch timestamp persisted in localStorage
+   769→  (`abhyas-recap-last-fetch`). The query function now catches errors and returns
+   770→  a graceful fallback recap instead of throwing. `retry: 0` prevents automatic
+   771→  retries on 429. `staleTime` increased to 30 min. Verified: recap loads
+   772→  (from LLM or fallback), no 429 errors in dev.log.
+   773→- **Category analytics enhancement**: the Stats view's category breakdown now
+   774→  shows per-category today's completion rate with a colored progress bar
+   775→  (using the category's theme color). Each category row shows `done/total`
+   776→  (e.g., "৩/৫") + a progress bar. Verified: progress bars render with correct
+   777→  colors and rates.
+   778→- **Styling polish**: recap refresh button now shows cooldown countdown,
+   779→  category rows have progress bars with category-colored fills.
+   780→
+   781→### Verification results
+   782→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   783→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   784→- ✅ agent-browser QA via Caddy gateway (port 81):
+   785→  - Home: recap card loads (LLM or fallback), no 429 errors.
+   786→  - Stats: category analytics card renders with per-category progress bars.
+   787→  - Desktop: all features render correctly.
+   788→  - No console errors / no dev.log errors.
+   789→- Screenshots: `qa-r13-stats-category.png`.
+   790→
+   791→### Unresolved / next-phase recommendations
+   792→- **Production build test**: confirm all features work end-to-end in production.
+   793→- **Data sync / multi-device**: server-side persistence of offline changes.
+   794→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   795→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   796→- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+   797→- **Image-based sharing**: generate a PNG image of the share card.
+   798→
+   799→---
+   800→
+   801→## Task ID: R14 (webDevReview Round 14 — Yearly Heatmap)
+   802→**Agent**: Z.ai Code (webDevReview cron)
+   803→
+   804→### Current project status (assessment)
+   805→After R13, the app was stable with AI recap cooldown + category analytics. This
+   806→round added a **GitHub-style 365-day yearly heatmap** to the Stats view, showing
+   807→combined habit completion density across the entire year. All QA-verified.
+   808→
+   809→### Work Log
+   810→- **Backend**: extended `/api/stats` to fetch completions for the full year
+   811→  (365 days instead of just 30). Added `yearlyHeatmap` array to the response —
+   812→  each entry is `{date, count}` representing the number of habit completions on
+   813→  that day. Verified: API returns 365 days, 22 active days, today=6 completions.
+   814→- **YearlyHeatmap component** (`yearly-heatmap.tsx`): GitHub-style 365-day
+   815→  calendar grid. Columns = weeks (52), rows = 7 days. Each cell is colored by
+   816→  completion density (0 = muted, increasing primary-color opacity for higher
+   817→  counts). Bengali month labels across the top. Color legend (কম → বেশি) at the
+   818→  bottom. Active-days + total-completions summary header. Horizontally scrollable
+   819→  on mobile. Hover tooltip shows date + count. Inserted into Stats view after
+   820→  the weekly insights card.
+   821→- **Styling polish**: color-mix for intensity shading, 11px cells with 2px gaps,
+   822→  rounded corners, hover ring, month labels, legend.
+   823→
+   824→### Verification results
+   825→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   826→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   827→- ✅ agent-browser QA via Caddy gateway (port 81):
+   828→  - Stats: yearly heatmap ("বার্ষিক কার্যকলাপ") renders with 365 days.
+   829→  - API: returns 365 days, 22 active days, today=6 completions.
+   830→  - Desktop: all features render correctly.
+   831→  - No console errors / no dev.log errors.
+   832→- Screenshots: `qa-r14-yearly-heatmap.png`.
+   833→
+   834→### Unresolved / next-phase recommendations
+   835→- **Production build test**: confirm all features work end-to-end in production.
+   836→- **Data sync / multi-device**: server-side persistence of offline changes.
+   837→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   838→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   839→- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+   840→- **Image-based sharing**: generate a PNG image of the share card.
+   841→- **Heatmap interactivity**: click a cell to see that day's details (habits, mood, notes).
+   842→
+   843→---
+   844→
+   845→## Task ID: R15 (webDevReview Round 15 — Heatmap Interactivity + Git Workflow)
+   846→**Agent**: Z.ai Code (webDevReview cron)
+   847→
+   848→### Current project status (assessment)
+   849→This round introduced the mandatory git workflow: cleared sandbox, pushed 14
+   850→rounds of work to GitHub as backup, then cloned fresh. After clone, the app was
+   851→fully stable (DB seeded, all 8 views functional, no errors). This round then
+   852→delivered **Yearly Heatmap Interactivity** — clicking a heatmap cell opens a
+   853→day-detail popover showing that day's habit completions, mood, focus time, and
+   854→notes. All QA-verified and pushed to GitHub.
+   855→
+   856→### Work Log
+   857→- **Git workflow**: backed up 14 rounds of work to GitHub (force push), cleared
+   858→  sandbox, cloned from `github.com/sharif418/abhyas.git`. Installed deps,
+   859→  pushed Prisma schema, started dev server + social service. Verified all data
+   860→  persisted (DB already seeded).
+   861→- **Day detail API** (`/api/day?date=YYYY-MM-DD`): fetches all activity for a
+   862→  specific day — habit completions (with habit details: name, icon, color,
+   863→  category, note), mood entry, and focus sessions (total minutes + count).
+   864→  Verified: 2026-07-27 returns 6 completions, mood=4, 50 focus minutes.
+   865→- **Heatmap interactivity**: yearly heatmap cells are now clickable buttons.
+   866→  Clicking a cell opens a `DayDetailPopover` — a full-screen modal overlay with:
+   867→  - Date header (Bengali day-first format)
+   868→  - Mood display (emoji + label + note)
+   869→  - Focus summary (minutes + session count)
+   870→  - Completed habits list (icon tiles + name + notes + ✓)
+   871→  - Empty state when no activity
+   872→  - Close button + click-outside-to-close
+   873→  - Loading shimmer state
+   874→  - Selected cell highlighted with outline ring
+   875→- **Styling polish**: clickable cells with hover ring, selected-cell outline,
+   876→  modal with backdrop blur, animated entrance/exit, icon tiles in popover.
+   877→
+   878→### Verification results
+   879→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   880→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   881→- ✅ agent-browser QA via Caddy gateway (port 81):
+   882→  - Stats: yearly heatmap renders, cells are clickable.
+   883→  - Day API: returns correct data (6 completions, mood=4, 50min focus).
+   884→  - No console errors / no dev.log errors.
+   885→- ✅ Git: committed and pushed to GitHub (`d746a77`).
+   886→- Screenshots: `qa-r15-heatmap.png`.
+   887→
+   888→### Unresolved / next-phase recommendations
+   889→- **Production build test**: confirm all features work end-to-end in production.
+   890→- **Data sync / multi-device**: server-side persistence of offline changes.
+   891→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   892→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   893→- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+   894→- **Image-based sharing**: generate a PNG image of the share card.
+   895→
+   896→
+   897→
+   898→
+   899→
+   900→
+   901→
+   902→
+   903→
+   904→
+   905→
+   906→
+   907→
+   908→
+   909→---
+   910→
+   911→## Task ID: R16 (Autonomous Agent — UI/UX Bug Fixes + Git Workflow)
+   912→**Agent**: Z.ai Code (Autonomous Execution Mode)
+   913→
+   914→### Current project status (assessment)
+   915→Cloned fresh from GitHub (15 rounds of work). App was stable with 8 views.
+   916→This round fixed reported UI/UX flaws: Appearance section title/overflow,
+   917→Add New Habit modal cut-off, and Habit Detail sheet layout. All QA-verified.
+   918→
+   919→### Work Log
+   920→- **Git workflow**: cleared sandbox, cloned from GitHub, installed deps,
+   921→  pushed Prisma schema, started dev + social servers. All data persisted.
+   922→- **Appearance section fix** (Profile view): the section title was " appearance"
+   923→  (English with leading space) — changed to "রূপ ও থিম" (Bengali). Changed
+   924→  Section component from `overflow-hidden` to `overflow-visible` to prevent
+   925→  content clipping (accent color picker, theme buttons).
+   926→- **Add New Habit modal fix** (habit-form.tsx): the sheet was getting cut off
+   927→  at the bottom because `HabitFormBody` returned a React fragment (`<>`)
+   928→  which doesn't participate in flex layout. Fixed by:
+   929→  - Wrapping the body in `<div className="flex flex-1 flex-col min-h-0 overflow-hidden">`
+   930→  - Adding `shrink-0` to SheetHeader and SheetFooter
+   931→  - Adding `min-h-0` to ScrollArea (critical for flex scrolling)
+   932→  - Adding `max-h-[100dvh]` to SheetContent
+   933→  Verified: footer ("যোগ করুন" + "বাতিল") is now fully visible.
+   934→- **Habit Detail sheet fix** (habit-detail.tsx): same fragment→div fix applied.
+   935→  Changed `<>` to `<div className="flex flex-1 flex-col min-h-0 overflow-hidden">`,
+   936→  added `shrink-0` to SheetHeader, `min-h-0` to the scroll container,
+   937→  `max-h-[100dvh]` to SheetContent.
+   938→
+   939→### Verification results
+   940→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   941→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   942→- ✅ agent-browser QA:
+   943→  - Habit form: opens, footer visible ("যোগ করুন" + "বাতিল" accessible).
+   944→  - Profile: Appearance section shows "রূপ ও থিম" (Bengali), no overflow.
+   945→  - No console errors / no dev.log errors.
+   946→- Screenshots: `qa-r16-habit-form-fixed.png`, `qa-r16-profile-appearance.png`.
+   947→
+   948→### Unresolved / next-phase recommendations
+   949→- **Production build test**: confirm all features work end-to-end in production.
+   950→- **Data sync / multi-device**: server-side persistence of offline changes.
+   951→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   952→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   953→- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+   954→- **Image-based sharing**: generate a PNG image of the share card.
+   955→
+   956→---
+   957→
+   958→## Task ID: R17 (webDevReview — Sound Effects + Git Workflow)
+   959→**Agent**: Z.ai Code (webDevReview cron)
+   960→
+   961→### Current project status (assessment)
+   962→Cloned fresh from GitHub (16 rounds of work). Fixed a stale Turbopack cache
+   963→issue in habit-detail.tsx. App was stable across all 8 views. This round added
+   964→a **premium sound effects system** using the Web Audio API — no external files
+   965→needed. Sounds fire on habit completion, streak milestones, level-ups, badge
+   966→unlocks, and perfect days, respecting the user's sound setting.
+   967→
+   968→### Work Log
+   969→- **Git workflow**: cleared sandbox, cloned from GitHub, installed deps,
+   970→  pushed Prisma schema, started dev + social servers.
+   971→- **Sound effects system** (`src/lib/sounds.ts`): zero-dependency Web Audio API
+   972→  implementation with 4 distinct sounds:
+   973→  - `playCompletionSound()`: rising two-note chime (C5 → G5)
+   974→  - `playStreakSound()`: triumphant three-note arpeggio (C5 → E5 → G5)
+   975→  - `playLevelUpSound()`: celebratory four-note fanfare (C5 → E5 → G5 → C6)
+   976→  - `playPerfectDaySound()`: warm three-note chord (C5 + E5 + G5 simultaneously)
+   977→  Each tone uses envelope shaping (quick attack, exponential decay) for a
+   978→  premium feel. AudioContext auto-resumes if suspended (autoplay policy).
+   979→- **Integration**: wired into `useToggleHabit`'s onSuccess handler. Respects
+   980→  the user's `sound` setting from the settings store. Sounds fire alongside
+   981→  existing confetti + toast feedback. Verified: toggle works, no errors.
+   982→- **Stale cache fix**: cleared `.next` directory to resolve a stale Turbopack
+   983→  cache showing a non-existent parse error in habit-detail.tsx.
+   984→
+   985→### Verification results
+   986→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+   987→- ✅ Dev server compiles, all routes 200, no runtime errors.
+   988→- ✅ agent-browser QA: habit toggle works, no console errors.
+   989→- ✅ Git: committed and pushed to GitHub.
+   990→
+   991→### Unresolved / next-phase recommendations
+   992→- **Production build test**: confirm all features work end-to-end in production.
+   993→- **Data sync / multi-device**: server-side persistence of offline changes.
+   994→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+   995→- **Social depth**: friend challenges, group leaderboards, direct messages.
+   996→- **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
+   997→- **Image-based sharing**: generate a PNG image of the share card.
+   998→
+   999→---
+  1000→
+  1001→## Task ID: R18 (webDevReview — Focus Session Tags + Git Workflow)
+  1002→**Agent**: Z.ai Code (webDevReview cron)
+  1003→
+  1004→### Current project status (assessment)
+  1005→Cloned fresh from GitHub (17 rounds of work). App was stable across all 8 views.
+  1006→This round added **Focus Session Tags** — users can tag each focus session with
+  1007→a topic (e.g., "পড়াশোনা", "কোডিং") for better organization and tracking.
+  1008→
+  1009→### Work Log
+  1010→- **Git workflow**: cleared sandbox, cloned from GitHub, installed deps,
+  1011→  pushed Prisma schema, started dev + social servers.
+  1012→- **FocusSession schema**: added `tag` field (optional String) to the
+  1013→  FocusSession Prisma model. Pushed schema, regenerated Prisma client.
+  1014→- **Focus API**: updated `/api/focus` POST to accept and save the `tag` field.
+  1015→  Updated the LogSchema with `tag: z.string().max(60).nullable().optional()`.
+  1016→  Verified: API saves tag correctly (tested with "study" → returned in GET).
+  1017→- **Focus view UI**: added a tag input field below the habit linking section.
+  1018→  Tag is cleared after each work session. Tags display in the recent sessions
+  1019→  list as violet-colored chips (#tag). The `handleComplete` useCallback now
+  1020→  includes `sessionTag` in its dependencies (fixed React Compiler error).
+  1021→- **Styling polish**: tag chips with violet theme, input with placeholder
+  1022→  examples ("যেমন: পড়াশোনা, কোডিং, লেখা...").
+  1023→
+  1024→### Verification results
+  1025→- ✅ `bun run lint` clean (0 errors, 0 warnings).
+  1026→- ✅ Dev server compiles, all routes 200, no runtime errors.
+  1027→- ✅ agent-browser QA: Focus view shows tag input, sessions list shows tag chips.
+  1028→- ✅ Focus API: POST with tag saves correctly, GET returns tag in session data.
+  1029→- ✅ Git: committed and pushed to GitHub.
+  1030→
+  1031→### Unresolved / next-phase recommendations
+  1032→- **Production build test**: confirm all features work end-to-end in production.
+  1033→- **Data sync / multi-device**: server-side persistence of offline changes.
+  1034→- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+  1035→- **Social depth**: friend challenges, group leaderboards, direct messages.
+  1036→- **Focus tag analytics**: show which tags get the most focus time.
+  1037→- **Image-based sharing**: generate a PNG image of the share card.
+  1038→

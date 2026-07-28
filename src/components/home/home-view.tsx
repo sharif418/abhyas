@@ -127,27 +127,7 @@ export function HomeView() {
         </div>
       </motion.div>
 
-      {/* AI Coach panel */}
-      <div className="mt-4">
-        <AICoachPanel />
-      </div>
-
-      {/* Bangladesh Calendar panel */}
-      <div className="mt-4">
-        <CalendarPanel />
-      </div>
-
-      {/* Daily mood selector */}
-      <div className="mt-4">
-        <MoodSelector />
-      </div>
-
-      {/* Weekly AI Recap */}
-      <div className="mt-4">
-        <WeeklyRecapCard />
-      </div>
-
-      {/* Habits by time of day */}
+      {/* Today's habits — primary task, immediately after hero */}
       <div className="mt-6 space-y-6">
         {TIMES_OF_DAY.map((tod) => {
           const list = byTime[tod.key] ?? [];
@@ -157,7 +137,7 @@ export function HomeView() {
             <section key={tod.key}>
               <div className="mb-2 flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{tod.emoji}</span>
+                  <IconRenderer name={tod.icon} size={16} className="text-muted-foreground" />
                   <h2 className="font-bold">{tod.label}</h2>
                   <span className="text-xs text-muted-foreground">
                     {toBn(doneCount)}/{toBn(list.length)}
@@ -169,7 +149,7 @@ export function HomeView() {
                     animate={{ scale: 1, opacity: 1 }}
                     className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
                   >
-                    ✨ সব সম্পন্ন!
+                    সব সম্পন্ন!
                   </motion.span>
                 )}
               </div>
@@ -197,6 +177,14 @@ export function HomeView() {
       >
         <Plus size={16} /> নতুন অভ্যাস যোগ করুন
       </button>
+
+      {/* Secondary panels — below the primary task */}
+      <div className="mt-6 space-y-4">
+        <MoodSelector />
+        <AICoachPanel />
+        <CalendarPanel />
+        <WeeklyRecapCard />
+      </div>
     </div>
   );
 }

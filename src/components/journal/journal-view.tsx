@@ -84,7 +84,7 @@ export function JournalView() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-5">
       <div>
-        <h1 className="text-xl font-bold">📔 জার্নাল</h1>
+        <h1 className="text-xl font-bold">জার্নাল</h1>
         <p className="text-xs text-muted-foreground">
           আপনার অভ্যাস, মুড ও নোটের সময়রেখা
         </p>

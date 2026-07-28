@@ -9,7 +9,7 @@ export function IslamicView() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-5">
       <div>
-        <h1 className="text-xl font-bold">🕌 ইসলামিক</h1>
+        <h1 className="text-xl font-bold">ইসলামিক</h1>
         <p className="text-xs text-muted-foreground">
           ইবাদত ও আধ্যাত্মিক অগ্রগতি ট্র্যাক করুন
         </p>

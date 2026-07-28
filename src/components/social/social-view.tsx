@@ -40,7 +40,7 @@ export function SocialView() {
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">👥 সোশ্যাল</h1>
+          <h1 className="text-xl font-bold">সোশ্যাল</h1>
           <p className="text-xs text-muted-foreground">
             বিশ্বব্যাপী ব্যবহারকারীদের সাথে প্রতিযোগিতা
           </p>

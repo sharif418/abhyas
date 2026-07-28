@@ -1035,3 +1035,32 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - **Social depth**: friend challenges, group leaderboards, direct messages.
 - **Focus tag analytics**: show which tags get the most focus time.
 - **Image-based sharing**: generate a PNG image of the share card.
+
+---
+
+## Task ID: R19 (CTO + UI/UX Audit Fixes)
+**Agent**: Z.ai Code (Autonomous)
+
+### Fixes Applied
+- Timezone bug: Intl.DateTimeFormat with Asia/Dhaka
+- next.config: ignoreBuildErrors=false, reactStrictMode=true
+- Error boundaries: error.tsx, global-error.tsx, not-found.tsx
+- Soft delete habits (active=false instead of delete)
+- Prisma logging gated to dev only
+- Home reordered: habits after hero, AI panels below
+- H1 emojis stripped (4 views)
+- Times-of-day emojis → lucide icons
+- TopBar greeting emoji removed
+
+### Verified
+- Lint clean, no runtime errors
+- Habits appear before AI panel on Home
+- All H1 titles emoji-free
+
+### Next priorities
+- Auth system (NextAuth)
+- Bottom nav reduce to 5 tabs
+- Mood/badge emoji → SVG/icons
+- Stats tab navigation
+- Zod enum validation
+- Stats endpoint N+1 fix

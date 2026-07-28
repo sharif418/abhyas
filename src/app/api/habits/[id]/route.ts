@@ -65,7 +65,7 @@ export async function PUT(
   return NextResponse.json(serializeHabit(updated));
 }
 
-/** DELETE /api/habits/:id — soft delete (archive) then hard delete */
+/** DELETE /api/habits/:id — soft delete (archive) to preserve history */
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -76,6 +76,7 @@ export async function DELETE(
   if (!existing || existing.userId !== user.id) {
     return NextResponse.json({ error: "পাওয়া যায়নি" }, { status: 404 });
   }
-  await db.habit.delete({ where: { id } });
+  // Soft delete: set active=false to preserve completion history for stats
+  await db.habit.update({ where: { id }, data: { active: false } });
   return NextResponse.json({ ok: true });
 }

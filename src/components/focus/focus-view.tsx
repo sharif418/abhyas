@@ -203,7 +203,7 @@ export function FocusView() {
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-4 py-5">
       <div>
-        <h1 className="text-xl font-bold">🎯 ফোকাস মোড</h1>
+        <h1 className="text-xl font-bold">ফোকাস মোড</h1>
         <p className="text-xs text-muted-foreground">
           পোমোডোরো টেকনিকে দিয়ে গভীর কাজ করুন
         </p>
