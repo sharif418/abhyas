@@ -164,6 +164,7 @@ model FocusSession {
   date        String   // YYYY-MM-DD
   durationMin Int      // session duration in minutes
   type        String   @default("work") // "work" | "break"
+  tag         String?  // optional session topic/tag (e.g. "পড়াশোনা", "কোডিং")
   completed   Boolean  @default(true)
   createdAt   DateTime @default(now())
 

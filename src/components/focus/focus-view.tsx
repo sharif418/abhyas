@@ -51,6 +51,7 @@ export function FocusView() {
   const [state, setState] = useState<TimerState>("idle");
   const [secondsLeft, setSecondsLeft] = useState(PRESETS[0].work * 60);
   const [selectedHabitId, setSelectedHabitId] = useState<string>("none");
+  const [sessionTag, setSessionTag] = useState("");
   const [completedCount, setCompletedCount] = useState(0);
   const [customWork, setCustomWork] = useState(30);
   const [customBreak, setCustomBreak] = useState(5);
@@ -84,7 +85,7 @@ export function FocusView() {
   });
 
   const logSession = useMutation({
-    mutationFn: (input: { durationMin: number; type: TimerMode; habitId?: string | null }) =>
+    mutationFn: (input: { durationMin: number; type: TimerMode; habitId?: string | null; tag?: string | null }) =>
       api.post<{
         xpAwarded: number;
         totalXp: number;
@@ -118,7 +119,10 @@ export function FocusView() {
       durationMin,
       type: mode,
       habitId: selectedHabitId !== "none" ? selectedHabitId : null,
+      tag: sessionTag.trim() || null,
     });
+    // Clear tag after session
+    if (mode === "work") setSessionTag("");
     if (mode === "work") {
       setCompletedCount((c) => c + 1);
       fireConfetti({ count: 60, duration: 600 });
@@ -130,7 +134,7 @@ export function FocusView() {
       setSecondsLeft((nextMode === "work" ? preset.work : preset.break) * 60);
       setState("idle");
     }, 1500);
-  }, [mode, preset, logSession, selectedHabitId]);
+  }, [mode, preset, logSession, selectedHabitId, sessionTag]);
 
   // timer tick
   useEffect(() => {
@@ -387,7 +391,7 @@ export function FocusView() {
         </div>
       </motion.div>
 
-      {/* Habit linking */}
+      {/* Habit linking + session tag */}
       <div className="rounded-3xl border bg-card p-4 shadow-sm">
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           কোন অভ্যাসের সাথে যুক্ত করবেন? (ঐচ্ছিক)
@@ -405,6 +409,18 @@ export function FocusView() {
             ))}
           </SelectContent>
         </Select>
+        <div className="mt-3">
+          <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+            সেশন ট্যাগ (ঐচ্ছিক)
+          </div>
+          <Input
+            value={sessionTag}
+            onChange={(e) => setSessionTag(e.target.value)}
+            placeholder="যেমন: পড়াশোনা, কোডিং, লেখা..."
+            className="h-9 text-sm"
+            maxLength={60}
+          />
+        </div>
       </div>
 
       {/* Today stats */}
@@ -470,8 +486,15 @@ export function FocusView() {
                     {s.type === "work" ? <Brain size={14} /> : <Coffee size={14} />}
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-semibold">
-                      {toBn(s.durationMin)} মিনিট {s.type === "work" ? "কাজ" : "বিশ্রাম"}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold">
+                        {toBn(s.durationMin)} মিনিট {s.type === "work" ? "কাজ" : "বিশ্রাম"}
+                      </span>
+                      {s.tag && (
+                        <span className="rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[8px] font-medium text-violet-600 dark:text-violet-400">
+                          #{s.tag}
+                        </span>
+                      )}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       {habit ? habit.name : "সাধারণ"} • {s.date}

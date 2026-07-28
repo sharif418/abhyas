@@ -10,6 +10,7 @@ const LogSchema = z.object({
   durationMin: z.number().int().min(1).max(180),
   type: z.enum(["work", "break"]).default("work"),
   habitId: z.string().nullable().optional(),
+  tag: z.string().max(60).nullable().optional(),
   date: z.string().default(todayKey()),
 });
 
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "অবৈধ ইনপুট" }, { status: 400 });
   }
 
-  const { durationMin, type, habitId, date } = parsed.data;
+  const { durationMin, type, habitId, tag, date } = parsed.data;
 
   const session = await db.focusSession.create({
     data: {
@@ -98,6 +99,7 @@ export async function POST(req: Request) {
       date,
       durationMin,
       type,
+      tag: tag ?? null,
       completed: true,
     },
   });

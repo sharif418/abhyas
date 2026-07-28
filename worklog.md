@@ -995,3 +995,43 @@ unlocks, and perfect days, respecting the user's sound setting.
 - **Social depth**: friend challenges, group leaderboards, direct messages.
 - **Focus enhancements**: ambient sounds, focus streak freeze, focus session tags.
 - **Image-based sharing**: generate a PNG image of the share card.
+
+---
+
+## Task ID: R18 (webDevReview — Focus Session Tags + Git Workflow)
+**Agent**: Z.ai Code (webDevReview cron)
+
+### Current project status (assessment)
+Cloned fresh from GitHub (17 rounds of work). App was stable across all 8 views.
+This round added **Focus Session Tags** — users can tag each focus session with
+a topic (e.g., "পড়াশোনা", "কোডিং") for better organization and tracking.
+
+### Work Log
+- **Git workflow**: cleared sandbox, cloned from GitHub, installed deps,
+  pushed Prisma schema, started dev + social servers.
+- **FocusSession schema**: added `tag` field (optional String) to the
+  FocusSession Prisma model. Pushed schema, regenerated Prisma client.
+- **Focus API**: updated `/api/focus` POST to accept and save the `tag` field.
+  Updated the LogSchema with `tag: z.string().max(60).nullable().optional()`.
+  Verified: API saves tag correctly (tested with "study" → returned in GET).
+- **Focus view UI**: added a tag input field below the habit linking section.
+  Tag is cleared after each work session. Tags display in the recent sessions
+  list as violet-colored chips (#tag). The `handleComplete` useCallback now
+  includes `sessionTag` in its dependencies (fixed React Compiler error).
+- **Styling polish**: tag chips with violet theme, input with placeholder
+  examples ("যেমন: পড়াশোনা, কোডিং, লেখা...").
+
+### Verification results
+- ✅ `bun run lint` clean (0 errors, 0 warnings).
+- ✅ Dev server compiles, all routes 200, no runtime errors.
+- ✅ agent-browser QA: Focus view shows tag input, sessions list shows tag chips.
+- ✅ Focus API: POST with tag saves correctly, GET returns tag in session data.
+- ✅ Git: committed and pushed to GitHub.
+
+### Unresolved / next-phase recommendations
+- **Production build test**: confirm all features work end-to-end in production.
+- **Data sync / multi-device**: server-side persistence of offline changes.
+- **Bangladesh calendar Hijri accuracy**: approximate dates need proper conversion.
+- **Social depth**: friend challenges, group leaderboards, direct messages.
+- **Focus tag analytics**: show which tags get the most focus time.
+- **Image-based sharing**: generate a PNG image of the share card.
