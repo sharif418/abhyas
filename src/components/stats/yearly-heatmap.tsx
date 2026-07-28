@@ -1,7 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { toBn, fromDateKey } from "@/lib/date-bn";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api-client";
+import { toBn, fromDateKey, bnDayFirst } from "@/lib/date-bn";
+import { X } from "lucide-react";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 
 interface HeatmapDay {
   date: string;
@@ -13,6 +18,7 @@ interface HeatmapDay {
  * Renders as a grid of weeks (columns) × 7 days (rows).
  */
 export function YearlyHeatmap({ data }: { data: HeatmapDay[] }) {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const maxCount = Math.max(...data.map((d) => d.count), 1);
 
   // group into weeks (columns of 7 days)
@@ -91,9 +97,11 @@ export function YearlyHeatmap({ data }: { data: HeatmapDay[] }) {
                     );
                   }
                   const intensity = day.count > 0 ? day.count / maxCount : 0;
+                  const isSelected = selectedDate === day.date;
                   return (
-                    <div
+                    <button
                       key={ri}
+                      onClick={() => setSelectedDate(day.date)}
                       title={`${day.date}: ${toBn(day.count)} সম্পন্ন`}
                       style={{
                         width: 11,
@@ -108,8 +116,10 @@ export function YearlyHeatmap({ data }: { data: HeatmapDay[] }) {
                               )}%, var(--muted))`,
                         opacity: day.count === 0 ? 0.4 : 1,
                         borderRadius: 2,
+                        outline: isSelected ? "2px solid var(--primary)" : undefined,
+                        outlineOffset: 1,
                       }}
-                      className="transition-colors hover:ring-1 hover:ring-ring/50"
+                      className="cursor-pointer transition-all hover:ring-1 hover:ring-ring/50"
                     />
                   );
                 })}
@@ -144,6 +154,162 @@ export function YearlyHeatmap({ data }: { data: HeatmapDay[] }) {
         </div>
         <span>বেশি</span>
       </div>
+
+      {/* Day detail popover */}
+      <AnimatePresence>
+        {selectedDate && (
+          <DayDetailPopover
+            date={selectedDate}
+            onClose={() => setSelectedDate(null)}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+const MOOD_EMOJI = ["", "😞", "😕", "😐", "🙂", "😄"];
+const MOOD_LABEL = ["", "খুব খারাপ", "খারাপ", "মোটামুটি", "ভালো", "খুব ভালো"];
+
+function DayDetailPopover({
+  date,
+  onClose,
+}: {
+  date: string;
+  onClose: () => void;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["day", date],
+    queryFn: () =>
+      api.get<{
+        date: string;
+        completions: {
+          habitId: string;
+          name: string;
+          icon: string;
+          color: string;
+          category: string;
+          note: string | null;
+        }[];
+        mood: { mood: number; note: string | null } | null;
+        focusMinutes: number;
+        focusSessionCount: number;
+      }>(`/api/day?date=${date}`),
+    staleTime: 60_000,
+  });
+
+  const dayDate = fromDateKey(date);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 10 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 10 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-3xl border bg-card p-5 shadow-xl"
+      >
+        {/* Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold">{bnDayFirst(dayDate)}</h3>
+            <p className="text-[11px] text-muted-foreground">{date}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/70"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2 py-4">
+            <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+          </div>
+        ) : data ? (
+          <div className="space-y-3">
+            {/* Mood */}
+            {data.mood && (
+              <div className="flex items-center gap-2 rounded-xl bg-muted/30 p-2.5">
+                <span className="text-xl">{MOOD_EMOJI[data.mood.mood]}</span>
+                <div>
+                  <div className="text-xs font-semibold">
+                    মুড: {MOOD_LABEL[data.mood.mood]}
+                  </div>
+                  {data.mood.note && (
+                    <p className="text-[10px] italic text-muted-foreground">
+                      {data.mood.note}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Focus */}
+            {data.focusMinutes > 0 && (
+              <div className="flex items-center gap-2 rounded-xl bg-primary/5 p-2.5">
+                <span className="text-base">🎯</span>
+                <div className="text-xs">
+                  <span className="font-semibold">
+                    {toBn(data.focusMinutes)} মিনিট ফোকাস
+                  </span>
+                  <span className="text-muted-foreground">
+                    {" "}({toBn(data.focusSessionCount)} সেশন)
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Completions */}
+            {data.completions.length > 0 ? (
+              <div>
+                <div className="mb-1.5 text-[10px] font-medium text-muted-foreground">
+                  সম্পন্ন অভ্যাস ({toBn(data.completions.length)} টি)
+                </div>
+                <div className="space-y-1.5">
+                  {data.completions.map((c) => (
+                    <div
+                      key={c.habitId}
+                      className="flex items-start gap-2 rounded-xl bg-background/50 p-2"
+                    >
+                      <div
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
+                        style={{ background: c.color }}
+                      >
+                        <IconRenderer name={c.icon} size={13} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold">{c.name}</div>
+                        {c.note && (
+                          <p className="text-[10px] italic text-muted-foreground">
+                            📝 {c.note}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-emerald-500">✓</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              !data.mood &&
+              data.focusMinutes === 0 && (
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  এই দিনে কোনো কার্যকলাপ নেই
+                </p>
+              )
+            )}
+          </div>
+        ) : null}
+      </motion.div>
     </motion.div>
   );
 }
