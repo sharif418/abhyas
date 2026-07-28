@@ -16,6 +16,7 @@ import { AICoachPanel } from "@/components/home/ai-coach-panel";
 import { CalendarPanel } from "@/components/home/calendar-panel";
 import { MoodSelector } from "@/components/home/mood-selector";
 import { WeeklyRecapCard } from "@/components/home/weekly-recap-card";
+import { DailyQuoteCard } from "@/components/home/daily-quote-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -204,6 +205,7 @@ export function HomeView() {
 
       {/* Secondary panels — below the primary task */}
       <div className="mt-6 space-y-4">
+        <DailyQuoteCard />
         <MoodSelector />
         <AICoachPanel />
         <CalendarPanel />

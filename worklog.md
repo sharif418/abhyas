@@ -1342,3 +1342,28 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Consolidate getHabitsWithMeta + completions fetch
 - Offline write queue (Service Worker background sync)
 - Real push notifications (Web Push API + VAPID)
+
+---
+
+## Task ID: R30 (Daily Motivation Quote Card)
+**Agent**: Z.ai Code (Autonomous)
+
+### New Feature
+- **Daily Motivation Quote Card** on Home view:
+  - 30 curated Bengali motivational quotes in `constants/daily-quotes.ts`
+  - Rotates daily based on day-of-year modulo list length
+  - Premium card design: gradient accent, quote icon, "আজকের অনুপ্রেরণা" label
+  - No emojis — uses SVG quote icon in a primary-tinted tile
+  - Shows quote text + author attribution
+  - Positioned at the top of the secondary panels section
+
+### Verified
+- Lint clean, no runtime errors
+- Quote card renders with correct daily quote
+- GitHub committed and pushed
+
+### Next priorities
+- Production build test
+- Consolidate getHabitsWithMeta + completions fetch
+- Offline write queue (Service Worker background sync)
+- Real push notifications (Web Push API + VAPID)
