@@ -50,7 +50,7 @@ export async function POST() {
         color: s.color,
         target: "প্রতিদিন",
         frequency: s.frequency,
-        frequencyDays: JSON.stringify(s.frequencyDays),
+        frequencyDays: s.frequencyDays ?? [],
         timesPerWeek: 0,
         timeOfDay: s.timeOfDay,
         isIslamic: s.isIslamic,
