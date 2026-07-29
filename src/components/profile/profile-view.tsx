@@ -112,7 +112,7 @@ export function ProfileView() {
       </motion.div>
 
       {/* Appearance */}
-      <Section title="রূপ ও থিম" icon="Palette">
+      <Section title="রূপ ও থিম" icon="Palette" padded>
         <div className="space-y-4">
           <div>
             <div className="mb-2 text-xs font-medium text-muted-foreground">থিম</div>
@@ -343,10 +343,16 @@ function Section({
   title,
   icon,
   children,
+  padded = false,
 }: {
   title: string;
   icon: string;
   children: React.ReactNode;
+  /** When true, adds p-4 padding around children. Use for sections with
+   *  custom content (e.g. theme picker). Leave false for sections that
+   *  use their own row-based layout (ToggleRow, DataRow) which have
+   *  built-in px-4 py-3 padding. */
+  padded?: boolean;
 }) {
   return (
     <motion.div
@@ -354,8 +360,11 @@ function Section({
       animate={{ opacity: 1, y: 0 }}
       className="overflow-visible rounded-3xl border bg-card shadow-sm"
     >
-      <div className="border-b px-4 py-3 text-sm font-bold">{title}</div>
-      <div>{children}</div>
+      <div className="flex items-center gap-2 border-b px-4 py-3 text-sm font-bold">
+        <IconRenderer name={icon} size={16} className="text-muted-foreground" />
+        {title}
+      </div>
+      <div className={padded ? "p-4" : undefined}>{children}</div>
     </motion.div>
   );
 }
@@ -567,7 +576,7 @@ function PushNotificationsRow() {
             ) : (
               <Send size={11} />
             )}
-            {sendingTest ? "পাঠানো হচ্ছে..." : "পরীক্ষা"}
+            {sendingTest ? "পাঠানো হচ্ছে..." : "পুশ পরীক্ষা"}
           </Button>
         )}
         <Switch
@@ -579,20 +588,34 @@ function PushNotificationsRow() {
       </div>
 
       {/* Status row */}
-      <div className="mt-2 pl-11 text-[11px]">
+      <div className="mt-2 flex items-center gap-2 pl-11 text-[11px]">
         <PermissionBadge state={permission} />
-        <span className="ml-2 text-muted-foreground">
+        <span className="text-muted-foreground">
           {isLoading
             ? "অবস্থা যাচাই করা হচ্ছে..."
             : isOn
-              ? "সাবস্ক্রাইব করা আছে"
-              : "সাবস্ক্রাইব করা নেই"}
+              ? "সাবস্ক্রাইব করা আছে ✓"
+              : permission === "denied"
+                ? "অনুমতি ব্লক করা হয়েছে"
+                : "সাবস্ক্রাইব করা নেই"}
         </span>
       </div>
 
+      {/* Denied permission — helpful guidance */}
       {permission === "denied" && (
-        <div className="mt-1 pl-11 text-[10px] text-muted-foreground">
-          ব্রাউজার সেটিংস থেকে অনুমতি পুনরায় চালু করুন।
+        <div className="mt-2 ml-11 rounded-lg bg-amber-50 dark:bg-amber-950/30 p-2.5 text-[11px] text-amber-700 dark:text-amber-300">
+          <div className="font-medium">নোটিফিকেশন ব্লক করা হয়েছে</div>
+          <p className="mt-0.5 leading-relaxed">
+            পুশ নোটিফিকেশন চালু করতে ব্রাউজারের ঠিকানা বারের বাম পাশে থাকা নোটিফিকেশন
+            আইকনে ক্লিক করুন, তারপর "নোটিফিকেশন" অনুমতি "অনুমতি দিন" এ পরিবর্তন করুন।
+          </p>
+        </div>
+      )}
+
+      {/* Default permission — hint to enable */}
+      {permission === "default" && !isOn && (
+        <div className="mt-1 ml-11 text-[10px] text-muted-foreground">
+          টগল চালু করলে ব্রাউজার অনুমতি চাইবে
         </div>
       )}
     </div>
