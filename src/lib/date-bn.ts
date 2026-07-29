@@ -67,6 +67,15 @@ export function bnWeekday(date: Date): string {
   return BENGALI_WEEKDAYS[date.getDay()];
 }
 
+/** Short Bengali weekday names (রবি, সোম, মঙ্গল, বুধ, বৃহ, শুক্র, শনি). */
+const BENGALI_WEEKDAYS_SHORT = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র", "শনি"];
+
+/** Short Bengali weekday for a date-string (YYYY-MM-DD) or Date. */
+export function getBengaliWeekdayShort(date: string | Date): string {
+  const d = typeof date === "string" ? new Date(date + "T00:00:00") : date;
+  return BENGALI_WEEKDAYS_SHORT[d.getDay()];
+}
+
 /** Bengali month name. */
 export function bnMonth(date: Date): string {
   return BENGALI_MONTHS[date.getMonth()];

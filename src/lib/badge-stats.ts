@@ -5,6 +5,13 @@ import { isScheduledOn } from "./streaks";
 import { levelFromXp } from "./gamification";
 import type { BadgeStats } from "@/types";
 
+/** Parse frequencyDays from native array (PostgreSQL) or JSON string (SQLite). */
+function parseFD(raw: unknown): number[] {
+  if (Array.isArray(raw)) return raw as number[];
+  if (typeof raw === "string") { try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch { return []; } }
+  return [];
+}
+
 /**
  * Compute badge-relevant stats from the database.
  * `override` lets callers inject freshly-computed streak values.
@@ -35,7 +42,7 @@ export async function computeBadgeStats(
     const set = new Set(h.completions.map((c) => c.date));
     const serialized = {
       frequency: h.frequency,
-      frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
+      frequencyDays: parseFD(h.frequencyDays),
     } as any;
     const cs = computeSimpleCurrentStreak(serialized, set);
     const bs = computeSimpleBestStreak(serialized, set);
@@ -54,7 +61,7 @@ export async function computeBadgeStats(
     for (const h of habits) {
       const serialized = {
         frequency: h.frequency,
-        frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
+        frequencyDays: parseFD(h.frequencyDays),
       } as any;
       if (isScheduledOn(serialized, d)) {
         any = true;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../[...nextauth]/route";
+import { serializeJson, serializeArray } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,7 @@ export async function POST() {
           color: h.color,
           target: h.target,
           frequency: h.frequency,
-          frequencyDays: h.frequencyDays,
+          frequencyDays: serializeArray(h.frequencyDays ?? []) as any,
           timesPerWeek: h.timesPerWeek,
           timeOfDay: h.timeOfDay,
           reminderTime: h.reminderTime,
@@ -195,7 +196,7 @@ export async function POST() {
         xp: guestUser.xp,
         level: guestUser.level,
         city: guestUser.city,
-        settings: guestSettings as unknown as import('@prisma/client').Prisma.InputJsonValue,
+        settings: serializeJson(guestSettings) as any,
       },
     });
 

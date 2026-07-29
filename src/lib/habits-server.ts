@@ -9,6 +9,21 @@ import {
 import { levelFromXp } from "./gamification";
 import type { Habit, HabitWithMeta } from "@/types";
 
+/** Parse a frequencyDays value that may be a native array (PostgreSQL)
+ *  or a JSON string (SQLite). */
+function parseFrequencyDays(raw: unknown): number[] {
+  if (Array.isArray(raw)) return raw as number[];
+  if (typeof raw === "string") {
+    try {
+      const v = JSON.parse(raw);
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 /** Serialize a Prisma habit row → client Habit shape. */
 export function serializeHabit(h: any): Habit {
   return {
@@ -21,7 +36,7 @@ export function serializeHabit(h: any): Habit {
     color: h.color,
     target: h.target,
     frequency: h.frequency,
-    frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
+    frequencyDays: parseFrequencyDays(h.frequencyDays),
     timesPerWeek: h.timesPerWeek ?? 0,
     timeOfDay: h.timeOfDay,
     reminderTime: h.reminderTime ?? null,

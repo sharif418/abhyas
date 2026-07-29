@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/user";
 import { TEMPLATE_BUNDLES } from "@/constants/template-bundles";
+import { serializeArray } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
           color: h.color,
           target: "প্রতিদিন",
           frequency: h.frequency,
-          frequencyDays: h.frequencyDays ?? [],
+          frequencyDays: serializeArray(h.frequencyDays ?? []) as any,
           timesPerWeek: 0,
           timeOfDay: h.timeOfDay,
           isIslamic: h.isIslamic,

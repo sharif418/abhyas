@@ -17,15 +17,21 @@ import { CalendarPanel } from "@/components/home/calendar-panel";
 import { MoodSelector } from "@/components/home/mood-selector";
 import { WeeklyRecapCard } from "@/components/home/weekly-recap-card";
 import { DailyQuoteCard } from "@/components/home/daily-quote-card";
+import { WeeklyHeatmap } from "@/components/home/weekly-heatmap";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
 
 interface StatsLite {
-  user: { name: string; level: number };
+  user: { name: string; level: number; levelTitle?: string };
   streaks: { bestOverall: number; activeStreaks: number };
   today: { done: number; total: number; pct: number };
   perfectDays: number;
+  gamification?: {
+    xpInLevel?: number;
+    xpForNextLevel?: number;
+    progress?: number;
+  };
 }
 
 export function HomeView() {
@@ -148,9 +154,34 @@ export function HomeView() {
                 color="#7c3aed"
               />
             </div>
+            {stats?.gamification && (
+              <div className="mt-3">
+                <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>লেভেল {toBn(stats.user.level)}</span>
+                  <span>
+                    {stats.gamification.xpInLevel != null && stats.gamification.xpForNextLevel != null
+                      ? `${toBn(stats.gamification.xpInLevel)} / ${toBn(stats.gamification.xpForNextLevel)} XP`
+                      : ""}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.round((stats.gamification.progress ?? 0) * 100)}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-teal-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>
+
+      {/* 7-day activity heatmap — instant week snapshot */}
+      <div className="mt-4">
+        <WeeklyHeatmap />
+      </div>
 
       {/* Today's habits — primary task, immediately after hero */}
       <div className="mt-6 space-y-6">

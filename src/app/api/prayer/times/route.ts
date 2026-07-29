@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { BD_CITIES } from "@/constants";
 import { todayKey, toDateKey, addDays } from "@/lib/date-bn";
 import type { PrayerTimes } from "@/types";
+import { serializeJson } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -105,9 +106,9 @@ async function fetchFromAladhan(
         lat: meta.lat,
         lng: meta.lng,
         method,
-        times: t as any,
+        times: serializeJson(t) as any,
       },
-      update: { times: t as any },
+      update: { times: serializeJson(t) as any },
     })
     .catch(() => {});
   return {

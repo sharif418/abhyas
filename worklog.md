@@ -1603,3 +1603,100 @@ that would have caused an immediate deployment failure. All have been fixed.
 - Verify live deployment at https://abhyas.ailearnersbd.com/api/health
 - Set up the social WebSocket mini-service (port 3003) as a separate Coolify service
 - Configure database backups in Coolify
+
+---
+Task ID: EVOLVE-1 (Autonomous Evolution — DB Compat + Premium UI)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit bdf1a99 — latest production). After installing
+dependencies and running the dev server, I discovered a **critical local-dev
+blocker**: the Prisma schema uses PostgreSQL types (`Json`, `Int[]`) but the local
+`.env` points to SQLite. Every DB write crashed with `PrismaClientValidationError`,
+making local QA impossible. The production deployment worked because Docker
+regenerates the Prisma client for PostgreSQL, but the developer experience was
+broken.
+
+Beyond the DB issue, the UI was functionally complete but lacked several
+high-impact visual features:
+- No week-level activity visualization (users couldn't see their 7-day pattern at a glance)
+- Streak milestones had no visual distinction (a 3-day and 30-day streak looked identical)
+- The hero card showed XP/level as text but no progress bar toward the next level
+- The `serializeHabit` function silently dropped `frequencyDays` for SQLite (returned `[]` for all string values)
+
+### Executed Work
+
+**1. DB Compatibility Layer (`src/lib/db-compat.ts`)** — NEW FILE
+- Created `serializeJson()` and `serializeArray()` helpers that detect the active
+  database provider (SQLite vs PostgreSQL) at runtime via `DATABASE_URL` prefix.
+- PostgreSQL: passes objects/arrays through to native `Json`/`Int[]` fields.
+- SQLite: JSON.stringifies to fit `String` fields.
+- Updated ALL 7 write paths to use these helpers:
+  - `src/lib/user.ts` (settings create + update)
+  - `src/app/api/auth/register/route.ts` (settings on register)
+  - `src/app/api/auth/migrate/route.ts` (settings + frequencyDays migration)
+  - `src/app/api/seed/route.ts` (frequencyDays on seed)
+  - `src/app/api/habits/route.ts` (frequencyDays on create)
+  - `src/app/api/habits/[id]/route.ts` (frequencyDays on update)
+  - `src/app/api/habits/templates/route.ts` (frequencyDays on template add)
+  - `src/app/api/prayer/times/route.ts` (times Json cache write)
+
+**2. Fixed `serializeHabit` for SQLite** (`src/lib/habits-server.ts`)
+- The `frequencyDays` field was `Array.isArray(h.frequencyDays) ? h.frequencyDays : []`
+  which silently returned `[]` for SQLite string values like `"[0,1,3]"`.
+- Added `parseFrequencyDays()` that handles both native arrays (PostgreSQL) and
+  JSON strings (SQLite), properly parsing the string case.
+
+**3. Fixed `badge-stats.ts` for SQLite** (`src/lib/badge-stats.ts`)
+- Same pattern: replaced `Array.isArray` checks with a `parseFD()` helper that
+  handles both array and string inputs.
+
+**4. Premium 7-Day Activity Heatmap** (`src/components/home/weekly-heatmap.tsx`) — NEW
+- Beautiful visual widget showing the last 7 days of habit completions.
+- Color intensity scales with completion count (5 levels: muted → primary).
+- Bengali weekday labels (রবি, সোম, মঙ্গল, ...) and date numbers.
+- Today highlighted with a ring + pulse dot indicator.
+- Staggered Framer Motion entrance animation (each cell delays 40ms).
+- Positioned right below the hero card on Home for instant week snapshot.
+
+**5. Streak Milestone Badges** (`src/components/habits/habit-row.tsx`)
+- Flame icon color now intensifies with streak length:
+  - 1-6 days: default streak color
+  - 7-13 days: amber (#f59e0b)
+  - 14-29 days: orange (#f97316) with glow + "দৃঢ়" badge
+  - 30-99 days: deep orange (#ea580c) with glow + pulse animation + "তারকা" badge
+  - 100+ days: red (#dc2626) with strong glow + "কিংবদন্তি" badge
+- Milestone badges are in Bengali: দৃঢ় (steadfast), তারকা (star), কিংবদন্তি (legend).
+
+**6. XP Level Progress Bar** (`src/components/home/home-view.tsx`)
+- Added a slim animated progress bar in the hero card showing XP progress
+  toward the next level.
+- Shows "লেভেল N" and "X / Y XP" labels.
+- Gradient fill (primary → teal) with 0.8s ease-out width animation.
+- Uses the existing `gamification` data from the `/api/stats` response.
+
+**7. Added `getBengaliWeekdayShort()` to date-bn.ts**
+- New utility function returning short Bengali weekday names (রবি, সোম, etc.)
+- Takes either a date string (YYYY-MM-DD) or Date object.
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ No runtime errors in dev.log
+- ✅ All APIs return 200: /api/me, /api/habits, /api/stats, /api/health, /api/journal
+- ✅ agent-browser QA: Home renders with heatmap ("গত ৭ দিন"), XP bar ("২২০ / ৩০০ XP"),
+  streak badges ("দৃঢ়" on 14+ day streaks), progress ring (40%), habit toggle works
+- ✅ DB writes work correctly with both SQLite (local) and PostgreSQL (production)
+- ✅ Dev schema (`schema.dev.prisma`) gitignored — won't affect production
+
+### Next Steps (Recommendations for Next Iteration)
+1. **Social WebSocket mini-service** — deploy the port 3003 socket.io service to Coolify
+   as a separate container; wire up the social/leaderboard UI to real-time data.
+2. **Advanced analytics** — add a monthly calendar view with GitHub-style contribution
+   heatmap (30/90 days) to the Stats page.
+3. **Push notifications** — implement Web Push API with VAPID keys for habit reminders.
+4. **Performance** — add `next/dynamic` lazy loading for heavy views (Stats charts,
+   Focus timer) to reduce initial JS bundle.
+5. **Accessibility audit** — add keyboard navigation for habit toggles and ensure all
+   interactive elements have proper ARIA labels.
+6. **Dark mode polish** — verify the heatmap and streak badges render correctly in
+   dark mode (the intensity classes use `bg-primary/N` which should adapt).

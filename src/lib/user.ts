@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from "@/constants/settings";
 import type { User, UserSettings } from "@/types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { serializeJson } from "./db-compat";
 
 /**
  * Server-side user helpers.
@@ -37,7 +38,7 @@ export async function getOrCreateUser(): Promise<{
       name: userId === DEFAULT_USER_ID ? "অতিথি" : (session?.user?.name ?? "ব্যবহারকারী"),
       email: userId === DEFAULT_USER_ID ? undefined : (session?.user?.email ?? undefined),
       city: "ঢাকা",
-      settings: DEFAULT_SETTINGS as any,
+      settings: serializeJson(DEFAULT_SETTINGS) as any,
     },
   });
   return {
@@ -67,7 +68,7 @@ export async function updateUser(
       ...(patch.xp !== undefined ? { xp: patch.xp } : {}),
       ...(patch.level !== undefined ? { level: patch.level } : {}),
       ...(patch.city !== undefined ? { city: patch.city } : {}),
-      settings: mergedSettings as any,
+      settings: serializeJson(mergedSettings) as any,
     },
   });
 }

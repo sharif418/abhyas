@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { Flame, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -73,9 +74,31 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
             {habit.streak > 0 ? (
-              <span className="inline-flex items-center gap-0.5 font-medium text-streak">
-                <Flame size={11} fill="currentColor" />
+              <span
+                className="inline-flex items-center gap-0.5 font-medium"
+                style={getStreakStyle(habit.streak)}
+              >
+                <Flame
+                  size={11}
+                  fill="currentColor"
+                  className={habit.streak >= 30 ? "animate-pulse" : ""}
+                />
                 {toBn(habit.streak)}
+                {habit.streak >= 100 && (
+                  <span className="ml-0.5 rounded-full bg-amber-500/20 px-1 text-[8px] font-bold text-amber-600 dark:text-amber-400">
+                    কিংবদন্তি
+                  </span>
+                )}
+                {habit.streak >= 30 && habit.streak < 100 && (
+                  <span className="ml-0.5 rounded-full bg-orange-500/20 px-1 text-[8px] font-bold text-orange-600 dark:text-orange-400">
+                    তারকা
+                  </span>
+                )}
+                {habit.streak >= 14 && habit.streak < 30 && (
+                  <span className="ml-0.5 rounded-full bg-amber-500/15 px-1 text-[8px] font-bold text-amber-600 dark:text-amber-400">
+                    দৃঢ়
+                  </span>
+                )}
               </span>
             ) : (
               <span className="inline-flex items-center gap-0.5">
@@ -168,4 +191,20 @@ function CheckButton({
       )}
     </motion.button>
   );
+}
+
+/**
+ * Streak milestone styling — flame color intensifies with streak length.
+ * 1-6: default streak color, 7-13: amber, 14-29: orange, 30+: deep red with glow.
+ */
+function getStreakStyle(streak: number): CSSProperties {
+  if (streak >= 100)
+    return { color: "#dc2626", textShadow: "0 0 8px rgba(220,38,38,0.5)" };
+  if (streak >= 30)
+    return { color: "#ea580c", textShadow: "0 0 6px rgba(234,88,12,0.4)" };
+  if (streak >= 14)
+    return { color: "#f97316", textShadow: "0 0 4px rgba(249,115,22,0.3)" };
+  if (streak >= 7)
+    return { color: "#f59e0b" };
+  return { color: "var(--streak)" };
 }

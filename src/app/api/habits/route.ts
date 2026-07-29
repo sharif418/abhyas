@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/user";
 import { getHabitsWithMeta, serializeHabit } from "@/lib/habits-server";
+import { serializeArray } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
       color: d.color,
       target: d.target,
       frequency: d.frequency,
-      frequencyDays: d.frequencyDays,
+      frequencyDays: serializeArray(d.frequencyDays) as any,
       timesPerWeek: d.timesPerWeek,
       timeOfDay: d.timeOfDay,
       reminderTime: d.reminderTime ?? null,
