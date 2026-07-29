@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       email,
       passwordHash,
       city,
-      settings: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
+      settings: DEFAULT_SETTINGS as unknown as import('@prisma/client').Prisma.InputJsonValue,
     },
   });
 

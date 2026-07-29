@@ -182,19 +182,20 @@ export async function POST() {
     }
 
     // Transfer XP and level from guest to new user.
-    // Prisma's JsonValue (read type) includes null, but the input type
-    // (InputJsonValue) does not accept null directly — coerce to a plain
-    // object so the assignment type-checks cleanly.
+    // Prisma's JsonValue (read type) includes null, but the write input
+    // type (InputJsonValue) does not — cast through unknown to satisfy
+    // the type checker. We guarantee non-null via the runtime check.
+    const guestSettings =
+      guestUser.settings && typeof guestUser.settings === 'object'
+        ? (guestUser.settings as Record<string, unknown>)
+        : {};
     await tx.user.update({
       where: { id: userId },
       data: {
         xp: guestUser.xp,
         level: guestUser.level,
         city: guestUser.city,
-        settings:
-          guestUser.settings && typeof guestUser.settings === 'object'
-            ? (guestUser.settings as Record<string, unknown>)
-            : {},
+        settings: guestSettings as unknown as import('@prisma/client').Prisma.InputJsonValue,
       },
     });
 
