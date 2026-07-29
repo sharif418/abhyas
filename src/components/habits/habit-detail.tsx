@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Heatmap } from "@/components/shared/heatmap";
+import { MonthlyCalendar } from "@/components/habits/monthly-calendar";
 import { IconTile, IconRenderer } from "@/components/shared/icon-renderer";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { useHabits, useToggleHabit, useDeleteHabit } from "@/hooks/use-habits";
@@ -180,6 +181,15 @@ export function HabitDetailSheet() {
                     এই সময়ে আপনি {toBn(Math.round(habit.completionRate * 30))} দিন অভ্যাসটি সম্পন্ন করেছেন।
                   </p>
                 </div>
+              </div>
+
+              {/* Monthly calendar — current month with completed days */}
+              <div className="mt-4">
+                <MonthlyCalendar
+                  completedDates={habit.completedDates}
+                  color={habit.color}
+                  frozenDate={habit.frozenDate}
+                />
               </div>
 
               {/* Heatmap */}

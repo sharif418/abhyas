@@ -2680,3 +2680,58 @@ Key opportunities identified:
 - Implement Web Push API for real push notifications (VAPID infrastructure exists)
 - Add AI-powered habit suggestions based on completion patterns
 - Optimize bundle with next/dynamic for heavy views (Stats charts, Focus timer)
+
+---
+Task ID: EVOLVE-5 (Autonomous Evolution — Premium Habit Calendar + Polish)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit 2c9b32a). The app is stable:
+- 0 TypeScript errors, 0 lint errors, 0 `as any`
+- Dark mode, push notifications, social view, focus timer all working
+- Sound effects, streak badges, weekly heatmap all implemented
+- Drag-and-drop reordering already wired (@dnd-kit + reorder API)
+- next/dynamic lazy loading already implemented for heavy views
+- Page transitions already animated (AnimatePresence in view-router)
+
+Key opportunity identified:
+- Habit detail drawer lacked a monthly calendar view — users could only
+  see the 6-month heatmap (tiny cells) but couldn't easily see which days
+  in the current month were completed. A monthly calendar provides a much
+  more intuitive day-by-day view.
+
+### Executed Work
+
+**1. Premium Monthly Calendar** (`src/components/habits/monthly-calendar.tsx`)
+- New component showing a single month's calendar with completed days highlighted
+- Bengali month names (জানুয়ারি, ফেব্রুয়ারি, মার্চ, ...)
+- Bengali weekday headers (রবি, সোম, মঙ্গল, বুধ, বৃহ, শুক্র, শনি)
+- Bengali date numbers (১, ২, ৩, ...)
+- Completed days filled with the habit's color
+- Today marked with a ring indicator
+- Frozen days (streak freeze) shown with ❄️ icon
+- Month navigation: previous/next buttons (ChevronLeft/ChevronRight)
+- Month summary: "এই মাসে X দিন সম্পন্ন করেছেন" (X days completed this month)
+- Framer Motion staggered entrance animation for completed cells
+- Future days dimmed to 40% opacity
+- Grid layout: 7 columns (days of week)
+
+**2. Habit detail integration**
+- Added MonthlyCalendar between the completion rate ring and the 6-month heatmap
+- Creates a visual hierarchy: stats → completion ring → monthly calendar → 6-month heatmap → milestones → notes
+- Passes completedDates, habit color, and frozenDate to the calendar
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: calendar renders with "জুলাই ২০২৬", "এই মাসে ১৫ দিন সম্পন্ন করেছেন"
+- ✅ Month navigation works (verified: clicked previous → "জুন ২০২৬")
+- ✅ Bengali weekday headers render correctly
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Add AI-powered habit suggestions based on completion patterns
+- Implement habit templates quick-start (beyond the existing onboarding presets)
+- Add streak recovery encouragement when a streak breaks
+- Add weekly review email/summary
+- Optimize the 6-month heatmap for mobile (horizontal scroll)
