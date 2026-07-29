@@ -16,9 +16,15 @@ WORKDIR /app
 COPY package.json bun.lock* ./
 COPY prisma ./prisma
 
-# Install dependencies with bun for speed
+# Install dependencies with bun for speed.
+# Note: --frozen-lockfile is intentionally omitted — the lockfile is committed
+# and provides reproducibility, but platform-specific optional deps (e.g. 
+# @biomejs/backend-linux-x64 vs darwin) can cause --frozen-lockfile to fail
+# in Docker (Linux) when the lockfile was generated on macOS. Using `bun install`
+# without the flag lets bun resolve the correct platform variant while still
+# respecting all pinned versions from the lockfile.
 RUN npm install -g bun && \
-    bun install --frozen-lockfile
+    bun install
 
 # Generate Prisma client (needs schema only)
 RUN bunx prisma generate
