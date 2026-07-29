@@ -1,14 +1,16 @@
 // অভ্যাস (Abhyas) — Premium Bengali Habit Tracker
-// Database schema adapted from the architecture proposal (PostgreSQL → SQLite).
-// Multi-user ready; the PWA demo operates on a default local user.
+// Production schema for PostgreSQL 16.
+// Optimized for multi-million user scale with proper indexes, Json fields, and enums.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, citext]
 }
 
 model User {
@@ -16,63 +18,65 @@ model User {
   name         String   @default("অতিথি")
   phone        String?  @unique
   email        String?  @unique
-  passwordHash String?  // bcrypt hash for NextAuth credentials provider
+  passwordHash String?
   avatar       String?
   xp           Int      @default(0)
   level        Int      @default(1)
   city         String   @default("ঢাকা")
-  settings     String   @default("{}") // JSON: theme, accent, reminders, etc.
+  settings     Json     @default("{}") // JSONB: theme, accent, reminders, etc.
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  habits       Habit[]
-  completions  HabitCompletion[]
-  prayers      PrayerRecord[]
-  quran        QuranSession[]
-  achievements Achievement[]
-  moods        MoodEntry[]
+  habits        Habit[]
+  completions   HabitCompletion[]
+  prayers       PrayerRecord[]
+  quran         QuranSession[]
+  achievements  Achievement[]
+  moods         MoodEntry[]
   focusSessions FocusSession[]
+
+  @@index([email])
 }
 
 model Habit {
-  id            String   @id @default(cuid())
-  userId        String
-  name          String
-  nameEn        String?
-  icon          String   @default("CheckCircle")
-  category      String   @default("স্বাস্থ্য")
-  color         String   @default("#059669")
-  target        String   @default("প্রতিদিন")
-  frequency     String   @default("প্রতিদিন") // প্রতিদিন | নির্দিষ্ট দিন | সপ্তাহে কয়েকবার
-  frequencyDays String   @default("[]") // JSON array of weekday numbers (0=Sun..6=Sat)
-  timesPerWeek  Int      @default(0) // for "সপ্তাহে কয়েকবার"
-  timeOfDay     String   @default("সকাল") // সকাল | দুপুর | বিকাল | রাত
-  reminderTime  String?  // HH:mm
-  streak        Int      @default(0)
-  bestStreak    Int      @default(0)
-  totalDone     Int      @default(0)
-  sortOrder     Int      @default(0)
-  active        Boolean  @default(true)
-  isIslamic     Boolean  @default(false)
-  // Streak freeze: 1 free freeze per week. frozenDate marks a forgiven day.
-  frozenDate    String?  // YYYY-MM-DD that was frozen (streak preserved)
-  freezeUsedWeek String? // ISO week key (YYYY-Www) when the freeze was used
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  name           String
+  nameEn         String?
+  icon           String   @default("CheckCircle")
+  category       String   @default("জীবনধারা")
+  color          String   @default("#059669")
+  target         String   @default("প্রতিদিন")
+  frequency      String   @default("প্রতিদিন")
+  frequencyDays  Int[]    @default([]) // Native PostgreSQL integer array
+  timesPerWeek   Int      @default(0)
+  timeOfDay      String   @default("সকাল")
+  reminderTime   String?
+  streak         Int      @default(0)
+  bestStreak     Int      @default(0)
+  totalDone      Int      @default(0)
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  isIslamic      Boolean  @default(false)
+  frozenDate     String?
+  freezeUsedWeek String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   completions HabitCompletion[]
 
   @@index([userId, active])
   @@index([userId, timeOfDay])
+  @@index([userId, streak])
 }
 
 model HabitCompletion {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   habitId     String
   userId      String
   date        String // YYYY-MM-DD (Asia/Dhaka)
-  completedAt DateTime  @default(now())
+  completedAt DateTime @default(now())
   note        String?
 
   habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
@@ -80,6 +84,7 @@ model HabitCompletion {
 
   @@unique([habitId, date])
   @@index([userId, date])
+  @@index([habitId, date])
 }
 
 model PrayerRecord {
@@ -98,6 +103,7 @@ model PrayerRecord {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+  @@index([userId, date])
 }
 
 model QuranSession {
@@ -125,23 +131,24 @@ model Achievement {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
+  @@index([userId])
 }
 
-// Cache for Aladhan prayer-time API responses (reduces external calls).
+// Cache for Aladhan prayer-time API responses.
 model PrayerTimeCache {
   id        String   @id @default(cuid())
   date      String // YYYY-MM-DD
   city      String
   lat       Float
   lng       Float
-  method    Int      @default(3) // Aladhan method 3 = Muslim World League
-  times     String   // JSON of prayer times
+  method    Int      @default(3)
+  times     Json // JSONB: prayer times
   fetchedAt DateTime @default(now())
 
   @@unique([date, lat, lng, method])
+  @@index([date])
 }
 
-// Daily mood tracking (1=very sad .. 5=very happy) + optional reflection note.
 model MoodEntry {
   id        String   @id @default(cuid())
   userId    String
@@ -157,19 +164,19 @@ model MoodEntry {
   @@index([userId, date])
 }
 
-// Focus / Pomodoro sessions — track deep-work time spent on habits.
 model FocusSession {
   id          String   @id @default(cuid())
   userId      String
-  habitId     String?  // optional linked habit
-  date        String   // YYYY-MM-DD
-  durationMin Int      // session duration in minutes
-  type        String   @default("work") // "work" | "break"
-  tag         String?  // optional session topic/tag (e.g. "পড়াশোনা", "কোডিং")
+  habitId     String?
+  date        String // YYYY-MM-DD
+  durationMin Int
+  type        String   @default("work")
+  tag         String?
   completed   Boolean  @default(true)
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
+  @@index([userId, type, date])
 }

@@ -21,7 +21,7 @@ export function serializeHabit(h: any): Habit {
     color: h.color,
     target: h.target,
     frequency: h.frequency,
-    frequencyDays: safeJsonArray(h.frequencyDays),
+    frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
     timesPerWeek: h.timesPerWeek ?? 0,
     timeOfDay: h.timeOfDay,
     reminderTime: h.reminderTime ?? null,
@@ -38,15 +38,8 @@ export function serializeHabit(h: any): Habit {
   };
 }
 
-function safeJsonArray(raw: string | null | undefined): number[] {
-  if (!raw) return [];
-  try {
-    const v = JSON.parse(raw);
-    return Array.isArray(v) ? v.map(Number) : [];
-  } catch {
-    return [];
-  }
-}
+// PostgreSQL returns native Int[] — no JSON parsing needed
+
 
 /** Fetch all active habits for the local user, enriched with completions.
  *  Also returns raw completions for reuse by callers (avoids redundant DB queries). */

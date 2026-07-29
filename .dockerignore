@@ -1,0 +1,52 @@
+# Dependencies (installed inside Docker)
+node_modules
+
+# Build output (rebuilt inside Docker)
+.next
+out
+
+# Development files
+dev.log
+server.log
+*.tsbuildinfo
+.eslintcache
+
+# Database (local SQLite — not needed in production Docker)
+db/
+*.db
+*.db-journal
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Test files
+tests/
+__tests__/
+
+# Documentation
+*.md
+docs/
+
+# Environment (injected at runtime via Coolify)
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-entrypoint.sh
+.dockerignore
+
+# Misc
+download/
+tool-results/
+mini-services/
+examples/
+.zscripts/
+upload/

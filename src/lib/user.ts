@@ -37,7 +37,7 @@ export async function getOrCreateUser(): Promise<{
       name: userId === DEFAULT_USER_ID ? "অতিথি" : (session?.user?.name ?? "ব্যবহারকারী"),
       email: userId === DEFAULT_USER_ID ? undefined : (session?.user?.email ?? undefined),
       city: "ঢাকা",
-      settings: JSON.stringify(DEFAULT_SETTINGS),
+      settings: DEFAULT_SETTINGS as any,
     },
   });
   return {
@@ -46,7 +46,7 @@ export async function getOrCreateUser(): Promise<{
     xp: user.xp,
     level: user.level,
     city: user.city,
-    settings: parseSettings(user.settings),
+    settings: typeof user.settings === "string" ? parseSettings(user.settings) : { ...DEFAULT_SETTINGS, ...(user.settings as object) },
   };
 }
 
@@ -67,7 +67,7 @@ export async function updateUser(
       ...(patch.xp !== undefined ? { xp: patch.xp } : {}),
       ...(patch.level !== undefined ? { level: patch.level } : {}),
       ...(patch.city !== undefined ? { city: patch.city } : {}),
-      settings: JSON.stringify(mergedSettings),
+      settings: mergedSettings as any,
     },
   });
 }

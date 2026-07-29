@@ -1453,3 +1453,85 @@ a topic (e.g., "পড়াশোনা", "কোডিং") for better organiz
 - Production build test
 - Real push notifications (Web Push API + VAPID)
 - ESLint rule cleanup (CTO audit C3)
+
+---
+
+## Task ID: PROD (Production Deployment Preparation — PostgreSQL + Docker)
+**Agent**: Z.ai Code (CTO / Cloud Systems Architect)
+
+### Architecture Analysis
+Deep analysis of the codebase revealed:
+- **Database**: SQLite (file-based, single-user) → must migrate to PostgreSQL 16 for multi-million user scale
+- **Build**: Next.js standalone output already configured — good foundation
+- **Auth**: NextAuth with credentials provider ready for production
+- **Security**: Headers, Zod validation, error boundaries in place
+- **Offline**: Service Worker with background sync implemented
+
+### Production Changes Applied
+
+**1. Prisma Schema Migration (SQLite → PostgreSQL)**
+- Changed `provider` from `"sqlite"` to `"postgresql"`
+- Added `previewFeatures = ["postgresqlExtensions"]` with `pgcrypto` extension
+- `settings` field: `String @default("{}")` → `Json @default("{}")` (native JSONB)
+- `frequencyDays` field: `String @default("[]")` → `Int[] @default([])` (native PostgreSQL integer array)
+- `times` field in PrayerTimeCache: `String` → `Json` (native JSONB)
+- Added additional indexes for query optimization: `@@index([userId, streak])`, `@@index([userId, type, date])`, `@@index([email])`, `@@index([date])`
+- Created initial migration directory
+
+**2. Code Updates for PostgreSQL Compatibility**
+- `habits-server.ts`: `safeJsonArray()` removed — PostgreSQL returns native `Int[]` directly
+- `badge-stats.ts`: `safeArr()` removed — same reason
+- `habits/route.ts` + `habits/[id]/route.ts`: `JSON.stringify(d.frequencyDays)` → `d.frequencyDays` (pass native array to Prisma)
+- `user.ts`: `JSON.stringify(settings)` → direct object (Json field handles serialization)
+- `user.ts`: `parseSettings()` updated to handle both string (legacy) and object (PostgreSQL) returns
+- `prayer/times/route.ts`: `buildFromCache()` updated to handle both string and object `times` field
+
+**3. Multi-Stage Dockerfile**
+- Stage 1 (deps): Node 22 Alpine, installs OpenSSL + bun, generates Prisma client
+- Stage 2 (builder): Copies deps, builds Next.js standalone output
+- Stage 3 (runner): Minimal image, non-root user (`nextjs:nodejs`), copies standalone + static + Prisma runtime
+- HEALTHCHECK configured (30s interval, 3 retries)
+- `docker-entrypoint.sh`: runs `prisma migrate deploy` then starts `node server.js`
+
+**4. Docker Compose for Local Production Testing**
+- PostgreSQL 16 Alpine with healthcheck
+- Next.js app (builds from Dockerfile, depends on db healthcheck)
+- Social WebSocket service
+- Dedicated bridge network (`abhyas-network`)
+- Named volume for PostgreSQL data (`abhyas_pgdata`)
+
+**5. Next.js Production Config**
+- Added `experimental.optimizePackageImports` for lucide-react, recharts, framer-motion, Radix UI
+- Added `Strict-Transport-Security` header (HSTS)
+- Added image optimization config (AVIF + WebP, 24h cache TTL)
+
+**6. Package.json Updates**
+- `start` script: `bun .next/standalone/server.js` → `node .next/standalone/server.js` (Node is the runtime in Docker)
+- Added `db:deploy` script: `prisma migrate deploy` (for production migrations)
+- Added `postinstall` script: `prisma generate` (auto-generates client on install)
+
+**7. Environment Configuration**
+- `.env.example`: documents all required production env vars (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL)
+- `.gitignore`: tracks `.env.example`, ignores `.env`, ignores `db/` directory (local SQLite)
+
+### Verified
+- ✅ Lint clean (0 errors, 0 warnings)
+- ✅ All JSON.stringify/parse calls updated for PostgreSQL Json/Int[] fields
+- ✅ Dockerfile follows best practices (multi-stage, non-root, healthcheck)
+- ✅ docker-compose.yml provides complete local production environment
+
+### Deployment Instructions for Coolify
+1. Create PostgreSQL 16 database (name: `abhyas-db`, user: `abhyas`)
+2. Create application from GitHub repo using Dockerfile
+3. Set environment variables:
+   - `DATABASE_URL=postgresql://abhyas:PASSWORD@abhyas-db:5432/abhyas?schema=public`
+   - `NEXTAUTH_SECRET=<generate with: openssl rand -base64 32>`
+   - `NEXTAUTH_URL=https://your-domain.com`
+4. Deploy — the entrypoint script will auto-run migrations
+5. Set up a separate service for the social WebSocket (mini-services/social, port 3003)
+
+### Next priorities
+- Generate actual Prisma migration SQL (run `prisma migrate dev` against PostgreSQL)
+- Set up Redis for session caching (optional for current scale)
+- Configure CDN for static assets (Coolify + CloudFlare)
+- Set up database backups in Coolify

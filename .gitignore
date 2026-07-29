@@ -30,8 +30,16 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files (keep .env.example tracked, ignore actual .env)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# database (local SQLite — production uses PostgreSQL)
+/db/
+*.db
+*.db-journal
 
 # vercel
 .vercel

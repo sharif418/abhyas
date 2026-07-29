@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       color: d.color,
       target: d.target,
       frequency: d.frequency,
-      frequencyDays: JSON.stringify(d.frequencyDays),
+      frequencyDays: d.frequencyDays,
       timesPerWeek: d.timesPerWeek,
       timeOfDay: d.timeOfDay,
       reminderTime: d.reminderTime ?? null,

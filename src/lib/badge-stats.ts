@@ -35,7 +35,7 @@ export async function computeBadgeStats(
     const set = new Set(h.completions.map((c) => c.date));
     const serialized = {
       frequency: h.frequency,
-      frequencyDays: safeArr(h.frequencyDays),
+      frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
     } as any;
     const cs = computeSimpleCurrentStreak(serialized, set);
     const bs = computeSimpleBestStreak(serialized, set);
@@ -54,7 +54,7 @@ export async function computeBadgeStats(
     for (const h of habits) {
       const serialized = {
         frequency: h.frequency,
-        frequencyDays: safeArr(h.frequencyDays),
+        frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
       } as any;
       if (isScheduledOn(serialized, d)) {
         any = true;
@@ -102,15 +102,6 @@ export async function computeBadgeStats(
   };
 }
 
-function safeArr(raw: string | null | undefined): number[] {
-  if (!raw) return [];
-  try {
-    const v = JSON.parse(raw);
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
 
 function computeSimpleCurrentStreak(habit: any, set: Set<string>): number {
   let streak = 0;

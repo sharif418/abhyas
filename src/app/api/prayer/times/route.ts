@@ -53,7 +53,7 @@ export async function GET(req: Request) {
       where: { date_lat_lng_method: { date: tomorrow, lat: meta.lat, lng: meta.lng, method } },
     });
     if (tomCache) {
-      const tom = JSON.parse(tomCache.times);
+      const tom = typeof tomCache.times === "string" ? JSON.parse(tomCache.times) : tomCache.times;
       times.tomorrowFajr = tom.Fajr;
     } else {
       try {
@@ -68,8 +68,8 @@ export async function GET(req: Request) {
   return NextResponse.json(times);
 }
 
-function buildFromCache(raw: string, meta: { name: string; lat: number; lng: number }, date: string): PrayerTimes {
-  const t = JSON.parse(raw);
+function buildFromCache(raw: any, meta: { name: string; lat: number; lng: number }, date: string): PrayerTimes {
+  const t = typeof raw === "string" ? JSON.parse(raw) : raw;
   return {
     date,
     city: meta.name,
@@ -105,9 +105,9 @@ async function fetchFromAladhan(
         lat: meta.lat,
         lng: meta.lng,
         method,
-        times: JSON.stringify(t),
+        times: t as any,
       },
-      update: { times: JSON.stringify(t) },
+      update: { times: t as any },
     })
     .catch(() => {});
   return {

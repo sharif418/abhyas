@@ -1,0 +1,76 @@
+# =============================================================================
+# অভ্যাস (Abhyas) — Docker Compose for Production
+# Use this for local production testing or as a reference for Coolify deployment.
+#
+# Usage:
+#   docker compose up -d
+#
+# The app will be available at http://localhost:3000
+# PostgreSQL will be available at localhost:5432
+# =============================================================================
+
+services:
+  # PostgreSQL 16 database
+  db:
+    image: postgres:16-alpine
+    container_name: abhyas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: abhyas
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-abhyas_secure_2026}
+      POSTGRES_DB: abhyas
+    volumes:
+      - abhyas_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abhyas -d abhyas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - abhyas-network
+
+  # Next.js application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: abhyas-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://abhyas:${DB_PASSWORD:-abhyas_secure_2026}@db:5432/abhyas?schema=public
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-abhyas_dev_secret_change_in_production}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    networks:
+      - abhyas-network
+
+  # Social WebSocket mini-service
+  social:
+    image: node:22-alpine
+    container_name: abhyas-social
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "npm install -g bun && bun install && bun run dev"
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ./mini-services/social:/app
+    ports:
+      - "3003:3003"
+    networks:
+      - abhyas-network
+
+volumes:
+  abhyas_pgdata:
+    driver: local
+
+networks:
+  abhyas-network:
+    driver: bridge

@@ -69,7 +69,7 @@ export async function PUT(
       ...(d.target !== undefined ? { target: d.target } : {}),
       ...(d.frequency !== undefined ? { frequency: d.frequency } : {}),
       ...(d.frequencyDays !== undefined
-        ? { frequencyDays: JSON.stringify(d.frequencyDays) }
+        ? { frequencyDays: d.frequencyDays }
         : {}),
       ...(d.timesPerWeek !== undefined ? { timesPerWeek: d.timesPerWeek } : {}),
       ...(d.timeOfDay !== undefined ? { timeOfDay: d.timeOfDay } : {}),
