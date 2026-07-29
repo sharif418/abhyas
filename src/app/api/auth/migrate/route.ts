@@ -181,14 +181,20 @@ export async function POST() {
       }).catch(() => {});
     }
 
-    // Transfer XP and level from guest to new user
+    // Transfer XP and level from guest to new user.
+    // Prisma's JsonValue (read type) includes null, but the input type
+    // (InputJsonValue) does not accept null directly — coerce to a plain
+    // object so the assignment type-checks cleanly.
     await tx.user.update({
       where: { id: userId },
       data: {
         xp: guestUser.xp,
         level: guestUser.level,
         city: guestUser.city,
-        settings: guestUser.settings,
+        settings:
+          guestUser.settings && typeof guestUser.settings === 'object'
+            ? (guestUser.settings as Record<string, unknown>)
+            : {},
       },
     });
 

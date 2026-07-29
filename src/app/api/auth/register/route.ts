@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       email,
       passwordHash,
       city,
-      settings: JSON.stringify(DEFAULT_SETTINGS),
+      settings: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
     },
   });
 
