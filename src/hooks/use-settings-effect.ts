@@ -1,23 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTheme } from "next-themes";
+import { useThemeManager } from "@/hooks/use-theme-manager";
 import { useSettingsStore } from "@/stores/settings-store";
 import { api } from "@/lib/api-client";
 import type { UserSettings } from "@/types";
 
 /**
  * Applies user settings to the DOM and syncs with the server.
- *  - theme → next-themes
+ *  - theme → custom theme manager (bypasses next-themes for reliability)
  *  - accent → CSS variable --primary (and a palette shift)
  *  - server persistence (best-effort)
  */
 export function useSettingsEffect() {
   const { theme, accent, weekStartsOn, haptics, sound, remindersEnabled, notificationsEnabled } =
     useSettingsStore();
-  const { setTheme } = useTheme();
+  const { setTheme } = useThemeManager();
 
-  // theme sync
+  // theme sync — use our custom theme manager which reliably updates
+  // both localStorage and the DOM class (next-themes + Turbopack can fail)
   useEffect(() => {
     setTheme(theme);
   }, [theme, setTheme]);

@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSettingsStore } from "@/stores/settings-store";
-import { useTheme } from "next-themes";
+import { useThemeManager } from "@/hooks/use-theme-manager";
 import { ACCENT_PRESETS } from "@/constants";
 import { toBn } from "@/lib/date-bn";
 import { gamificationState, levelTitle } from "@/lib/gamification";
@@ -70,7 +70,7 @@ export function ProfileView() {
     queryFn: () => api.get<MeResponse>("/api/me"),
   });
   const settings = useSettingsStore();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useThemeManager();
 
   const game = me ? gamificationState(me.xp) : null;
 
@@ -140,7 +140,7 @@ export function ProfileView() {
 
           <div>
             <div className="mb-2 text-xs font-medium text-muted-foreground">অ্যাকসেন্ট রঙ</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pb-1">
               {ACCENT_PRESETS.map((c) => {
                 const active = settings.accent === c.value;
                 return (
@@ -618,11 +618,12 @@ function PermissionBadge({ state }: { state: PushPermissionState }) {
   );
 }
 
-/** Test notification button — fires a sample OS notification. */
+/** Test notification button — fires a sample OS notification (browser-level test). */
 function TestNotificationButton() {
   const [status, setStatus] = useState<"idle" | "sent" | "denied">("idle");
   const send = async () => {
     if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("এই ব্রাউজারে নোটিফিকেশন সমর্থিত নয়");
       setStatus("denied");
       return;
     }
@@ -631,6 +632,7 @@ function TestNotificationButton() {
       perm = await Notification.requestPermission();
     }
     if (perm !== "granted") {
+      toast.error("নোটিফিকেশন অনুমতি প্রয়োজন। ব্রাউজার সেটিংস থেকে অনুমতি দিন।");
       setStatus("denied");
       return;
     }
@@ -640,7 +642,9 @@ function TestNotificationButton() {
         icon: "/icon.svg",
       });
       setStatus("sent");
+      toast.success("পরীক্ষামূলক নোটিফিকেশন পাঠানো হয়েছে");
     } catch {
+      toast.error("নোটিফিকেশন পাঠাতে ব্যর্থ");
       setStatus("denied");
     }
   };
@@ -652,7 +656,7 @@ function TestNotificationButton() {
       className="h-7 gap-1 px-2 text-[11px]"
     >
       <Send size={11} />
-      {status === "sent" ? "পাঠানো হয়েছে" : status === "denied" ? "অনুমতি নেই" : "পরীক্ষা"}
+      {status === "sent" ? "পাঠানো হয়েছে" : status === "denied" ? "অনুমতি নেই" : "ব্রাউজার পরীক্ষা"}
     </Button>
   );
 }

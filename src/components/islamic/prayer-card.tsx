@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Clock, Moon } from "lucide-react";
+import { MapPin, Clock, Moon, Sunrise, Sun, Sunset, CloudSun, type LucideIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { usePrayerTimes, usePrayerRecord, useTogglePrayer } from "@/hooks/use-prayer";
@@ -18,6 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+/** Lucide icon per prayer key (replaces the legacy emoji glyphs). */
+const PRAYER_ICONS: Record<"fajr" | "dhuhr" | "asr" | "maghrib" | "isha", LucideIcon> = {
+  fajr: Sunrise,
+  dhuhr: Sun,
+  asr: Sunset,
+  maghrib: CloudSun,
+  isha: Moon,
+};
 
 export function PrayerCard() {
   const [city, setCity] = useState("ঢাকা");
@@ -80,7 +89,10 @@ export function PrayerCard() {
               color="var(--islamic)"
               animate={false}
             >
-              <span className="text-lg">{next.emoji}</span>
+              {(() => {
+                const NextIcon = PRAYER_ICONS[next.key];
+                return <NextIcon size={22} className="text-islamic" aria-hidden />;
+              })()}
             </ProgressRing>
             <div className="flex-1">
               <div className="text-[11px] text-muted-foreground">
@@ -105,6 +117,7 @@ export function PrayerCard() {
             const done = record?.[p.field] ?? false;
             const time = times ? times[p.field === "fajr" ? "Fajr" : p.field === "dhuhr" ? "Dhuhr" : p.field === "asr" ? "Asr" : p.field === "maghrib" ? "Maghrib" : "Isha"] : "--:--";
             const t = time !== "--:--" ? bnTime(time) : null;
+            const Icon = PRAYER_ICONS[p.key];
             return (
               <motion.button
                 key={p.key}
@@ -117,7 +130,7 @@ export function PrayerCard() {
                     : "hover:border-islamic/40"
                 )}
               >
-                <span className="text-base">{p.emoji}</span>
+                <Icon size={18} aria-hidden />
                 <span className="text-[10px] font-semibold">{p.label}</span>
                 <span className="tabular text-[10px] text-muted-foreground">
                   {t ? `${t.label}` : "—"}

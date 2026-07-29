@@ -151,7 +151,7 @@ function HabitFormBody({
                         : "hover:border-foreground/20"
                     )}
                   >
-                    <span className="text-base">{c.emoji}</span>
+                    <IconRenderer name={c.icon} size={16} className="shrink-0" aria-hidden />
                     <span className="font-medium leading-tight">{c.label}</span>
                   </button>
                 );
@@ -262,7 +262,7 @@ function HabitFormBody({
                         : "hover:border-foreground/20"
                     )}
                   >
-                    <span className="text-base">{t.emoji}</span>
+                    <IconRenderer name={t.icon} size={18} className="shrink-0" aria-hidden />
                     <span className="font-medium">{t.label}</span>
                   </button>
                 );

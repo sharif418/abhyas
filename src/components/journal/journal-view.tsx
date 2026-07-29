@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, BookHeart } from "lucide-react";
+import { Search, X, BookHeart, Smile, SmilePlus, Meh, Frown, Angry, type LucideIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toBn, bnDayFirst, fromDateKey } from "@/lib/date-bn";
@@ -35,6 +35,15 @@ interface JournalResponse {
 const MOOD_EMOJI = ["", "😞", "😕", "😐", "🙂", "😄"];
 const MOOD_LABEL = ["", "খুব খারাপ", "খারাপ", "মোটামুটি", "ভালো", "খুব ভালো"];
 const MOOD_COLOR = ["", "#dc2626", "#ea580c", "#ca8a04", "#16a34a", "#059669"];
+/** Lucide icons for the mood *filter* chips (display still uses MOOD_EMOJI). */
+const MOOD_ICONS: (LucideIcon | null)[] = [
+  null,
+  Angry,
+  Frown,
+  Meh,
+  Smile,
+  SmilePlus,
+];
 
 export function JournalView() {
   const { data, isLoading } = useQuery<JournalResponse>({
@@ -118,15 +127,19 @@ export function JournalView() {
             >
               সব
             </FilterChip>
-            {[5, 4, 3, 2, 1].map((m) => (
-              <FilterChip
-                key={m}
-                active={moodFilter === m}
-                onClick={() => setMoodFilter(moodFilter === m ? null : m)}
-              >
-                {MOOD_EMOJI[m]} {MOOD_LABEL[m]}
-              </FilterChip>
-            ))}
+            {[5, 4, 3, 2, 1].map((m) => {
+              const MoodIcon = MOOD_ICONS[m];
+              return (
+                <FilterChip
+                  key={m}
+                  active={moodFilter === m}
+                  onClick={() => setMoodFilter(moodFilter === m ? null : m)}
+                >
+                  {MoodIcon && <MoodIcon size={12} className="mr-0.5" aria-hidden />}
+                  {MOOD_LABEL[m]}
+                </FilterChip>
+              );
+            })}
           </div>
         </div>
       )}

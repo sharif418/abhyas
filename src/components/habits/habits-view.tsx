@@ -195,7 +195,7 @@ export function HabitsView() {
         <span className="mx-1 self-center text-muted-foreground/40">|</span>
         {CATEGORIES.map((c) => (
           <Chip key={c.name} active={filter === c.name} onClick={() => setFilter(c.name)}>
-            <span className="mr-1">{c.emoji}</span>
+            <IconRenderer name={c.icon} size={14} className="mr-1 shrink-0" aria-hidden />
             {c.label}
           </Chip>
         ))}

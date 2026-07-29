@@ -131,6 +131,10 @@ export async function getPushSubscription(): Promise<PushSubscription | null> {
  *
  * Returns the new subscription, or null if permission was denied.
  * Throws on unsupported browser or unexpected SW failure.
+ *
+ * If no Service Worker is registered yet, this function registers it
+ * on-demand before subscribing. This ensures push works even if the
+ * SW registration was delayed or skipped.
  */
 export async function subscribePush(): Promise<PushSubscription | null> {
   if (!isPushSupported()) {
@@ -150,7 +154,28 @@ export async function subscribePush(): Promise<PushSubscription | null> {
     return null;
   }
 
-  const reg = await withTimeout(navigator.serviceWorker.ready, 3000);
+  // Ensure a Service Worker is registered before trying to subscribe.
+  // If /sw.js hasn't been registered yet (e.g. first visit), register it
+  // now so that pushManager.subscribe() has a SW to attach to.
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      await navigator.serviceWorker.register("/sw.js");
+    }
+  } catch {
+    // SW registration failure is non-fatal — we'll still try to subscribe
+    // and the error will surface with a clear message below.
+  }
+
+  let reg: ServiceWorkerRegistration;
+  try {
+    reg = await withTimeout(navigator.serviceWorker.ready, 5000);
+  } catch {
+    throw new Error(
+      "সার্ভিস ওয়ার্কার প্রস্তুত হচ্ছে না। পেজ রিলোড করে আবার চেষ্টা করুন।"
+    );
+  }
+
   const vapidPublicKey = await fetchVapidPublicKey();
   const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
 

@@ -2389,3 +2389,234 @@ with:
 - Automated push notification scheduling (cron worker)
 - WAI-ARIA compliant keyboard navigation
 - Horizontal scaling capability (Redis adapter)
+
+---
+Task ID: 5-b
+Agent: Emoji→Lucide Icon Cleanup Engineer
+Task: Replace remaining decorative emoji with lucide-react icons in habits + islamic + journal views
+
+### Assessment
+The EVOLVE-2 cleanup replaced 13 decorative emoji across home/stats/profile/social,
+but four feature views still rendered legacy emoji glyphs from the `CATEGORY_MAP`,
+`TIMES_OF_DAY`, `PRAYERS`, and `MOOD_EMOJI` constants. These emoji render
+inconsistently across OS/font stacks (Windows Segoe UI Emoji vs. macOS Apple
+Color Emoji vs. Android Noto) and don't inherit `currentColor`, so they can't
+adapt to active/dark states. Replaced them with scalable, theme-aware lucide SVG
+icons while preserving all functionality (active state, onClick handlers, etc.)
+and keeping the mood *display* emoji (which follow the universal mood-selector
+pattern).
+
+### Executed Work
+
+**1. Habits view — category filter chips** (`src/components/habits/habits-view.tsx`)
+- Category filter chip at L196-201 was rendering `{c.emoji}` as a text glyph
+  (🕌 💪 📚 💼 👨‍👩‍👧 💰 🧠 ✨) prefixed to the Bengali label.
+- Replaced with `<IconRenderer name={c.icon} size={14} className="mr-1 shrink-0" aria-hidden />`
+  — uses the existing `icon` field on `CategoryMeta` (Moon, Dumbbell, BookOpen,
+  Briefcase, Heart, Wallet, Brain, Sparkles).
+- `IconRenderer` was already imported, so no new import needed.
+- Size 14px matches the surrounding `text-xs` (12px) chip text — icon slightly
+  larger for visual balance with the Bengali glyphs.
+- `aria-hidden` added since the visible label already conveys meaning.
+- `shrink-0` prevents the icon from collapsing when the chip is truncated.
+
+**2. Add Habit sheet — category + time-of-day buttons** (`src/components/habits/habit-form.tsx`)
+- Category buttons (L154): `{c.emoji}` → `<IconRenderer name={c.icon} size={16} className="shrink-0" aria-hidden />`.
+  - 16px matches the original `text-base` emoji size; icon sits beside the
+    Bengali label in the 2-column grid.
+- Time-of-day buttons (L265): `{t.emoji}` (🌅 ☀️ 🌇 🌙) → `<IconRenderer name={t.icon} size={18} className="shrink-0" aria-hidden />`.
+  - Uses the existing `icon` field on `TimeOfDayMeta` (Sunrise, Sun, Sunset, Moon)
+    — exactly the icon names called out in the task brief.
+  - 18px slightly larger than the original `text-base` emoji because lucide line
+    icons read smaller than filled emoji at the same nominal size.
+- `IconRenderer` was already imported; no new imports needed.
+
+**3. Islamic view — prayer buttons + next-prayer ring** (`src/components/islamic/prayer-card.tsx`)
+- Added imports: `Sunrise, Sun, Sunset, CloudSun, type LucideIcon` from lucide-react
+  (`Moon` was already imported).
+- Added a `PRAYER_ICONS` map keyed by prayer key, mapping each prayer to the
+  lucide icon specified in the brief:
+  - `fajr` → Sunrise (replaces 🌅)
+  - `dhuhr` → Sun (replaces ☀️)
+  - `asr` → Sunset (replaces 🌇)
+  - `maghrib` → CloudSun (replaces 🌆)
+  - `isha` → Moon (replaces 🌙)
+- Prayer list buttons (L134): `{p.emoji}` → `<Icon size={18} aria-hidden />`,
+  where `Icon = PRAYER_ICONS[p.key]` is computed at the top of the `.map`
+  callback (cleaner than an IIFE).
+- Next-prayer highlight ProgressRing (L92-95): `{next.emoji}` →
+  `<NextIcon size={22} className="text-islamic" aria-hidden />` via IIFE (since
+  `next` is conditional, can't hoist the const outside the JSX guard).
+  - 22px fits the 64px ring (inner ~52px) nicely; `text-islamic` matches the
+    ring stroke color for visual cohesion.
+- The `PRAYERS` array in `src/constants/index.ts` was left untouched (still
+  carries the `emoji` field for backward compat with `NextPrayer.emoji` in
+  `src/lib/prayer.ts` — though that field is no longer rendered).
+
+**4. Journal view — mood filter chips** (`src/components/journal/journal-view.tsx`)
+- Added imports: `Smile, SmilePlus, Meh, Frown, Angry, type LucideIcon`.
+- Added `MOOD_ICONS` array alongside the existing `MOOD_EMOJI`:
+  - index 1 (😞 very bad) → Angry
+  - index 2 (😕 bad) → Frown
+  - index 3 (😐 okay) → Meh
+  - index 4 (🙂 good) → Smile
+  - index 5 (😄 very good) → SmilePlus
+- Filter chip rendering (L130-142): changed from `{MOOD_EMOJI[m]} {MOOD_LABEL[m]}`
+  to compute `MoodIcon = MOOD_ICONS[m]` and render
+  `<MoodIcon size={12} className="mr-0.5" aria-hidden />` before the label.
+  - 12px matches the `text-[10px]` chip text — icon slightly larger to remain
+    legible at this tiny scale.
+- The `.map` callback was converted from expression form `(m) => (...)` to
+  block form `(m) => { ... return (...) }` to allow the `MoodIcon` const.
+- `MOOD_EMOJI` array kept intact — still used at L201 (timeline dot) and L237
+  (day card mood badge) for mood *display*, per the task brief.
+
+### Verification Results
+- ✅ `bunx eslint src/components/habits/habits-view.tsx src/components/habits/habit-form.tsx src/components/islamic/prayer-card.tsx src/components/journal/journal-view.tsx` → clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` → clean for src/ (only the pre-existing unrelated `examples/websocket/server.ts` socket.io type error remains)
+- ✅ All `onClick`, `active` state, `key`, and conditional rendering preserved
+- ✅ `aria-hidden` added to all decorative icons (visible text labels convey meaning)
+- ✅ `shrink-0` added to icons inside flex layouts to prevent collapse
+- ✅ Icon colors inherit `currentColor` — auto-adapt to active state (`text-primary-foreground` when active, `text-muted-foreground` when inactive) and dark mode
+- Note: A pre-existing lint error in `src/hooks/use-theme-manager.ts:59` (`react-hooks/set-state-in-effect`) was found during the full `bun run lint` run — this file was NOT modified by this task and the error is unrelated. Reported for visibility.
+
+### Design Decisions
+- **Used `IconRenderer` for category/time-of-day** (already imported in both
+  habits files) since the icon name comes from a string field in constants —
+  keeps the dynamic-dispatch pattern consistent with the rest of the app.
+- **Used direct imports for prayer + mood icons** since the icon set is fixed
+  and known at compile time — avoids the `LucideIcons[name]` lookup overhead
+  and gives better tree-shaking.
+- **Left `emoji` fields in constants untouched** (`CATEGORIES`, `TIMES_OF_DAY`,
+  `PRAYERS`, `MOOD_EMOJI`) — they're harmless data, removing them would churn
+  the type definitions and risk breaking other consumers. Future cleanup task
+  could remove them if desired.
+- **Next-prayer ring icon was also replaced** (not just the prayer buttons)
+  for visual consistency — otherwise the same prayer (e.g. Fajr) would show as
+  a Sunrise icon in the button grid but a 🌅 emoji in the next-prayer card.
+
+### Files Changed
+- `src/components/habits/habits-view.tsx` (1 line: category chip emoji → IconRenderer)
+- `src/components/habits/habit-form.tsx` (2 lines: category + time-of-day emoji → IconRenderer)
+- `src/components/islamic/prayer-card.tsx` (+13/-4: imports, PRAYER_ICONS map, 2 emoji sites)
+- `src/components/journal/journal-view.tsx` (+24/-5: imports, MOOD_ICONS array, filter chip refactor)
+
+
+---
+Task ID: 5-c
+Agent: Social View Loading-State Engineer
+Task: Fix perpetual "লিডারবোর্ড লোড হচ্ছে..." state in Social view when WebSocket can't connect
+
+### Assessment
+The Social view (`src/components/social/social-view.tsx`) rendered a
+perpetual Bengali "লিডারবোর্ড লোড হচ্ছে..." loading state whenever the
+WebSocket mini-service on port 3003 was unreachable — the `useSocial`
+hook (`src/hooks/use-social.ts`) only exposed a boolean `connected` flag
+with no failure signal, and socket.io's `reconnection: true` policy kept
+retrying silently in the background. There was no timeout, no error
+state, and no graceful fallback — the user was stuck on a text-only
+placeholder forever.
+
+### Executed Work
+
+**1. Connection-lifecycle state machine in `use-social.ts`**
+- Introduced `SocialConnectionState = "connecting" | "connected" | "error"`
+  as the canonical status, exported alongside the hook. The legacy
+  `connected` boolean is preserved for backward compatibility (it mirrors
+  `connectionState === "connected"`).
+- Added a 5-second `CONNECT_TIMEOUT_MS` safety net (`window.setTimeout`)
+  inside the socket-effect. If the handshake hasn't completed by then,
+  the hook flips to `"error"` and disconnects the socket — so socket.io's
+  own auto-reconnect doesn't surprise the user later while they're
+  reading the demo data.
+- New `reconnect()` callback increments an internal `reconnectNonce`,
+  which is the effect's sole dependency — bumping it tears down the old
+  socket (cleanup) and stands up a fresh one. Also clears stale
+  leaderboard / activities / onlineCount so the UI shows a clean
+  connecting state on retry.
+- Resetting state on retry uses the canonical "adjust state when a value
+  changes" pattern (setState during render with a `prevReconnectNonce`
+  guard), avoiding the `react-hooks/set-state-in-effect` lint rule that
+  fires when setState is called synchronously in an effect body.
+- Refined event semantics:
+  - `connect_error` is treated as transient (socket.io will retry) —
+    only the 5 s timeout or `reconnect_failed` escalate to `"error"`.
+  - `disconnect` after a successful session goes back to `"connecting"`
+    (socket.io auto-reconnects) — `"error"` is reserved for
+    initial-handshake failures so users don't see the demo banner for a
+    momentary network blip.
+- The `join` / `update-xp` effects now gate on `connectionState ===
+  "connected"` instead of the boolean, so they don't fire prematurely
+  during the connecting or error phases.
+
+**2. Three-state UI in `social-view.tsx` with Framer Motion transitions**
+- **Loading state** (`connectionState === "connecting"` && no data yet):
+  - Replaced the bare "লিডারবোর্ড লোড হচ্ছে..." text with a proper
+    5-row skeleton (rank circle + avatar + name + XP + level, all
+    `animate-pulse` on `bg-muted`).
+  - Below the skeleton: an animated `Loader2` spinner (lucide) with the
+    Bengali label "সংযোগ হচ্ছে..." (Connecting...).
+  - Wrapped in `role="status" aria-live="polite"` for AT users.
+- **Error / demo state** (`connectionState === "error"`):
+  - The leaderboard list swaps in a static `DEMO_LEADERBOARD` constant
+    (6 mock Bengali users — আয়েশা সিদ্দিকা, রহিম আহমেদ, ফাতেমা খাতুন,
+    আব্দুল্লাহ আল-মামুন, জাকির হোসেন, মারিয়া রহমান — with XP, level,
+    and best-streak values) so users can preview what the feature looks
+    like. `isYou` is intentionally omitted on demo rows.
+  - A small amber "ডেমো মোড" badge appears next to the "লিডারবোর্ড"
+    heading (`AlertCircle` icon + label, `bg-amber-500/10`).
+  - The status pill in the header also turns amber with the "ডেমো মোড"
+    label.
+  - A dismissible-looking amber banner sits below the grid with
+    `role="alert" aria-live="assertive"`:
+      • Heading: "সংযোগ স্থাপন করা যায়নি" (Could not connect)
+      • Explanation: live server unreachable, demo leaderboard shown for
+        feature preview.
+      • A `Button` (variant `outline`, amber-tinted) labelled
+        "আবার চেষ্টা করুন" (Try again) with a `RefreshCw` icon —
+        wired to `reconnect()`.
+  - The "your rank" hero is hidden in demo mode (the local user isn't
+    part of the mock leaderboard), and the activity-feed empty state
+    explains "ডেমো মোডে লাইভ কার্যকলাপ উপলব্ধ নয়।"
+- **Connected state**: unchanged rendering path; `myRank` is now
+  short-circuited to `null` in demo mode so it doesn't accidentally
+  match a demo row.
+- All state transitions are wrapped in `AnimatePresence` with
+  `mode="wait"` / `mode="popLayout"` so skeleton → live data, live →
+  demo, and demo → reconnecting all animate cleanly.
+- Bengali copy throughout; no English leakage.
+
+### Technical Notes
+- Used existing UI components only: `Button` (`@/components/ui/button`),
+  lucide icons (`AlertCircle`, `Loader2`, `RefreshCw`, plus the
+  pre-existing `Crown` / `Flame` / `Trophy` / `Users` / `Wifi` /
+  `WifiOff`). Skeleton rows are hand-rolled with `animate-pulse` to
+  match the exact layout of live leaderboard rows (the generic
+  `Skeleton` block didn't fit the row shape).
+- TypeScript: exported `SocialConnectionState` and `LeaderboardEntry`
+  type reused for `DEMO_LEADERBOARD`.
+- The lint rule `react-hooks/set-state-in-effect` flagged the initial
+  naive `setConnectionState("connecting")` at the top of the socket
+  effect — resolved via the render-time "adjust state when value
+  changes" pattern (`prevReconnectNonce` guard), which is the React-docs
+  recommended fix and avoids cascading renders.
+
+### Verification
+- ✅ `bun run lint` — clean for both edited files
+  (`src/hooks/use-social.ts` + `src/components/social/social-view.tsx`).
+  NOTE: a single pre-existing `react-hooks/set-state-in-effect` error
+  remains in `src/hooks/use-theme-manager.ts` (an untracked file
+  introduced by another concurrent sub-agent, not part of this task's
+  scope). All errors introduced by this task have been resolved.
+- ✅ No new TypeScript errors in the edited files
+  (`bunx tsc --noEmit` filtered to `src/hooks/use-social.ts` +
+  `src/components/social/social-view.tsx` returns clean).
+
+### Next Steps
+- Consider backoff-bounded auto-retry on the error state (e.g. one
+  silent retry after 30 s) so a transient outage self-heals without
+  requiring the user to click "আবার চেষ্টা করুন".
+- The pre-existing `use-theme-manager.ts` lint error should be addressed
+  by its owner (likely the 5-a / 5-b agent) — same fix pattern applies
+  (render-time setState with a "mounted" guard, or migration to
+  `useSyncExternalStore` for the localStorage-backed theme).
