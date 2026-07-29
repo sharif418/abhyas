@@ -1,28 +1,41 @@
 #!/bin/sh
 # =============================================================================
 # অভ্যাস — Docker Entrypoint
-# 1. Runs Prisma database migrations in the background (non-blocking)
+# 1. Runs Prisma database migrations (non-blocking, in background)
 # 2. Starts the Next.js standalone server immediately
+#
+# Migrations run via the Prisma CLI JS entry point (node_modules/prisma/build)
+# which is always available in the Docker image. We avoid `npx` which tries
+# to download packages at runtime.
 # =============================================================================
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [entrypoint] $*"; }
 
 log "Starting অভ্যাস (Abhyas) production server..."
 
+# Locate the Prisma CLI binary (different paths across versions)
+PRISMA_CLI=""
+for p in \
+  "./node_modules/prisma/build/index.js" \
+  "./node_modules/.bin/prisma" \
+  "./node_modules/@prisma/cli/build/index.js"; do
+  if [ -f "$p" ] || [ -x "$p" ]; then PRISMA_CLI="$p"; break; fi
+done
+
 # ---------------------------------------------------------------------------
 # Run Prisma migrations in the background (non-blocking).
-# Use the local prisma binary directly (not npx, which tries to download).
-# The /api/health endpoint will report DB status once the server is up.
+# The /api/health endpoint reports DB status once the server is up.
 # ---------------------------------------------------------------------------
 (
   log "Background: running database migrations..."
-  if [ -f ./node_modules/.bin/prisma ]; then
-    ./node_modules/.bin/prisma migrate deploy 2>&1 | while read line; do log "migration: $line"; done
-    log "Background: migrations finished (exit: $?)."
+  if [ -n "$PRISMA_CLI" ]; then
+    log "Background: using prisma at $PRISMA_CLI"
+    node "$PRISMA_CLI" migrate deploy 2>&1 | while read line; do log "migration: $line"; done
+    log "Background: migrations finished."
   else
-    log "Background: prisma binary not found, trying npx..."
-    npx prisma migrate deploy 2>&1 | while read line; do log "migration: $line"; done
-    log "Background: migrations finished (exit: $?)."
+    log "Background: prisma CLI not found, trying npx fallback..."
+    npx --yes prisma migrate deploy 2>&1 | while read line; do log "migration: $line"; done
+    log "Background: migrations finished (npx)."
   fi
 ) &
 
