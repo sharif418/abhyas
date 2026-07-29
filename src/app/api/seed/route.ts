@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/user";
 import { todayKey, toDateKey, addDays } from "@/lib/date-bn";
-import { serializeArray } from "@/lib/db-compat";
+import { prismaArray } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ export async function POST() {
         color: s.color,
         target: "প্রতিদিন",
         frequency: s.frequency,
-        frequencyDays: serializeArray(s.frequencyDays ?? []) as any,
+        frequencyDays: prismaArray(s.frequencyDays ?? []),
         timesPerWeek: 0,
         timeOfDay: s.timeOfDay,
         isIslamic: s.isIslamic,

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useSettingsStore } from "@/stores/settings-store";
 import { api } from "@/lib/api-client";
+import type { UserSettings } from "@/types";
 
 /**
  * Applies user settings to the DOM and syncs with the server.
@@ -30,20 +31,10 @@ export function useSettingsEffect() {
   useEffect(() => {
     let mounted = true;
     api
-      .get<{
-        settings: {
-          theme?: string;
-          accent?: string;
-          weekStartsOn?: number;
-          haptics?: boolean;
-          sound?: boolean;
-          remindersEnabled?: boolean;
-          notificationsEnabled?: boolean;
-        };
-      }>("/api/me")
+      .get<{ settings: Partial<UserSettings> }>("/api/me")
       .then((res) => {
         if (!mounted) return;
-        useSettingsStore.getState().hydrateFromServer(res.settings as any);
+        useSettingsStore.getState().hydrateFromServer(res.settings);
       })
       .catch(() => {});
     return () => {

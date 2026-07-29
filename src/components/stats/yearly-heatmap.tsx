@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toBn, fromDateKey, bnDayFirst } from "@/lib/date-bn";
-import { X } from "lucide-react";
+import { X, Target } from "lucide-react";
 import { IconRenderer } from "@/components/shared/icon-renderer";
 
 interface HeatmapDay {
@@ -256,7 +256,7 @@ function DayDetailPopover({
             {/* Focus */}
             {data.focusMinutes > 0 && (
               <div className="flex items-center gap-2 rounded-xl bg-primary/5 p-2.5">
-                <span className="text-base">🎯</span>
+                <Target size={16} className="inline shrink-0 text-primary" />
                 <div className="text-xs">
                   <span className="font-semibold">
                     {toBn(data.focusMinutes)} মিনিট ফোকাস

@@ -8,6 +8,8 @@ interface IconRendererProps {
   className?: string;
   size?: number;
   strokeWidth?: number;
+  /** Forwarded to the underlying SVG (e.g. `aria-hidden` for decorative icons). */
+  "aria-hidden"?: boolean | "true" | "false";
 }
 
 /**
@@ -19,10 +21,11 @@ export function IconRenderer({
   className,
   size = 20,
   strokeWidth = 2,
+  ...rest
 }: IconRendererProps) {
   const Comp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[name] ??
     LucideIcons.CheckCircle;
-  return <Comp className={className} size={size} strokeWidth={strokeWidth} />;
+  return <Comp className={className} size={size} strokeWidth={strokeWidth} {...rest} />;
 }
 
 /** A colored rounded tile showing a habit icon. */
@@ -41,6 +44,8 @@ export function IconTile({
 }) {
   return (
     <div
+      role="img"
+      aria-hidden
       className={cn(
         "flex shrink-0 items-center justify-center rounded-2xl text-white shadow-sm",
         className
@@ -52,7 +57,7 @@ export function IconTile({
         boxShadow: `0 6px 16px -8px ${color}`,
       }}
     >
-      <IconRenderer name={name} size={iconSize ?? size * 0.5} />
+      <IconRenderer name={name} size={iconSize ?? size * 0.5} aria-hidden />
     </div>
   );
 }

@@ -1,17 +1,47 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { useUIStore } from "@/stores/ui-store";
 import { HomeView } from "@/components/home/home-view";
 import { HabitsView } from "@/components/habits/habits-view";
-import { StatsView } from "@/components/stats/stats-view";
-import { IslamicView } from "@/components/islamic/islamic-view";
-import { SocialView } from "@/components/social/social-view";
-import { JournalView } from "@/components/journal/journal-view";
-import { FocusView } from "@/components/focus/focus-view";
-import { ProfileView } from "@/components/profile/profile-view";
+import { ViewSkeleton } from "./view-skeleton";
+import type { ComponentType } from "react";
 
-const VIEWS = {
+/**
+ * View loading strategy:
+ *  - Home + Habits: eagerly loaded (primary views, needed on first paint).
+ *  - Stats (Recharts), Focus (timer), Social (socket.io), Journal, Islamic
+ *    (prayer times + Quran tracker), Profile: lazy-loaded via `next/dynamic`
+ *    so their chunks only ship when the user opens them. Each shows the
+ *    `ViewSkeleton` branded fallback while the chunk downloads.
+ */
+const StatsView = dynamic(
+  () => import("@/components/stats/stats-view").then((m) => ({ default: m.StatsView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+const FocusView = dynamic(
+  () => import("@/components/focus/focus-view").then((m) => ({ default: m.FocusView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+const IslamicView = dynamic(
+  () => import("@/components/islamic/islamic-view").then((m) => ({ default: m.IslamicView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+const SocialView = dynamic(
+  () => import("@/components/social/social-view").then((m) => ({ default: m.SocialView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+const JournalView = dynamic(
+  () => import("@/components/journal/journal-view").then((m) => ({ default: m.JournalView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+const ProfileView = dynamic(
+  () => import("@/components/profile/profile-view").then((m) => ({ default: m.ProfileView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+
+const VIEWS: Record<string, ComponentType> = {
   home: HomeView,
   habits: HabitsView,
   stats: StatsView,

@@ -211,31 +211,43 @@ export function StatsView() {
       </div>
 
       {/* Tab navigation */}
-      <div className="flex gap-1 rounded-2xl bg-muted/50 p-1">
+      <div
+        role="tablist"
+        aria-label="পরিসংখ্যান বিভাগ"
+        className="flex gap-1 rounded-2xl bg-muted/50 p-1"
+      >
         {([
           { key: "overview", label: "সারসংক্ষেপ" },
           { key: "trends", label: "ধারা" },
           { key: "mood", label: "মুড" },
           { key: "badges", label: "ব্যাজ" },
-        ] as const).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "flex-1 rounded-xl py-2 text-xs font-medium transition",
-              activeTab === tab.key
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+        ] as const).map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              role="tab"
+              id={`stats-tab-${tab.key}`}
+              aria-selected={isActive}
+              aria-controls={`stats-tabpanel-${tab.key}`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex-1 rounded-xl py-2 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                isActive
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Overview tab */}
       {activeTab === "overview" && (
-        <>
+        <div role="tabpanel" id="stats-tabpanel-overview" aria-labelledby="stats-tab-overview">
           <WeeklyInsights insights={stats.insights} />
           {stats.categories.length > 0 && (
             <Card>
@@ -299,12 +311,12 @@ export function StatsView() {
               </div>
             </Card>
           )}
-        </>
+        </div>
       )}
 
       {/* Trends tab */}
       {activeTab === "trends" && (
-        <>
+        <div role="tabpanel" id="stats-tabpanel-trends" aria-labelledby="stats-tab-trends" className="space-y-5">
           {/* Yearly heatmap */}
           {stats.yearlyHeatmap && stats.yearlyHeatmap.length > 0 && (
             <YearlyHeatmap data={stats.yearlyHeatmap} />
@@ -370,12 +382,12 @@ export function StatsView() {
       {stats.monthlyTrend && stats.monthlyTrend.length > 0 && (
         <MonthlyTrendChart data={stats.monthlyTrend} />
       )}
-        </>
+        </div>
       )}
 
       {/* Mood tab */}
       {activeTab === "mood" && (
-        <>
+        <div role="tabpanel" id="stats-tabpanel-mood" aria-labelledby="stats-tab-mood" className="space-y-5">
       {/* Mood trend chart */}
       {stats.mood && <MoodTrendChart data={stats.mood.series} />}
 
@@ -383,11 +395,12 @@ export function StatsView() {
       {stats.moodCorrelations && (
         <MoodCorrelationCard correlations={stats.moodCorrelations} />
       )}
-        </>
+        </div>
       )}
 
       {/* Badges tab */}
       {activeTab === "badges" && (
+        <div role="tabpanel" id="stats-tabpanel-badges" aria-labelledby="stats-tab-badges">
         <Card>
           <CardHeader
             title={`ব্যাজ (${toBn(earnedBadges.length)}/${toBn(stats.badges.length)})`}
@@ -410,6 +423,7 @@ export function StatsView() {
             })}
           </div>
         </Card>
+        </div>
       )}
     </div>
   );

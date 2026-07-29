@@ -3,7 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { DEFAULT_SETTINGS } from "@/constants/settings";
-import { serializeJson } from "@/lib/db-compat";
+import { prismaJson } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       email,
       passwordHash,
       city,
-      settings: serializeJson(DEFAULT_SETTINGS) as any,
+      settings: prismaJson(DEFAULT_SETTINGS),
     },
   });
 

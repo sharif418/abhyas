@@ -71,6 +71,7 @@ export function HabitDetailSheet() {
                 <Button
                   onClick={() => toggle.mutate({ habitId: habit.id })}
                   className="flex-1"
+                  aria-pressed={habit.completedToday}
                   variant={habit.completedToday ? "secondary" : "default"}
                 >
                   {habit.completedToday ? "✓ সম্পন্ন হয়েছে" : "আজ সম্পন্ন করুন"}
@@ -84,9 +85,11 @@ export function HabitDetailSheet() {
                       onClick={() => freeze.mutate(habit.id)}
                       disabled={freeze.isPending}
                       title="স্ট্রিক ফ্রিজ করুন"
+                      aria-label="স্ট্রিক ফ্রিজ করুন"
                       className="text-sky-600 hover:text-sky-700"
                     >
-                      <Snowflake size={16} />
+                      <Snowflake size={16} aria-hidden />
+                      <span className="sr-only">স্ট্রিক ফ্রিজ করুন</span>
                     </Button>
                   )}
                 <ShareButton habitId={habit.id} />
@@ -97,13 +100,21 @@ export function HabitDetailSheet() {
                     close();
                     openEdit(habit.id);
                   }}
+                  aria-label="অভ্যাস সম্পাদনা করুন"
                 >
-                  <Pencil size={16} />
+                  <Pencil size={16} aria-hidden />
+                  <span className="sr-only">সম্পাদনা করুন</span>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="icon" className="text-destructive">
-                      <Trash2 size={16} />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="text-destructive"
+                      aria-label="অভ্যাস মুছে ফেলুন"
+                    >
+                      <Trash2 size={16} aria-hidden />
+                      <span className="sr-only">মুছে ফেলুন</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>

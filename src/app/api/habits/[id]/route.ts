@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getOrCreateUser } from "@/lib/user";
 import { serializeHabit } from "@/lib/habits-server";
-import { serializeArray } from "@/lib/db-compat";
+import { prismaArray } from "@/lib/db-compat";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +70,7 @@ export async function PUT(
       ...(d.target !== undefined ? { target: d.target } : {}),
       ...(d.frequency !== undefined ? { frequency: d.frequency } : {}),
       ...(d.frequencyDays !== undefined
-        ? { frequencyDays: serializeArray(d.frequencyDays) as any }
+        ? { frequencyDays: prismaArray(d.frequencyDays) }
         : {}),
       ...(d.timesPerWeek !== undefined ? { timesPerWeek: d.timesPerWeek } : {}),
       ...(d.timeOfDay !== undefined ? { timeOfDay: d.timeOfDay } : {}),

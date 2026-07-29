@@ -23,15 +23,16 @@ export function SidebarNav() {
         </div>
       </div>
 
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-col gap-1" aria-label="প্রধান নেভিগেশন">
         {NAV_ITEMS.filter((i) => i.key !== "more").map((item) => {
           const active = view === item.key;
           return (
             <button
               key={item.key}
               onClick={() => setView(item.key)}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 active
                   ? "text-sidebar-primary-foreground"
                   : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -44,7 +45,7 @@ export function SidebarNav() {
                   transition={{ type: "spring", stiffness: 400, damping: 32 }}
                 />
               )}
-              <span className="relative z-10">
+              <span className="relative z-10" aria-hidden>
                 <IconRenderer name={item.icon} size={18} />
               </span>
               <span className="relative z-10">{item.label}</span>
@@ -53,7 +54,7 @@ export function SidebarNav() {
         })}
 
         {/* Separator */}
-        <div className="my-2 border-t" />
+        <div className="my-2 border-t" role="separator" aria-orientation="horizontal" />
 
         {MORE_ITEMS.map((item) => {
           const active = view === item.key;
@@ -61,8 +62,9 @@ export function SidebarNav() {
             <button
               key={item.key}
               onClick={() => setView(item.key)}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 active
                   ? "text-sidebar-primary-foreground"
                   : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -75,7 +77,7 @@ export function SidebarNav() {
                   transition={{ type: "spring", stiffness: 400, damping: 32 }}
                 />
               )}
-              <span className="relative z-10">
+              <span className="relative z-10" aria-hidden>
                 <IconRenderer name={item.icon} size={18} />
               </span>
               <span className="relative z-10">{item.label}</span>

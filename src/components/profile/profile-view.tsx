@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -19,6 +19,7 @@ import {
   BellRing,
   Send,
   FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -32,6 +33,15 @@ import { Switch } from "@/components/ui/switch";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { IconRenderer } from "@/components/shared/icon-renderer";
 import { cn } from "@/lib/utils";
+import {
+  isPushSupported,
+  getPushPermissionState,
+  getPushSubscription,
+  subscribePush,
+  unsubscribePush,
+  PUSH_PERMISSION_LABEL,
+  type PushPermissionState,
+} from "@/lib/push";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -191,6 +201,11 @@ export function ProfileView() {
             settings.notificationsEnabled ? <TestNotificationButton /> : null
           }
         />
+      </Section>
+
+      {/* Push Notifications */}
+      <Section title="পুশ নোটিফিকেশন" icon="BellRing">
+        <PushNotificationsRow />
       </Section>
 
       {/* Data */}
@@ -413,6 +428,196 @@ function ToggleRow({
   );
 }
 
+/**
+ * PushNotificationsRow — VAPID Web Push toggle.
+ *
+ * Subscribes the browser to server-driven push notifications (via the
+ * `/api/push/*` routes and `src/lib/push.ts`). Shows live permission
+ * status and exposes a "পরীক্ষা" button that POSTs to `/api/push/test`.
+ *
+ * Degrades gracefully when:
+ *   - Push is unsupported (no SW / PushManager / non-secure context)
+ *   - VAPID keys are missing on the server
+ *   - The user previously denied notification permission
+ */
+function PushNotificationsRow() {
+  const [supported] = useState(() => isPushSupported());
+  const [permission, setPermission] = useState<PushPermissionState>(() =>
+    getPushPermissionState()
+  );
+  const [subscribed, setSubscribed] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+
+  // Check for an existing push subscription on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sub = await getPushSubscription();
+      if (cancelled) return;
+      setSubscribed(Boolean(sub));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Poll Notification.permission so the UI reflects changes made from
+  // browser site settings (where the user can revoke/grant outside the app).
+  useEffect(() => {
+    if (!supported) return;
+    const id = setInterval(() => {
+      setPermission(getPushPermissionState());
+    }, 2000);
+    return () => clearInterval(id);
+  }, [supported]);
+
+  const handleToggle = async (checked: boolean) => {
+    setBusy(true);
+    try {
+      if (checked) {
+        const sub = await subscribePush();
+        if (sub) {
+          setSubscribed(true);
+          setPermission("granted");
+          toast.success("পুশ নোটিফিকেশন চালু হয়েছে");
+        } else {
+          // Permission denied by user OR subscribe silently failed.
+          setPermission(getPushPermissionState());
+          toast.error("পুশ অনুমতি অস্বীকার করা হয়েছে");
+        }
+      } else {
+        const ok = await unsubscribePush();
+        if (ok) {
+          setSubscribed(false);
+          toast.success("পুশ নোটিফিকেশন বন্ধ হয়েছে");
+        }
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "পুশ অপারেশন ব্যর্থ";
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setSendingTest(true);
+    try {
+      const res = await fetch("/api/push/test", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as {
+        sent?: boolean;
+        error?: string;
+      };
+      if (res.ok && data.sent) {
+        toast.success("পরীক্ষামূলক পুশ পাঠানো হয়েছে");
+      } else {
+        toast.error(data?.error || "পুশ পাঠাতে ব্যর্থ");
+      }
+    } catch {
+      toast.error("নেটওয়ার্ক ত্রুটি");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  // --- Unsupported: show muted info row, no switch ---
+  if (!supported) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <BellRing size={16} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium">পুশ নোটিফিকেশন</div>
+          <div className="text-[11px] text-muted-foreground">
+            এই ব্রাউজারে সমর্থিত নয় (HTTPS ও সার্ভিস ওয়ার্কার প্রয়োজন)
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isOn = subscribed === true;
+  const isLoading = subscribed === null;
+
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <BellRing size={16} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium">পুশ নোটিফিকেশন</div>
+          <div className="text-[11px] text-muted-foreground">
+            সার্ভার থেকে অভ্যাস রিমাইন্ডার
+          </div>
+        </div>
+        {isOn && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleTest}
+            disabled={sendingTest || busy}
+            className="h-7 gap-1 px-2 text-[11px]"
+          >
+            {sendingTest ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <Send size={11} />
+            )}
+            {sendingTest ? "পাঠানো হচ্ছে..." : "পরীক্ষা"}
+          </Button>
+        )}
+        <Switch
+          checked={isOn}
+          onCheckedChange={handleToggle}
+          disabled={busy || isLoading || permission === "denied"}
+          aria-label="পুশ নোটিফিকেশন টগল"
+        />
+      </div>
+
+      {/* Status row */}
+      <div className="mt-2 pl-11 text-[11px]">
+        <PermissionBadge state={permission} />
+        <span className="ml-2 text-muted-foreground">
+          {isLoading
+            ? "অবস্থা যাচাই করা হচ্ছে..."
+            : isOn
+              ? "সাবস্ক্রাইব করা আছে"
+              : "সাবস্ক্রাইব করা নেই"}
+        </span>
+      </div>
+
+      {permission === "denied" && (
+        <div className="mt-1 pl-11 text-[10px] text-muted-foreground">
+          ব্রাউজার সেটিংস থেকে অনুমতি পুনরায় চালু করুন।
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PermissionBadge({ state }: { state: PushPermissionState }) {
+  const color =
+    state === "granted"
+      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+      : state === "denied"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-muted text-muted-foreground";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
+        color
+      )}
+    >
+      {PUSH_PERMISSION_LABEL[state]}
+    </span>
+  );
+}
+
 /** Test notification button — fires a sample OS notification. */
 function TestNotificationButton() {
   const [status, setStatus] = useState<"idle" | "sent" | "denied">("idle");
@@ -430,7 +635,7 @@ function TestNotificationButton() {
       return;
     }
     try {
-      new Notification("🔔 অভ্যাস", {
+      new Notification("অভ্যাস", {
         body: "নোটিফিকেশন সফলভাবে চালু হয়েছে!",
         icon: "/icon.svg",
       });

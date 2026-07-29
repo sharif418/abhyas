@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X } from "lucide-react";
+import { Search, X, BookHeart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toBn, bnDayFirst, fromDateKey } from "@/lib/date-bn";
@@ -133,7 +133,7 @@ export function JournalView() {
 
       {days.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/50 p-10 text-center">
-          <span className="text-4xl">📔</span>
+          <BookHeart size={36} className="text-muted-foreground" />
           <div>
             <h3 className="font-semibold">
               {searchQuery || moodFilter !== null

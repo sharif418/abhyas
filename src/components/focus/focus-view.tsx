@@ -98,7 +98,7 @@ export function FocusView() {
       qc.invalidateQueries({ queryKey: ["stats"] });
       if (res.xpAwarded > 0) {
         if (res.leveledUp) {
-          toast.success(`⭐ লেভেল আপ! এখন লেভেল ${toBn(res.level)}`, {
+          toast.success(`লেভেল আপ! এখন লেভেল ${toBn(res.level)}`, {
             description: `+${toBn(res.xpAwarded)} XP অর্জন`,
           });
         } else {

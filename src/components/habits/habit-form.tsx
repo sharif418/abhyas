@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Moon } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -171,7 +171,7 @@ function HabitFormBody({
             )}
           >
             <span className="flex items-center gap-2">
-              <span className="text-base">🕌</span>
+              <Moon size={16} className="text-islamic" />
               <span className="font-medium">ইসলামিক অভ্যাস</span>
             </span>
             <span

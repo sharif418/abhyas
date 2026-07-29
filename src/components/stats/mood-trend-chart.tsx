@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { MessageCircle } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -41,7 +42,7 @@ export function MoodTrendChart({ data }: { data: MoodPoint[] }) {
           <p className="text-[11px] text-muted-foreground">গত ৩০ দিনের মুড</p>
         </div>
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-          <span className="text-3xl">💭</span>
+          <MessageCircle size={32} className="text-muted-foreground" />
           <p className="text-xs text-muted-foreground">
             এখনো কোনো মুড লগ করা হয়নি। হোম পেজ থেকে আজকের মুড নির্বাচন করুন।
           </p>

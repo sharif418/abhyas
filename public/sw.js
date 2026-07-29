@@ -5,7 +5,8 @@
 //  - network-first for /api/* with cache fallback (fresh data when online)
 //  - opaque fallback for the Aladhan prayer-times API
 
-const CACHE_VERSION = "abhyas-v3";
+// Bumped to v4: added `push` + `notificationclick` handlers for VAPID push.
+const CACHE_VERSION = "abhyas-v4";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -188,6 +189,93 @@ self.addEventListener("sync", (event) => {
   if (event.tag === "abhyas-sync") {
     event.waitUntil(processQueue());
   }
+});
+
+// ---- Web Push (VAPID) event handlers ----
+//
+// `push`     — fired when the push service delivers a message. We parse
+//              the JSON payload (sent by src/lib/push-server.ts) and
+//              display a Bengali notification via the SW registration.
+//
+// `notificationclick` — focus an existing app tab (or open a new one)
+//              and navigate to the payload's URL. This lets a tap on a
+//              "আপনার অভ্যাস সম্পন্ন করার সময় হয়েছে" reminder jump
+//              straight into the app.
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    // Some push services deliver plain-text payloads — fall back gracefully.
+    payload = event.data ? { body: event.data.text() } : {};
+  }
+
+  const title = payload.title || "🔔 অভ্যাস";
+  const options = {
+    body: payload.body || "আপনার অভ্যাস সম্পন্ন করার সময় হয়েছে",
+    icon: payload.icon || "/icon.svg",
+    badge: payload.badge || "/icon.svg",
+    tag: payload.tag || "abhyas-habit",
+    data: payload.data || { url: "/" },
+    vibrate: [80, 40, 80],
+    requireInteraction: false,
+    // Reuse tag for collapse: newer notif with same tag replaces older.
+    renotify: false,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl =
+    (event.notification.data && event.notification.data.url) || "/";
+
+  event.waitUntil(
+    (async () => {
+      const allClients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      // Focus an existing tab on our origin (and navigate to target URL).
+      for (const client of allClients) {
+        if (client.url && client.url.includes(self.location.origin)) {
+          if ("focus" in client) {
+            try {
+              await client.focus();
+            } catch {
+              /* ignore */
+            }
+          }
+          if ("navigate" in client) {
+            try {
+              await client.navigate(targetUrl);
+            } catch {
+              /* ignore */
+            }
+          }
+          return;
+        }
+      }
+
+      // No existing tab — open a fresh one.
+      if (self.clients.openWindow) {
+        try {
+          await self.clients.openWindow(targetUrl);
+        } catch {
+          /* ignore */
+        }
+      }
+    })()
+  );
+});
+
+// Close-all handler — useful for clearing stacked notifications.
+self.addEventListener("notificationclose", () => {
+  // no-op for now; future: analytics on dismissed reminders.
 });
 
 async function processQueue() {

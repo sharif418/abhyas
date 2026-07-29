@@ -229,9 +229,10 @@ export function HomeView() {
       {/* Quick action card */}
       <button
         onClick={openAddHabit}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-3 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-3 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        aria-label="নতুন অভ্যাস যোগ করুন"
       >
-        <Plus size={16} /> নতুন অভ্যাস যোগ করুন
+        <Plus size={16} aria-hidden /> নতুন অভ্যাস যোগ করুন
       </button>
 
       {/* Secondary panels — below the primary task */}

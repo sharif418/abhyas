@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toBn, bnMonth, fromDateKey } from "@/lib/date-bn";
@@ -122,8 +122,9 @@ export function CalendarPanel() {
                   {day.description}
                 </p>
                 {day.habitTheme && (
-                  <p className="truncate text-[10px] text-primary/70">
-                    ✨ {day.habitTheme}
+                  <p className="flex items-center gap-1 truncate text-[10px] text-primary/70">
+                    <Sparkles size={14} className="inline shrink-0 text-primary" />
+                    {day.habitTheme}
                   </p>
                 )}
               </div>

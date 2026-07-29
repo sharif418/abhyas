@@ -48,7 +48,7 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
         type="button"
         onClick={onOpen}
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
-        aria-label={`${habit.name} বিস্তারিত`}
+        aria-label={`${habit.name} বিস্তারিত দেখুন`}
       >
         <IconTile name={habit.icon} color={habit.color} size={compact ? 38 : 44} />
         <div className="min-w-0 flex-1">
@@ -68,7 +68,7 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
             )}
             {isFrozenToday && (
               <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
-                <Snowflake size={9} /> ফ্রিজ
+                <Snowflake size={9} aria-hidden /> ফ্রিজ
               </span>
             )}
           </div>
@@ -77,10 +77,12 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
               <span
                 className="inline-flex items-center gap-0.5 font-medium"
                 style={getStreakStyle(habit.streak)}
+                aria-label={`স্ট্রিক ${toBn(habit.streak)} দিন`}
               >
                 <Flame
                   size={11}
                   fill="currentColor"
+                  aria-hidden
                   className={habit.streak >= 30 ? "animate-pulse" : ""}
                 />
                 {toBn(habit.streak)}
@@ -133,10 +135,11 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
           }}
           disabled={freeze.isPending}
           title="স্ট্রিক ফ্রিজ করুন (সপ্তাহে ১ বার)"
-          aria-label="স্ট্রিক ফ্রিজ করুন"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-300/50 bg-sky-50 text-sky-600 opacity-0 transition hover:bg-sky-100 group-hover:opacity-100 dark:bg-sky-950/30 dark:text-sky-400 dark:hover:bg-sky-950/50"
+          aria-label={`${habit.name} স্ট্রিক ফ্রিজ করুন`}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-300/50 bg-sky-50 text-sky-600 opacity-0 transition hover:bg-sky-100 group-hover:opacity-100 focus-visible:opacity-100 dark:bg-sky-950/30 dark:text-sky-400 dark:hover:bg-sky-950/50"
         >
-          <Snowflake size={15} />
+          <Snowflake size={15} aria-hidden />
+          <span className="sr-only">স্ট্রিক ফ্রিজ করুন</span>
         </button>
       )}
 
@@ -167,7 +170,7 @@ function CheckButton({
       aria-pressed={done}
       aria-label={done ? "সম্পন্ন বাতিল করুন" : "অভ্যাস সম্পন্ন করুন"}
       className={cn(
-        "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+        "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
         done ? "border-transparent text-white" : "border-foreground/20 text-transparent hover:border-foreground/40"
       )}
       style={done ? { background: color, boxShadow: `0 4px 12px -4px ${color}` } : {}}
@@ -185,10 +188,12 @@ function CheckButton({
           strokeWidth="3.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden
         >
           <path d="M20 6 9 17l-5-5" />
         </motion.svg>
       )}
+      <span className="sr-only">{done ? "সম্পন্ন বাতিল করুন" : "অভ্যাস সম্পন্ন করুন"}</span>
     </motion.button>
   );
 }

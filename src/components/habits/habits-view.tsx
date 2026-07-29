@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ArrowUpDown, Check, LayoutGrid, Flame, TrendingUp, Target } from "lucide-react";
+import { Plus, Search, ArrowUpDown, Check, LayoutGrid, Flame, TrendingUp, Target, GripVertical } from "lucide-react";
 import { useHabits, useToggleHabit } from "@/hooks/use-habits";
 import { useUIStore } from "@/stores/ui-store";
 import { HabitRow } from "@/components/habits/habit-row";
@@ -166,7 +166,7 @@ export function HabitsView() {
 
       {reorderMode && (
         <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
-          ✋ অভ্যাস ধরে টেনে নিয়ে ক্রম পরিবর্তন করুন। প্রতিটি সময়ের (সকাল/দুপুর/বিকাল/রাত) ভেতরে আলাদাভাবে সাজান।
+          <GripVertical size={16} className="inline align-text-bottom mr-1" /> অভ্যাস ধরে টেনে নিয়ে ক্রম পরিবর্তন করুন। প্রতিটি সময়ের (সকাল/দুপুর/বিকাল/রাত) ভেতরে আলাদাভাবে সাজান।
         </div>
       )}
 

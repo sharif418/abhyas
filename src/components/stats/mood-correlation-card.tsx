@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Search, Lightbulb } from "lucide-react";
 import { toBn } from "@/lib/date-bn";
 import { IconTile } from "@/components/shared/icon-renderer";
 
@@ -39,7 +40,7 @@ export function MoodCorrelationCard({
           </p>
         </div>
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <span className="text-2xl">🔍</span>
+          <Search size={28} className="text-muted-foreground" />
           <p className="text-xs text-muted-foreground">
             বিশ্লেষণের জন্য আরও মুড ও অভ্যাস ডেটা দরকার (অন্তত ২ দিন)।
           </p>
@@ -140,8 +141,9 @@ export function MoodCorrelationCard({
         })}
       </div>
 
-      <p className="mt-3 text-center text-[9px] text-muted-foreground">
-        💡 যে অভ্যাসে পার্থক্য বেশি, সেটি আপনার মুডে সবচেয়ে বেশি প্রভাব ফেলে
+      <p className="mt-3 flex items-center justify-center gap-1 text-center text-[9px] text-muted-foreground">
+        <Lightbulb size={14} className="inline shrink-0 text-amber-500" />
+        যে অভ্যাসে পার্থক্য বেশি, সেটি আপনার মুডে সবচেয়ে বেশি প্রভাব ফেলে
       </p>
     </motion.div>
   );

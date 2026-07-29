@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, AlertTriangle, RefreshCw, Lightbulb } from "lucide-react";
+import { Sparkles, AlertTriangle, RefreshCw, Lightbulb, Heart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -76,7 +76,7 @@ export function AICoachPanel() {
             >
               {/* Encouragement */}
               <div className="flex items-start gap-2 rounded-2xl bg-emerald-500/8 p-2.5">
-                <span className="text-base">💚</span>
+                <Heart size={16} className="mt-0.5 shrink-0 text-emerald-500" />
                 <p className="text-sm font-medium leading-snug">{data.encouragement}</p>
               </div>
 

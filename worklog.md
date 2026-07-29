@@ -1700,3 +1700,603 @@ high-impact visual features:
    interactive elements have proper ARIA labels.
 6. **Dark mode polish** — verify the heatmap and streak badges render correctly in
    dark mode (the intensity classes use `bg-primary/N` which should adapt).
+
+---
+Task ID: 4-a
+Agent: Social WebSocket Engineer
+Task: Deploy Social WebSocket mini-service + wire up real-time social/leaderboard UI
+
+Work Log:
+- Read project history (worklog R1–R15 + PROD + EVOLVE-1) to understand context:
+  the social mini-service was first delivered in R5 (port 3003, path "/", Caddy
+  gateway with `XTransformPort=3003`). The UI (`src/components/social/social-view.tsx`)
+  and hook (`src/hooks/use-social.ts`) were already wired up correctly with
+  `io("/?XTransformPort=3003", { path: "/", ... })` — no changes needed there.
+- Reviewed the existing `mini-services/social/index.ts` (10 demo users with
+  different Bengali names, `io.emit` broadcasts, no room-based grouping) and
+  identified gaps vs. the new spec:
+  1. Used `io.emit(...)` for broadcasts — spec requires room-based grouping
+     with users joining a `"global"` room by default.
+  2. Demo user names were `আরিফ, সাবরিনা, তানভীর, নুসরাত, ইমরান, ফারিয়া, রাকিব,
+     মেহজাবিন, শাকিল, জারিন` — spec requires the exact names `রহিম, করিম, ফাতেমা,
+     আব্দুল্লাহ, আয়েশা, হাসান, জায়েদ, মরিয়ম, ওমর, খাদিজা`.
+  3. Long-standing bug: `buildLeaderboard(youId?)` was called without `youId`
+     in `io.emit("leaderboard", buildLeaderboard())`, so no entry was ever
+     marked `isYou: true` → the client's `myRank = leaderboard.findIndex(e => e.isYou)`
+     always returned -1 → "your rank" hero card never showed a number.
+- Rewrote `mini-services/social/index.ts` end-to-end:
+  - **Room-based grouping**: every socket auto-joins `"global"` on connect via
+    `socket.join(GLOBAL_ROOM)`. All broadcasts scoped via `io.to("global").emit(...)`
+    or `io.to(socketId).emit(...)` for personalized snapshots.
+  - **Optional `join-room` / `leave-room` events** added for future friend-group /
+    challenge rooms (the global room cannot be left).
+  - **Personalized leaderboard broadcast** (critical fix): `broadcastLeaderboard()`
+    iterates over `liveUsers` and emits a per-socket snapshot with that socket's
+    own entry marked `isYou: true`. Non-joined sockets get a generic snapshot via
+    `io.to(GLOBAL_ROOM).except(joinedIds).emit(...)`. This fixes the R5 myRank bug.
+  - **`buildLeaderboardForYou(youId?)`**: marks the viewer's entry `isYou: true`
+    and appends them to the top-20 list if they fall outside it, so they're
+    always visible.
+  - **Spec-exact Bengali mock users**: রহিম (xp 3200, level 9, streak 68),
+    করিম (2840/8/52), ফাতেমা (2510/7/47), আব্দুল্লাহ (2180/7/33), আয়েশা
+    (1890/6/42), হাসান (1620/6/28), জায়েদ (1340/5/19), মরিয়ম (1080/5/24),
+    ওমর (760/4/12), খাদিজা (540/3/8) — sorted by XP desc at seed time.
+  - **Demo activity feed**: 10 demo activities (one per mock user) cycling every
+    18s — uses the same Bengali names so the feed feels coherent (e.g.
+    `রহিম completed ফজরের নামাজ`, `করিম streak on কুরআন তিলাওয়াত`).
+  - **New informational events**: `connected` (acks socket id), `rooms` (lists
+    the socket's joined rooms) — emitted on connect + on room join/leave.
+  - **New request-response event**: `get-leaderboard` lets clients request a
+    fresh personalized snapshot on demand (e.g. after reconnect).
+  - **Sort stability**: ranking now sorts by `xp desc, bestStreak desc, name asc`
+    so ties don't reshuffle between broadcasts.
+  - **Graceful shutdown**: SIGTERM/SIGINT now emit `presence: 0` to the global
+    room before closing so clients immediately reflect the offline state.
+  - Preserved the existing event names (`join`, `activity`, `update-xp`,
+    `leaderboard`, `presence`) so the client hook (`use-social.ts`) keeps working
+    unchanged — backward compatible.
+- Verified `mini-services/social/package.json` already has the required
+  `dev: bun --hot index.ts` script — `bun --hot` is supported by Bun 1.3.14.
+- Installed the mini-service's standalone `socket.io` dependency (via `bun install`
+  inside `mini-services/social/`).
+
+Stage Summary:
+- ✅ `bun run lint` clean (0 errors, 0 warnings) from project root.
+- ✅ `bunx tsc --noEmit` clean for `mini-services/social/index.ts` (resolved a
+  `Set<string> vs string | string[]` type error on `io.to(...).except(...)` by
+  switching to `Array.from(liveUsers.keys())`).
+- ✅ Mini-service started in background via
+  `cd mini-services/social && nohup bun --hot index.ts > /tmp/social.log 2>&1 &`
+  — PID 12420, listening on `*:3003` (verified via `ss -ltnp`).
+- ✅ Boot log: `[social] WebSocket server running on port 3003` +
+  `[social] global room ready — demo users: 10`.
+- ✅ Smoke test (socket.io-client, direct localhost:3003): connected, received
+  initial 10-entry leaderboard with the correct Bengali names (রহিম / করিম /
+  ফাতেমা as top 3), received `connected`, `rooms: ["global"]`, `presence: 10`,
+  then emitted `join` as "পরীক্ষক" (xp 1500, level 5) → received a personalized
+  leaderboard with our entry correctly marked `isYou: true` (the R5 myRank bug
+  is fixed), received a broadcast `activity` event (`completion from রহিম`)
+  from the periodic demo ticker. All 5 checks PASSED.
+- ✅ Client wiring verified: `src/hooks/use-social.ts` line 46 uses
+  `io("/?XTransformPort=3003", { path: "/", transports: ["polling", "websocket"], ... })`
+  — exactly the gateway-required format (NEVER a direct `http://localhost:3003`).
+- ✅ UI verified: `src/components/social/social-view.tsx` renders a live
+  leaderboard (rank badges, level, XP, streak, "আপনি" pill on the viewer's row,
+  crown for top-3) + a live activity feed (animated rows for completion/streak/
+  levelup/join events) + a connection status pill (Wifi/WifiOff) + online count.
+- Service is running in the background and ready for the Caddy gateway on port 81
+  to proxy browser traffic via `/?XTransformPort=3003`.
+
+Next Actions (for downstream agents):
+- Verify the social view end-to-end through the Caddy gateway (port 81) via
+  agent-browser — confirm the leaderboard renders with the new Bengali names
+  and the "your rank" hero card now shows a real number (was blank before due
+  to the R5 isYou bug).
+- Optionally add a per-user "rooms" indicator in the social UI (the server now
+  emits a `rooms` event on connect) — currently informational only.
+- The mini-service has no persistence (in-memory only) — a Redis-backed adapter
+  would be needed for multi-instance horizontal scaling in production.
+
+---
+Task ID: 4-b
+Agent: Analytics Engineer
+Task: Add GitHub-style contribution heatmap (30/90 days) to Stats page
+
+Work Log:
+- Read worklog.md to understand project history (EVOLVE-1 task recommended this exact feature as a next step).
+- Reviewed `src/components/stats/stats-view.tsx` — identified the StatsResponse shape, the `dailySeries` (30 days) and `yearlyHeatmap` (365 days) fields, and the existing tab structure (overview/trends/mood/badges). Noted that the existing yearly-heatmap.tsx uses inline `style` + `color-mix` for cell colors rather than Tailwind utility classes — wanted to improve on this with proper Tailwind opacity variants.
+- Reviewed `src/app/api/stats/route.ts` — confirmed `dailySeries` returns only 30 entries while `yearlyHeatmap` returns 365. Chose to pass `yearlyHeatmap` to the new component so the 90-day toggle has data without modifying the API.
+- Reviewed `src/lib/date-bn.ts` for `toBn`, `fromDateKey`, `getBengaliWeekdayShort` utilities.
+- Reviewed `src/components/home/weekly-heatmap.tsx` for the existing 5-level intensity palette pattern.
+- Reviewed `src/components/ui/tooltip.tsx` (shadcn) — chose it for hover tooltips over native `title` for accessibility + polish. Each cell wraps in `<Tooltip>`/`<TooltipTrigger asChild>`/`<TooltipContent>`.
+- Reviewed `src/components/shared/heatmap.tsx` (per-habit heatmap) — confirmed it serves a different purpose (per-habit, schedule-aware, GitHub-standard orientation) and my aggregate contribution heatmap is a distinct, complementary component.
+- Created `src/components/stats/contribution-heatmap.tsx`:
+  • Transposed orientation per spec: 7 weekday columns on X-axis (রবি, সোম, মঙ্গল, বুধ, বৃহ, শুক্র, শনি); month labels on Y-axis next to the row where each month first appears.
+  • 30/90-day toggle using a segmented control matching the existing tab-toggle style.
+  • 5 intensity levels via Tailwind classes only: `bg-muted` (level 0), `bg-primary/10` (1), `bg-primary/30` (2), `bg-primary/50` (3), `bg-primary` (4 = /100). All from CSS variables → dark mode compatible, no hardcoded colors.
+  • Hover tooltip (shadcn Tooltip) showing Bengali date ("১৫ জুন") and Bengali completion count ("৩টি সম্পন্ন" / "কোনো সম্পন্ন নেই").
+  • Today highlighted with `ring-1 ring-primary ring-offset-1 ring-offset-card`.
+  • Responsive cells: `h-4 w-4 sm:h-5 sm:w-5` with `gap-[3px] sm:gap-[4px]`. Outer container `overflow-x-auto` for very narrow viewports.
+  • Framer Motion staggered entrance: each cell animates `opacity 0→1` + `scale 0.6→1` with delay `0.05 + flatIdx*0.004` (capped at 0.6s). Whole card also fades+slides in.
+  • Summary stats inside the card: "মোট সম্পন্ন: Xটি" (total completions in selected range) and "সেরা দিন: Xটি" (best-day count). Both displayed in `bg-primary/5` rounded chips with `tabular` Bengali numerals.
+  • Legend at bottom: "কম [□□■■■] বেশি".
+  • TypeScript types throughout: `Level = 0|1|2|3|4`, `RangeKey = 30|90`, `HeatmapDay` interface.
+  • Empty state for when `data` is empty (renders a placeholder card).
+  • "use client" directive at top.
+- Integrated into `stats-view.tsx`:
+  • Imported `ContributionHeatmap` next to the existing `YearlyHeatmap` import.
+  • Rendered `<ContributionHeatmap data={stats.yearlyHeatmap} />` between the Quick Stats grid and the Tab navigation — always visible regardless of active tab (positioned prominently as requested).
+  • Guarded with `stats.yearlyHeatmap?.length > 0` to avoid rendering on partial data.
+- Ran `bun run lint` — clean (0 errors, 0 warnings, exit 0).
+- Ran `bunx tsc --noEmit` — no errors in my files (pre-existing unrelated errors in `examples/websocket/server.ts` and `src/lib/push.ts` are not from this change).
+- Verified `/api/stats` returns 200 with 365 `yearlyHeatmap` entries — sufficient data for both 30-day and 90-day views.
+
+Stage Summary:
+- New file `src/components/stats/contribution-heatmap.tsx` (260 lines) — fully self-contained, client-side, TypeScript-typed, dark-mode compatible, responsive.
+- Modified `src/components/stats/stats-view.tsx` — added 1 import + 4-line JSX block to render the heatmap prominently above the tab navigation.
+- Lint passes cleanly. No new TypeScript errors. No runtime regressions — dev server still returns 200 on `/api/stats`.
+- Followed existing project conventions: custom motion.div Card (matches stats-view pattern), inline toggle button (matches tab nav style), shadcn Tooltip (matches existing imports), `toBn()` for all numerals, Bengali labels throughout.
+- Future enhancement (out of scope): if a 90-day `dailySeries90` field is added to the API later, the component can be switched to use it instead of slicing `yearlyHeatmap` — but the current approach avoids API changes and works correctly today.
+
+---
+Task ID: 4-c
+Agent: Push Notification Engineer
+Task: Implement Web Push API with VAPID keys for habit reminders
+
+Work Log:
+- Read the project history (worklog R1–R15 + PROD + EVOLVE-1 + 4-a + 4-b).
+  Confirmed "Push notifications" was listed as priority #3 in EVOLVE-1's
+  next-iteration recommendations.
+- Reviewed existing code:
+  * `src/components/profile/profile-view.tsx` — already has a basic
+    `TestNotificationButton` using the Notification API directly (line ~433)
+    and `ToggleRow` switches wired to the settings store. My work adds a
+    new `PushNotificationsRow` without disturbing the existing UI.
+  * `public/sw.js` — already handles offline caching + Background Sync
+    queue for habit toggles. I added `push` and `notificationclick`
+    handlers and bumped the cache version `v3 → v4` so existing clients
+    pick up the new SW.
+  * `src/components/app/sw-register.tsx` — SW only registers in production
+    (NODE_ENV !== "production"). My `getPushSubscription()` handles the
+    dev case gracefully via a 3s timeout on `navigator.serviceWorker.ready`.
+  * `src/hooks/use-notifications.ts` — existing local Notification-API
+    reminder system. Left untouched (works alongside push).
+- Installed `web-push@3.6.7` (server-side VAPID signing) and
+  `@types/web-push@3.6.4` (TypeScript types).
+- Generated a sample VAPID keypair via `web-push generate-vapid-keys --json`
+  and stored it in both `.env.example` (committed) and `.env` (gitignored,
+  for local dev).
+- Created `src/lib/push.ts` (client-safe helpers — no `web-push` import):
+  * `urlBase64ToUint8Array()` — Base64URL → Uint8Array for `applicationServerKey`
+  * `isPushSupported()` — feature-detect (SW + PushManager + Notification + secure context)
+  * `getPushPermissionState()` — wraps `Notification.permission`
+  * `fetchVapidPublicKey()` — GETs `/api/push/vapid-public`
+  * `getPushSubscription()` — reads existing sub from SW registration
+    (with 3s timeout to handle dev mode where no SW is registered)
+  * `subscribePush()` — requests permission, subscribes, POSTs to server
+  * `unsubscribePush()` — unsubscribes + notifies server
+  * `PUSH_PERMISSION_LABEL` — Bengali labels for each permission state
+  * `PushPermissionState` and `PushSubscriptionPayload` types
+- Created `src/lib/push-server.ts` (server-only, imports `web-push`):
+  * `isPushConfigured()` / `getVapidPublicKey()` — env var accessors
+  * `generateVapidKeys()` — wraps `webPush.generateVAPIDKeys()` for programmatic setup
+  * `sendPushNotification(sub, payload)` — calls `webPush.sendNotification`
+    with TTL=1h, urgency=normal, collapse key from payload.tag
+  * `HABIT_REMINDER_BODY` constant = "আপনার অভ্যাস সম্পন্ন করার সময় হয়েছে"
+  * Configures VAPID via `setVapidDetails()` lazily on first send
+- Created `src/lib/push-store.ts` — in-memory `Map<endpoint, subscription>`
+  persisted via `globalThis` to survive Next.js HMR. Includes a clear
+  comment block documenting the production migration path (Prisma
+  `PushSubscription` model with userId + endpoint uniqueness).
+- Created 4 API routes (all `runtime = "nodejs"`, `dynamic = "force-dynamic"`):
+  * `GET  /api/push/vapid-public` — returns `{ publicKey, configured }`
+    (503 if VAPID keys missing)
+  * `POST /api/push/subscribe` — zod-validates `{endpoint, keys}` and
+    stores via `pushSubscriptionStore.add()`
+  * `POST /api/push/unsubscribe` — removes by endpoint
+  * `POST /api/push/test` — sends a test push to the most-recent
+    subscription, with Bengali error responses for 404 (no sub) and
+    503 (VAPID not configured) cases
+- Added SW event handlers to `public/sw.js`:
+  * `push` — parses JSON payload (falls back to text), shows notification
+    with Bengali default body "আপনার অভ্যাস সম্পন্ন করার সময় হয়েছে",
+    icon `/icon.svg`, vibrate `[80,40,80]`, tag for collapse
+  * `notificationclick` — closes the notif, focuses existing same-origin
+    tab (and navigates it to `data.url`), or opens a new window if none
+  * `notificationclose` — no-op (placeholder for future analytics)
+- Added `PushNotificationsRow` component to `profile-view.tsx`:
+  * Toggle switch (shadcn `Switch`) wired to `subscribePush` / `unsubscribePush`
+  * Live permission badge (green "অনুমতি দেওয়া হয়েছে" / red
+    "অস্বীকার করা হয়েছে" / muted "অনুমতি প্রয়োজন")
+  * Polls `Notification.permission` every 2s to reflect browser-settings changes
+  * "পরীক্ষা" button (only shown when subscribed) POSTs to `/api/push/test`
+    with loading spinner state
+  * Unsupported-browser branch shows a muted info row (no switch) — e.g.
+    when running on HTTP or without SW
+  * Denied-permission hint: "ব্রাউজার সেটিংস থেকে অনুমতি পুনরায় চালু করুন।"
+  * All toasts in Bengali (সন্ন toasts via existing sonner instance)
+- Updated `.env.example` with a documented `VAPID_PUBLIC_KEY` /
+  `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` block, including the generation
+  command (`bunx web-push generate-vapid-keys`).
+- Resolved a TypeScript 5.7+ strict-typing issue: `Uint8Array<ArrayBufferLike>`
+  returned by `urlBase64ToUint8Array()` is not directly assignable to the
+  `BufferSource` expected by `PushManager.subscribe`. Added an
+  `as unknown as BufferSource` cast at the call site (sound at runtime —
+  the underlying buffer IS an ArrayBuffer).
+- Verified `web-push` library loads correctly in Node:
+  `setVapidDetails()` accepts the sample keypair, `generateVAPIDKeys()`
+  returns valid `{publicKey, privateKey}` Base64URL strings.
+- Verified `public/sw.js` parses cleanly via `node --check`.
+- Ran `bun run lint` — clean (0 errors, 0 warnings).
+- Ran `bunx tsc --noEmit` — only pre-existing unrelated error in
+  `examples/websocket/server.ts` (missing `socket.io` types, out of scope).
+  All push-related files (`src/lib/push.ts`, `src/lib/push-server.ts`,
+  `src/lib/push-store.ts`, `src/app/api/push/**/*.ts`,
+  `src/components/profile/profile-view.tsx`) type-check cleanly.
+
+Stage Summary:
+- 6 new files: `src/lib/push.ts`, `src/lib/push-server.ts`,
+  `src/lib/push-store.ts`, `src/app/api/push/vapid-public/route.ts`,
+  `src/app/api/push/subscribe/route.ts`, `src/app/api/push/unsubscribe/route.ts`,
+  `src/app/api/push/test/route.ts` (7 routes total).
+- 3 modified files: `public/sw.js` (push + notificationclick handlers,
+  cache version v3→v4), `src/components/profile/profile-view.tsx`
+  (new `PushNotificationsRow` + `PermissionBadge` components, placed in a
+  new "পুশ নোটিফিকেশন" section between Preferences and Data), `.env.example`
+  (VAPID env vars + generation docs).
+- 2 dependencies added: `web-push@3.6.7`, `@types/web-push@3.6.4`.
+- Architecture: client-safe helpers (`src/lib/push.ts`) deliberately
+  separated from server-only `web-push` wrapper (`src/lib/push-server.ts`)
+  to keep `web-push` (Node `crypto`-dependent) out of the client bundle.
+- Graceful degradation matrix:
+  * Non-HTTPS / no SW → row shows "এই ব্রাউজারে সমর্থিত নয়", no switch
+  * VAPID keys missing on server → `/api/push/vapid-public` returns 503,
+    `subscribePush()` throws, toast shows error
+  * User denied permission → switch disabled, badge shows "অস্বীকার করা হয়েছে",
+    hint to re-enable from browser settings
+  * Dev mode (no SW registered) → `getPushSubscription()` times out after
+    3s and returns null; UI shows "সাবস্ক্রাইব করা নেই"
+- Storage is in-memory `Map` (survives HMR via `globalThis`) — clearly
+  documented as a dev shim with the production Prisma schema inline.
+- All UI text in Bengali; uses existing shadcn `Switch`, `Button`,
+  `motion.div` Section wrapper; follows the inline-component pattern of
+  existing `TestNotificationButton` / `ResetButton` / `ExportButton`.
+- Next steps (out of scope):
+  1. Add a cron/scheduler (e.g. Vercel Cron, Coolify scheduled task, or
+     `node-cron` in the social mini-service) that calls
+     `sendPushNotification()` for each habit with a `reminderTime` daily.
+  2. Migrate `push-store.ts` from in-memory Map to a Prisma
+     `PushSubscription` model (schema drafted in the file's docblock).
+  3. Optionally extend `use-notifications.ts` to delegate to push for
+     users with an active subscription (so server-side reminders work
+     even when the app is closed).
+
+---
+Task ID: 3-a
+Agent: UI Polish Engineer
+Task: Replace emoji with lucide icons across UI components (senior approach)
+
+Work Log:
+- Audited the project's emoji usage and classified each occurrence as
+  "keep" (universal UI pattern, lighter than an icon) or "replace"
+  (decorative emoji that should be a proper lucide-react icon component).
+- Kept: `✓` checkmarks in text strings (focus-view line 355,
+  weekly-recap-card line 159, etc.) and the `MOOD_EMOJI` arrays in
+  journal-view, yearly-heatmap, mood-trend-chart, mood-correlation-card
+  (mood rating emoji are the universal UI pattern for mood selectors).
+- Replaced 13 emoji across 11 files with proper lucide-react icon
+  components, adding the necessary imports at the top of each file:
+  * `habits-view.tsx` (line 169): `✋` → `<GripVertical size={16}
+    className="inline align-text-bottom mr-1" />` (drag instruction).
+  * `ai-coach-panel.tsx` (line 79): `💚` → `<Heart size={16}
+    className="mt-0.5 shrink-0 text-emerald-500" />` (encouragement
+    bullet), added `Heart` to the existing lucide-react import.
+  * `calendar-panel.tsx` (line 126): `✨` → `<Sparkles size={14}
+    className="inline shrink-0 text-primary" />` wrapping the
+    `day.habitTheme` text in a flex container so the icon vertically
+    aligns with the truncated text.
+  * `weekly-recap-card.tsx` (lines 139 + 168): `✨` → `<Sparkles
+    size={14} className="mt-0.5 inline shrink-0 text-primary" />` on
+    the headline; `📈` → `<TrendingUp size={16} className="mt-0.5
+    shrink-0 text-amber-600 dark:text-amber-400" />` on the
+    improvement callout. Sparkles + TrendingUp were already imported.
+  * `journal-view.tsx` (line 136): `📔` → `<BookHeart size={36}
+    className="text-muted-foreground" />` for the empty-state hero
+    (added `BookHeart` to the import).
+  * `onboarding-modal.tsx` (line 265): `💡` → `<Lightbulb size={16}
+    className="inline text-amber-500" />` for the tips card header,
+    wrapped in a flex container.
+  * `profile-view.tsx` (line 638): removed the `🔔` emoji from the
+    `new Notification("🔔 অভ্যাস", …)` title — the notification
+    icon is already provided via the `icon: "/icon.svg"` option, so
+    the bell in the title was redundant clutter.
+  * `mood-correlation-card.tsx` (lines 42 + 144): `🔍` → `<Search
+    size={28} className="text-muted-foreground" />` for empty state;
+    `💡` → `<Lightbulb size={14} className="inline shrink-0
+    text-amber-500" />` for the footnote. Added `Search, Lightbulb`
+    imports.
+  * `mood-trend-chart.tsx` (line 44): `💭` → `<MessageCircle size={32}
+    className="text-muted-foreground" />` for empty state.
+  * `yearly-heatmap.tsx` (line 259): `🎯` → `<Target size={16}
+    className="inline shrink-0 text-primary" />` for the focus summary
+    row. Added `Target` to the existing `X` import.
+  * `focus-view.tsx` (line 101): removed the leading `⭐ ` from the
+    level-up toast message; the toast already has a success styling
+    and the star was redundant.
+- Mid-task incident: a `git stash` (run to baseline-check a tsc error
+  that turned out to be from a parallel agent's `stats-view.tsx`
+  change) captured my edits along with prior-task modifications.
+  The subsequent `git stash pop` aborted because parallel agents had
+  since modified `home-view.tsx` and `stats-view.tsx`. Restored via
+  `git checkout stash@{0} -- <file>...` for every file except the two
+  conflicting ones (whose newer parallel-agent versions were preserved
+  in the working tree), then dropped the stash. Verified all 11 of my
+  touched files retained the icon replacements and the parallel
+  agents' work was not clobbered.
+- Ran `bun run lint` — clean (0 errors, 0 warnings).
+- Ran `bunx tsc --noEmit` — only the pre-existing unrelated error in
+  `examples/websocket/server.ts` (missing `socket.io` types, out of
+  scope for this task). All 11 modified files type-check cleanly.
+
+Stage Summary:
+- 11 files modified with 13 emoji → lucide-react icon replacements.
+- 7 new icon imports added (`GripVertical`, `Heart`, `BookHeart`,
+  `Lightbulb` ×2, `Search`, `MessageCircle`, `Target`); 2 icons
+  (`Sparkles`, `TrendingUp`) were already imported in their files.
+- Preserved the 4 `MOOD_EMOJI` arrays (universal mood-selector
+  pattern) and all `✓` checkmarks in text strings (lighter than an
+  icon for inline completion cues).
+- All icon sizes matched the surrounding typography: 14 px for
+  inline-text icons (Sparkles, Lightbulb footnote), 16 px for
+  card-level icons (GripVertical, Heart, Lightbulb header, Target,
+  TrendingUp), 28-36 px for empty-state hero icons (Search, BookHeart,
+  MessageCircle).
+- All icon colors matched the semantic context: `text-emerald-500`
+  for encouragement (Heart), `text-amber-500` for tips (Lightbulb),
+  `text-primary` for highlighted accents (Sparkles, Target),
+  `text-muted-foreground` for empty-state placeholders (BookHeart,
+  MessageCircle, Search), `text-amber-600 dark:text-amber-400` for
+  the improvement callout (TrendingUp) to match the existing
+  amber-themed risk/alert styling.
+- Lint + tsc both clean (modulo the unrelated pre-existing
+  socket.io error in `examples/`).
+- No runtime behavior changes — purely visual iconography upgrade
+  from inline emoji glyphs to scalable, theme-aware SVG icons that
+  inherit `currentColor` and respond to dark/light mode.
+
+---
+Task ID: 5-a
+Agent: Performance & Accessibility Engineer
+Task: Performance (lazy loading) + Accessibility audit + Dark mode polish
+
+Work Log:
+- Read project worklog + app shell (`src/components/app/`) to understand the
+  single-route SPA architecture with a client-side view router
+  (`ViewRouter` keyed by `useUIStore.view`).
+- **Performance — next/dynamic lazy loading** (`src/components/app/view-router.tsx`):
+  - Created `src/components/app/view-skeleton.tsx` — branded skeleton
+    fallback (`role="status"` + `aria-live="polite"` + sr-only "অনুগ্রহ
+    করে অপেক্ষা করুন…") mirroring the title+hero+grid layout of a typical
+    view so there's no layout shift when the chunk hydrates.
+  - Refactored `ViewRouter`: kept `HomeView` and `HabitsView` eagerly
+    imported (primary views needed on first paint). Lazy-loaded the heavy
+    views via `next/dynamic` with `ssr: false` + `loading: () =>
+    <ViewSkeleton />`:
+      • `StatsView` (Recharts + many sub-charts)
+      • `FocusView` (timer logic)
+      • `SocialView` (socket.io client)
+      • `JournalView`
+      • `IslamicView` (prayer times + Quran tracker)
+      • `ProfileView` (in the "More" menu — also lazy)
+  - Used the `.then(m => ({ default: m.X }))` pattern since all views use
+    named exports.
+
+- **Accessibility audit**:
+  - `src/components/shared/progress-ring.tsx`: added optional `aria-label`
+    prop. When set, the wrapper div becomes `role="progressbar"` with
+    `aria-valuenow/min/max`; otherwise the SVG is marked `aria-hidden`
+    (the visible child text already conveys the value to AT).
+  - `src/components/shared/icon-renderer.tsx`: `IconRenderer` now accepts
+    and forwards `aria-hidden` (and any extra props) to the underlying
+    lucide SVG. `IconTile` is now `role="img" aria-hidden` (decorative —
+    the habit name is announced by the parent button's `aria-label`).
+  - `src/components/habits/habit-row.tsx`:
+      • Row-detail `aria-label` now reads «{name} বিস্তারিত দেখুন».
+      • Streak `<span>` got `aria-label="স্ট্রিক {n} দিন"`; flame icon
+        `aria-hidden`.
+      • Frozen badge Snowflake icon `aria-hidden`.
+      • Freeze button `aria-label` now includes the habit name; added
+        `focus-visible:opacity-100` so keyboard users see the button even
+        without hover, plus an `sr-only` redundant label.
+      • `CheckButton`: added visible focus ring (`focus-visible:ring-2
+        ring-ring ring-offset-card`), `aria-hidden` on the checkmark SVG,
+        and an `sr-only` label mirroring the `aria-label`.
+  - `src/components/habits/habit-detail.tsx`:
+      • "আজ সম্পন্ন করুন" button now has `aria-pressed`.
+      • Icon-only Snowflake / Pencil / Trash2 buttons now have
+        `aria-label` (Bengali) + `sr-only` text + `aria-hidden` icons.
+  - `src/components/home/home-view.tsx`:
+      • Hero card converted from `<motion.div>` to `<motion.section
+        aria-labelledby="home-hero-title">` with `<h1 id="home-hero-title">`
+        — proper landmark + heading association.
+      • Hero `ProgressRing` now passes `aria-label="আজকের অগ্রগতি …
+        শতাংশ"`.
+      • "নতুন অভ্যাস যোগ করুন" quick-action button: added `aria-label`
+        (the visible text already covers it, but the button is now
+        keyboard-focusable with a visible ring) + `aria-hidden` Plus icon.
+  - `src/components/stats/stats-view.tsx`:
+      • Tab strip is now `role="tablist" aria-label="পরিসংখ্যান বিভাগ"`.
+      • Each tab button has `role="tab"`, `id`, `aria-selected`,
+        `aria-controls`, and roving `tabIndex` (active=0, others=-1).
+      • Each tab panel is `role="tabpanel"` with `id` + `aria-labelledby`
+        (replaced the loose `<>…</>` fragments with `<div role="tabpanel">`).
+      • Added `focus-visible:ring-2` styling to tabs.
+  - `src/components/app/bottom-nav.tsx`:
+      • `<nav aria-label="প্রধান নেভিগেশন">`.
+      • "More" button: `aria-label` now toggles between «আরও মেনু খুলুন» /
+        «আরও মেনু বন্ধ করুন», plus `aria-haspopup="menu"` and
+        `aria-current` when a More-item view is active.
+      • More popover: `role="menu" aria-label="আরও ভিউ"`; items are
+        `role="menuitem"` with `aria-current`.
+      • All nav buttons got `focus-visible:ring-2` styling; decorative
+        icon spans + active-indicator pill marked `aria-hidden`.
+  - `src/components/app/sidebar-nav.tsx`:
+      • `<nav aria-label="প্রধান নেভিগেশন">`.
+      • Each item button has `aria-current={active ? "page" : undefined}`
+        + `focus-visible:ring-2`.
+      • Separator `<div>` is now `role="separator"
+        aria-orientation="horizontal"`.
+      • Icon spans `aria-hidden`.
+  - `src/components/app/top-bar.tsx`:
+      • Level ring button: rich `aria-label` (level + title + XP +
+        "প্রোফাইল খুলুন") + `focus-visible:ring-2`.
+      • Inner `ProgressRing` passes `aria-label` for the progressbar role;
+        child number + XP label marked `aria-hidden` to avoid double
+        announcement.
+      • Add-habit button: `aria-hidden` Plus icon + `focus-visible:ring-2`.
+
+- **Dark mode polish** — audited the three called-out components:
+  - `src/components/home/weekly-heatmap.tsx`: confirmed the intensity ramp
+    (`bg-muted/50` → `bg-primary/15` → `/30` → `/55` → `bg-primary`,
+    paired with `text-muted-foreground` → `text-primary/70` → `/80` →
+    `text-primary-foreground`) is built entirely on CSS variables
+    (`--primary`, `--muted`, `--muted-foreground`, `--card`), which the
+    `.dark` block in `globals.css` overrides — so the heatmap auto-adapts.
+    The today highlight uses `ring-primary ring-offset-card` (also
+    theme-aware). No hardcoded hex anywhere. ✓
+  - `src/components/stats/contribution-heatmap.tsx`: confirmed `LEVEL_BG`
+    (`bg-muted`, `bg-primary/10`, `/30`, `/50`, `bg-primary`) and the
+    summary boxes (`bg-primary/5`) all use CSS variables. Legend, ring
+    highlight, and tab toggle all use theme-aware tokens. ✓
+  - `src/components/habits/habit-row.tsx`: confirmed every state class has
+    a dark variant:
+      • frozen: `bg-sky-50/40 dark:bg-sky-950/20`, badge
+        `bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300`.
+      • freeze button: `bg-sky-50 text-sky-600 dark:bg-sky-950/30
+        dark:text-sky-400 dark:hover:bg-sky-950/50`.
+      • milestone badges: `text-amber-600 dark:text-amber-400`,
+        `text-orange-600 dark:text-orange-400`.
+      • streak glow inline `textShadow` uses warm hex colors (red/orange/
+        amber) with rgba halos at 0.3–0.5 alpha — additive on both light
+        and dark surfaces, so the fire effect reads in both themes.
+      • `text-white` on the check button sits on an opaque `habit.color`
+        background, so it's theme-independent.
+    No dark-mode-breaking hardcoded colors found.
+
+- **Verification**:
+  - `bunx tsc --noEmit` → clean (only the pre-existing unrelated
+    `examples/websocket/server.ts` socket.io type error remains).
+  - `bun run lint` → clean, zero errors/warnings.
+
+Stage Summary:
+- **Performance**: 6 of 8 views are now code-split via `next/dynamic`
+  (`ssr: false` + branded `ViewSkeleton` fallback). Home + Habits stay
+  eager. This removes Recharts, socket.io, the focus timer, the prayer
+  times/Quran tracker, and the journal editor from the initial JS bundle
+  for users who never open those views.
+- **Accessibility**: Major interactive surfaces now have proper ARIA:
+  - progressbar role + values on `ProgressRing`,
+  - tablist/tab/tabpanel semantics on the stats tab strip,
+  - `aria-pressed` on every habit toggle (row + detail),
+  - `aria-label` + `sr-only` text on every icon-only button (freeze,
+    edit, delete, share, add-habit, level, more-menu, templates),
+  - `aria-current="page"` on all nav items (bottom-nav + sidebar),
+  - `aria-haspopup` + `role="menu"`/`menuitem` on the More popover,
+  - `aria-labelledby` heading association on the home hero section,
+  - `aria-hidden` on all decorative icons / SVGs / active-indicator pills,
+  - visible `focus-visible:ring-2` on every nav/tab/button surface so
+    keyboard users get a clear focus indicator (the global CSS rule
+    `:focus:not(:focus-visible){outline:none}` already suppresses mouse
+    focus rings).
+- **Dark mode**: All three called-out components already use CSS-variable
+  tokens (`bg-primary`, `text-primary-foreground`, `bg-muted`, etc.) that
+  the `.dark` block in `globals.css` overrides — they auto-adapt. The
+  streak glow uses additive warm-color rgba halos that read in both
+  themes. No hardcoded colors needed fixing; audit confirmed.
+- **No regressions**: lint + tsc clean; no runtime behavior changes
+  beyond the lazy-loading (which is transparent to user state).
+
+---
+Task ID: EVOLVE-2 (Senior Quality Cleanup + Feature Expansion)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Desktop agent review identified quality issues from the previous "junior" agent:
+1. **`as any` hacks** (14 occurrences) scattered across 10 files — the db-compat.ts
+   compatibility layer used `as any` to bypass TypeScript instead of proper generics
+2. **Emoji as UI** — 13+ decorative emoji used where lucide icons would be more
+   professional (🕌, ✋, 💚, ✨, 📈, 📔, 💡, 🔍, 💭, 🎯, ⭐, 🔔)
+3. **Remaining features** from the roadmap: Social WebSocket, contribution heatmap,
+   push notifications, performance, accessibility, dark mode polish
+
+### Executed Work
+
+**1. Eliminated ALL `as any` (14 → 0) — db-compat.ts redesign**
+- Redesigned `prismaJson<T, TTarget>()` and `prismaArray<TTarget>()` with generic
+  return types that let call sites specify the exact Prisma input type
+- The cast is now **bounded** (inside the helper only), **explicit** (via `unknown`),
+  and **documented** — the canonical pattern for provider-polymorphic Prisma helpers
+- All 10 call sites updated: zero casts needed at assignment points
+- Fixed `isScheduledOn()` to accept `ScheduleInfo` (Pick<Habit, "frequency"|"frequencyDays">)
+  instead of full `Habit`, eliminating `as any` in badge-stats.ts
+- Fixed `use-settings-effect.ts` to use `Partial<UserSettings>` instead of `as any`
+
+**2. Emoji cleanup (13 emoji → 0, kept ✓ and MOOD_EMOJI)**
+- Replaced all decorative emoji with proper lucide-react icons:
+  🕌→Moon, ✋→GripVertical, 💚→Heart, ✨→Sparkles, 📈→TrendingUp,
+  📔→BookHeart, 💡→Lightbulb, 🔍→Search, 💭→MessageCircle, 🎯→Target
+- Kept `✓` checkmarks (universal Unicode, lighter than icons)
+- Kept `MOOD_EMOJI` arrays (universal mood-selector pattern)
+
+**3. Social WebSocket mini-service (Task 4-a)**
+- Rewrote `mini-services/social/index.ts` with room-based grouping
+- Fixed `isYou` bug (leaderboard never marked the current user)
+- 10 Bengali mock users (রহিম, করিম, ফাতেমা, আব্দুল্লাহ, আয়েশা...)
+- Personalized leaderboard per socket, activity feed, graceful shutdown
+- Service running on port 3003, verified via smoke test
+
+**4. GitHub-style contribution heatmap (Task 4-b)**
+- New `src/components/stats/contribution-heatmap.tsx` (260 lines)
+- 30/90-day toggle, 5 intensity levels using CSS variables (dark mode compatible)
+- Bengali weekday labels, hover tooltips, Framer Motion entrance
+- Summary stats: "মোট সম্পন্ন" + "সেরা দিন"
+- Integrated prominently in Stats view
+
+**5. Push notifications with VAPID (Task 4-c)**
+- `src/lib/push.ts` (client) + `src/lib/push-server.ts` (web-push) + `src/lib/push-store.ts`
+- 4 API endpoints: vapid-public, subscribe, unsubscribe, test
+- Service Worker `push` + `notificationclick` handlers with Bengali text
+- Profile UI: switch + permission badge + test button
+- Graceful degradation for non-HTTPS, no SW, denied permission
+
+**6. Performance: lazy loading (Task 5-a)**
+- `next/dynamic` lazy-loaded 6 heavy views (Stats, Focus, Social, Journal, Islamic, Profile)
+- Kept Home + Habits eager (primary views)
+- New `ViewSkeleton` component with `role="status"` + `aria-live="polite"`
+
+**7. Accessibility audit (Task 5-a)**
+- ProgressRing: `role="progressbar"` + `aria-valuenow/min/max`
+- Stats tabs: `role="tablist"` + `role="tab"` + `aria-selected` + `aria-controls`
+- Bottom nav: `aria-label="প্রধান নেভিগেশন"` + `aria-current="page"`
+- All icon-only buttons: `aria-label` + `sr-only` + `focus-visible:ring-2`
+- Sidebar: `aria-label` + `role="separator"`
+
+**8. Dark mode polish (Task 5-a)**
+- Verified weekly-heatmap, contribution-heatmap, habit-row all use CSS variables
+- No hardcoded colors — all intensity classes auto-adapt via `bg-primary/N`
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ `as any` count: 0 (was 14)
+- ✅ Decorative emoji count: 0 (kept ✓ + MOOD_EMOJI only)
+- ✅ All APIs return 200 (/api/me, /api/habits, /api/health, /api/stats)
+- ✅ agent-browser QA: Home renders with accessibility attributes, Stats has
+  tablist+tabs, heatmap renders, lazy loading works
+- ✅ Social WebSocket service running on port 3003
+
+### Next Steps
+- Wire push notification scheduler (cron) for daily habit reminders
+- Migrate push-store.ts to Prisma PushSubscription model
+- Add arrow-key navigation between stats tabs (WAI-ARIA preferred pattern)
+- Consider Redis adapter for Socket.io horizontal scaling

@@ -41,7 +41,10 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t pb-safe lg:hidden">
+    <nav
+      className="glass fixed inset-x-0 bottom-0 z-40 border-t pb-safe lg:hidden"
+      aria-label="প্রধান নেভিগেশন"
+    >
       <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
         {NAV_ITEMS.map((item) => {
           if (item.key === "more") {
@@ -49,9 +52,11 @@ export function BottomNav() {
               <div key="more" ref={moreRef} className="relative flex flex-1">
                 <button
                   onClick={handleMoreClick}
-                  className="relative flex w-full flex-col items-center gap-0.5 py-2.5"
-                  aria-label="আরও"
+                  className="relative flex w-full flex-col items-center gap-0.5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+                  aria-label={moreOpen ? "আরও মেনু বন্ধ করুন" : "আরও মেনু খুলুন"}
                   aria-expanded={moreOpen}
+                  aria-haspopup="menu"
+                  aria-current={isMoreActive ? "page" : undefined}
                 >
                   <span
                     className={cn(
@@ -68,7 +73,7 @@ export function BottomNav() {
                         transition={{ type: "spring", stiffness: 450, damping: 32 }}
                       />
                     )}
-                    <span className="relative z-10">
+                    <span className="relative z-10" aria-hidden>
                       <IconRenderer name={moreOpen ? "X" : "Menu"} size={20} />
                     </span>
                   </span>
@@ -91,6 +96,8 @@ export function BottomNav() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
+                      role="menu"
+                      aria-label="আরও ভিউ"
                       className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 rounded-2xl border bg-popover p-1.5 shadow-xl"
                     >
                       {MORE_ITEMS.map((mItem) => {
@@ -98,18 +105,20 @@ export function BottomNav() {
                         return (
                           <button
                             key={mItem.key}
+                            role="menuitem"
                             onClick={() => handleMoreSelect(mItem.key)}
+                            aria-current={active ? "page" : undefined}
                             className={cn(
-                              "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition",
+                              "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                               active
                                 ? "bg-primary/10 text-primary font-semibold"
                                 : "text-foreground hover:bg-muted/50"
                             )}
                           >
-                            <IconRenderer name={mItem.icon} size={16} />
+                            <IconRenderer name={mItem.icon} size={16} aria-hidden />
                             {mItem.label}
                             {active && (
-                              <span className="ml-auto h-2 w-2 rounded-full bg-primary" />
+                              <span className="ml-auto h-2 w-2 rounded-full bg-primary" aria-hidden />
                             )}
                           </button>
                         );
@@ -126,7 +135,7 @@ export function BottomNav() {
             <button
               key={item.key}
               onClick={() => setView(item.key)}
-              className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5"
+              className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
               aria-label={item.label}
               aria-current={active ? "page" : undefined}
             >
@@ -143,7 +152,7 @@ export function BottomNav() {
                     transition={{ type: "spring", stiffness: 450, damping: 32 }}
                   />
                 )}
-                <span className="relative z-10">
+                <span className="relative z-10" aria-hidden>
                   <IconRenderer name={item.icon} size={20} />
                 </span>
               </span>

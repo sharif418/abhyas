@@ -135,8 +135,9 @@ export function WeeklyRecapCard() {
                 <div className="space-y-3">
                   {/* Headline */}
                   <div className="rounded-2xl bg-emerald-500/8 p-2.5">
-                    <p className="text-sm font-semibold leading-snug">
-                      ✨ {data.headline}
+                    <p className="flex items-start gap-1 text-sm font-semibold leading-snug">
+                      <Sparkles size={14} className="mt-0.5 inline shrink-0 text-primary" />
+                      {data.headline}
                     </p>
                   </div>
 
@@ -165,7 +166,7 @@ export function WeeklyRecapCard() {
                   {/* Improvement + Next week focus */}
                   <div className="grid gap-2">
                     <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-2.5">
-                      <span className="text-base">📈</span>
+                      <TrendingUp size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
                       <p className="text-xs leading-snug text-amber-700 dark:text-amber-300">
                         {data.improvement}
                       </p>

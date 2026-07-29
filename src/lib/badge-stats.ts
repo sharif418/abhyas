@@ -1,9 +1,9 @@
 import { db } from "./db";
 import { getOrCreateUser } from "./user";
 import { todayKey, addDays, toDateKey, fromDateKey } from "./date-bn";
-import { isScheduledOn } from "./streaks";
+import { isScheduledOn, type ScheduleInfo } from "./streaks";
 import { levelFromXp } from "./gamification";
-import type { BadgeStats } from "@/types";
+import type { BadgeStats, Frequency } from "@/types";
 
 /** Parse frequencyDays from native array (PostgreSQL) or JSON string (SQLite). */
 function parseFD(raw: unknown): number[] {
@@ -40,10 +40,10 @@ export async function computeBadgeStats(
   let currentStreak = override?.currentStreak ?? 0;
   for (const h of habits) {
     const set = new Set(h.completions.map((c) => c.date));
-    const serialized = {
-      frequency: h.frequency,
+    const serialized: ScheduleInfo = {
+      frequency: h.frequency as Frequency,
       frequencyDays: parseFD(h.frequencyDays),
-    } as any;
+    };
     const cs = computeSimpleCurrentStreak(serialized, set);
     const bs = computeSimpleBestStreak(serialized, set);
     if (cs > currentStreak) currentStreak = cs;
@@ -59,10 +59,10 @@ export async function computeBadgeStats(
     let allDone = true;
     let any = false;
     for (const h of habits) {
-      const serialized = {
-        frequency: h.frequency,
+      const serialized: ScheduleInfo = {
+        frequency: h.frequency as Frequency,
         frequencyDays: parseFD(h.frequencyDays),
-      } as any;
+      };
       if (isScheduledOn(serialized, d)) {
         any = true;
         if (!h.completions.some((c) => c.date === key)) {
@@ -110,7 +110,7 @@ export async function computeBadgeStats(
 }
 
 
-function computeSimpleCurrentStreak(habit: any, set: Set<string>): number {
+function computeSimpleCurrentStreak(habit: ScheduleInfo, set: Set<string>): number {
   let streak = 0;
   let cursor = new Date();
   let skippedToday = false;
@@ -130,7 +130,7 @@ function computeSimpleCurrentStreak(habit: any, set: Set<string>): number {
   return streak;
 }
 
-function computeSimpleBestStreak(habit: any, set: Set<string>): number {
+function computeSimpleBestStreak(habit: ScheduleInfo, set: Set<string>): number {
   const sorted = Array.from(set).sort();
   let best = 0;
   let run = 0;

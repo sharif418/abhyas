@@ -49,18 +49,20 @@ export function TopBar() {
         {game && (
           <button
             onClick={() => useUIStore.getState().setView("profile")}
-            className="flex items-center gap-2 rounded-full border bg-card/70 py-1 pl-1 pr-3 shadow-sm transition hover:border-foreground/20"
+            className="flex items-center gap-2 rounded-full border bg-card/70 py-1 pl-1 pr-3 shadow-sm transition hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             title={`লেভেল ${toBn(game.level)} • ${levelTitle(game.level)}`}
+            aria-label={`লেভেল ${toBn(game.level)} • ${levelTitle(game.level)}. XP ${toBn(me!.xp)}. প্রোফাইল খুলুন`}
           >
             <ProgressRing
               value={game.progress}
               size={34}
               stroke={3}
               animate={false}
+              aria-label={`লেভেল ${toBn(game.level)} এ অগ্রগতি ${toBn(Math.round(game.progress * 100))} শতাংশ`}
             >
-              <span className="text-[10px] font-bold">{toBn(game.level)}</span>
+              <span className="text-[10px] font-bold" aria-hidden>{toBn(game.level)}</span>
             </ProgressRing>
-            <div className="leading-tight">
+            <div className="leading-tight" aria-hidden>
               <div className="text-[10px] text-muted-foreground">XP</div>
               <div className="tabular text-xs font-bold">{toBn(me!.xp)}</div>
             </div>
@@ -70,12 +72,12 @@ export function TopBar() {
         <button
           onClick={openAddHabit}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition",
+            "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             "hover:scale-105 active:scale-95"
           )}
           aria-label="নতুন অভ্যাস যোগ করুন"
         >
-          <Plus size={22} />
+          <Plus size={22} aria-hidden />
         </button>
       </div>
     </header>

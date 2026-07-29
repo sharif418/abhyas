@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles, ChevronRight } from "lucide-react";
+import { Check, Sparkles, ChevronRight, Lightbulb } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -262,7 +262,10 @@ export function OnboardingModal() {
                 যোগ হতে যাচ্ছে। প্রতিদিন এক ট্যাপে সম্পন্ন করুন, স্ট্রিক বাড়ান, ব্যাজ আনলক করুন।
               </p>
               <div className="mt-4 rounded-2xl bg-muted/50 p-3 text-left text-xs">
-                <div className="font-semibold">💡 টিপস</div>
+                <div className="flex items-center gap-1 font-semibold">
+                  <Lightbulb size={16} className="inline text-amber-500" />
+                  টিপস
+                </div>
                 <p className="mt-1 text-muted-foreground">
                   প্রতিদিন একই সময়ে অভ্যাস সম্পন্ন করলে তা দ্রুত অভ্যাসে পরিণত হয়।
                 </p>

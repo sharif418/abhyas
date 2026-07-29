@@ -1,6 +1,9 @@
 import { addDays, diffDays, fromDateKey, toDateKey, todayKey } from "./date-bn";
 import type { Habit } from "@/types";
 
+/** The subset of a Habit needed for schedule/streak calculations. */
+export type ScheduleInfo = Pick<Habit, "frequency" | "frequencyDays">;
+
 /**
  * Streak engine — the heart of a habit tracker.
  *
@@ -15,7 +18,7 @@ import type { Habit } from "@/types";
  *  - "মাসে একবার"          → monthly cadence (rare); use last 31-day window
  */
 
-export function isScheduledOn(habit: Habit, date: Date): boolean {
+export function isScheduledOn(habit: ScheduleInfo, date: Date): boolean {
   switch (habit.frequency) {
     case "প্রতিদিন":
       return true;
