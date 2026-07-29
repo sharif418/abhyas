@@ -34,6 +34,7 @@ model User {
   achievements  Achievement[]
   moods         MoodEntry[]
   focusSessions FocusSession[]
+  pushSubscriptions PushSubscription[]
 
   @@index([email])
 }
@@ -179,4 +180,21 @@ model FocusSession {
 
   @@index([userId, date])
   @@index([userId, type, date])
+}
+
+// Web Push subscriptions for sending push notifications to users' devices.
+// One user can have multiple subscriptions (multiple devices/browsers).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique // FCM/Apple push endpoint URL
+  p256dh    String   // ECDH public key (Base64URL)
+  auth      String   // auth secret (Base64URL)
+  expirationTime Int? // epoch ms when subscription expires (null = no expiry)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

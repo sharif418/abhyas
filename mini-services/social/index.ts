@@ -1,5 +1,7 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
 
 /**
  * অভ্যাস (Abhyas) — Social WebSocket Mini-Service
@@ -113,6 +115,33 @@ const io = new Server(httpServer, {
   pingTimeout: 60_000,
   pingInterval: 25_000,
 });
+
+// ---------------------------------------------------------------------------
+// Redis adapter for horizontal scaling
+// ---------------------------------------------------------------------------
+// When REDIS_URL is set, the Socket.io server uses a Redis pub/sub adapter
+// to share events (emits, joins, disconnects) across multiple instances.
+// This enables horizontal scaling — deploy N social-service containers behind
+// a load balancer and all connected clients receive consistent broadcasts.
+//
+// If REDIS_URL is not set, the server runs in single-instance mode (default
+// for development and small deployments). No functionality is lost.
+const REDIS_URL = process.env.REDIS_URL;
+
+if (REDIS_URL) {
+  const pubClient = createClient({ url: REDIS_URL });
+  const subClient = pubClient.duplicate();
+
+  Promise.all([pubClient.connect(), subClient.connect()])
+    .then(() => {
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log(`[social] Redis adapter connected — horizontal scaling enabled.`);
+    })
+    .catch((err) => {
+      console.error(`[social] Redis adapter failed to connect:`, err);
+      console.error(`[social] Continuing in single-instance mode.`);
+    });
+}
 
 /** Broadcast presence count to the global room. */
 function broadcastPresence(): void {

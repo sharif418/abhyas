@@ -1,0 +1,12 @@
+{
+  "name": "abhyas-push-scheduler",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

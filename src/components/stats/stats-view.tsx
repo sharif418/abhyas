@@ -94,6 +94,50 @@ export function StatsView() {
     queryFn: () => api.get<StatsResponse>("/api/stats"),
   });
 
+  // WAI-ARIA tabs pattern: arrow keys move between tabs, Home/End jump to first/last.
+  // Roving tabindex: only the active tab has tabIndex=0, others have -1.
+  const tabs: readonly { key: StatsTab; label: string }[] = [
+    { key: "overview", label: "সারসংক্ষেপ" },
+    { key: "trends", label: "ধারা" },
+    { key: "mood", label: "মুড" },
+    { key: "badges", label: "ব্যাজ" },
+  ] as const;
+
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = tabs.findIndex((t) => t.key === activeTab);
+    if (currentIndex === -1) return;
+
+    let nextIndex: number | null = null;
+    switch (e.key) {
+      case "ArrowRight":
+      case "Right":
+        nextIndex = (currentIndex + 1) % tabs.length;
+        break;
+      case "ArrowLeft":
+      case "Left":
+        nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = tabs.length - 1;
+        break;
+      default:
+        return; // don't preventDefault for unhandled keys
+    }
+
+    if (nextIndex !== null) {
+      e.preventDefault();
+      const newTab = tabs[nextIndex];
+      setActiveTab(newTab.key);
+      // Move focus to the newly activated tab (WAI-ARIA recommended behavior)
+      requestAnimationFrame(() => {
+        document.getElementById(`stats-tab-${newTab.key}`)?.focus();
+      });
+    }
+  };
+
   if (isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
@@ -210,18 +254,14 @@ export function StatsView() {
         />
       </div>
 
-      {/* Tab navigation */}
+      {/* Tab navigation — WAI-ARIA tabs with arrow-key navigation */}
       <div
         role="tablist"
         aria-label="পরিসংখ্যান বিভাগ"
+        onKeyDown={handleTabKeyDown}
         className="flex gap-1 rounded-2xl bg-muted/50 p-1"
       >
-        {([
-          { key: "overview", label: "সারসংক্ষেপ" },
-          { key: "trends", label: "ধারা" },
-          { key: "mood", label: "মুড" },
-          { key: "badges", label: "ব্যাজ" },
-        ] as const).map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
             <button

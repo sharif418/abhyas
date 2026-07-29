@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { pushSubscriptionStore } from "@/lib/push-store";
+import { getOrCreateUser } from "@/lib/user";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,8 +25,8 @@ const SubscriptionSchema = z.object({
  * Body:
  *   { endpoint, expirationTime?, keys: { p256dh, auth } }
  *
- * Storage is in-memory (Map keyed by endpoint) for now — see
- * `src/lib/push-store.ts` for the production migration note.
+ * The subscription is persisted to the database (PushSubscription table),
+ * keyed by endpoint URL. Survives server restarts.
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -37,10 +38,11 @@ export async function POST(req: Request) {
     );
   }
 
-  pushSubscriptionStore.add(parsed.data);
+  const user = await getOrCreateUser();
+  await pushSubscriptionStore.add(user.id, parsed.data);
 
   return NextResponse.json({
     ok: true,
-    total: pushSubscriptionStore.count(),
+    total: await pushSubscriptionStore.count(),
   });
 }
