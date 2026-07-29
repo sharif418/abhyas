@@ -23,19 +23,19 @@ log "Starting অভ্যাস (Abhyas) production server..."
 #    a failed migration should fail the container, not silently mutate schema.
 # ---------------------------------------------------------------------------
 MIGRATE_OK=0
-for i in $(seq 1 30); do
-  log "Running database migrations (attempt ${i}/30)..."
+for i in $(seq 1 15); do
+  log "Running database migrations (attempt ${i}/15)..."
   if npx prisma migrate deploy; then
     MIGRATE_OK=1
     log "Database migrations complete."
     break
   fi
-  log "Migration attempt ${i} failed, retrying in 2s..."
-  sleep 2
+  log "Migration attempt ${i} failed, retrying in 3s..."
+  sleep 3
 done
 
 if [ "$MIGRATE_OK" -ne 1 ]; then
-  log "ERROR: Database migrations failed after 30 attempts. Aborting."
+  log "ERROR: Database migrations failed after 15 attempts. Aborting."
   exit 1
 fi
 
