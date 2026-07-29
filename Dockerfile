@@ -84,9 +84,10 @@ USER nextjs
 # Expose the app port
 EXPOSE 3000
 
-# Health check (hits the Next.js root route)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+# Health check — hits the dedicated /api/health endpoint which probes DB connectivity.
+# Returns 200 (healthy) only when the database is reachable; 503 otherwise.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget -q -O /dev/null --tries=1 --timeout=5 http://localhost:3000/api/health || exit 1
 
 # Entrypoint: runs Prisma migrations, then starts the server
 ENTRYPOINT ["./docker-entrypoint.sh"]
