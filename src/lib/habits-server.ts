@@ -58,7 +58,7 @@ export async function getHabitsAndCompletions(): Promise<{
     where: { userId: user.id, active: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
   });
-  if (habits.length === 0) return [];
+  if (habits.length === 0) return { habits: [], rawCompletions: [] };
 
   const completions = await db.habitCompletion.findMany({
     where: { userId: user.id },

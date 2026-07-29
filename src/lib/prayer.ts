@@ -82,7 +82,7 @@ export function currentPrayerKey(
     maghrib: times.Maghrib,
     isha: times.Isha,
   };
-  let current: "isha-night" = "isha-night";
+  let current: "fajr" | "dhuhr" | "asr" | "maghrib" | "isha" | "isha-night" = "isha-night";
   for (const key of order) {
     const t = parseTodayTime(map[key], now);
     if (t.getTime() <= now.getTime()) current = key;

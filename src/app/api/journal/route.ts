@@ -118,8 +118,11 @@ export async function GET(req: Request) {
   });
 }
 
-function safeArr(raw: string | null | undefined): number[] {
+function safeArr(raw: number[] | string | null | undefined): number[] {
   if (!raw) return [];
+  // PostgreSQL returns a native number[] for Int[] fields.
+  if (Array.isArray(raw)) return raw;
+  // Legacy SQLite stored arrays as JSON strings.
   try {
     const v = JSON.parse(raw);
     return Array.isArray(v) ? v : [];

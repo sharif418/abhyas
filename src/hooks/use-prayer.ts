@@ -88,7 +88,7 @@ export function useTogglePrayer() {
 export function useQuranSessions() {
   return useQuery({
     queryKey: ["quran"],
-    queryFn: () => api.get<{ sessions: any[]; totalPages: number; streak: number }>("/api/quran"),
+    queryFn: () => api.get<{ sessions: any[]; totalPages: number; totalSessions: number; streak: number }>("/api/quran"),
   });
 }
 

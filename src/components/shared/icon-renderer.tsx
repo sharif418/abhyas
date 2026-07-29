@@ -20,7 +20,7 @@ export function IconRenderer({
   size = 20,
   strokeWidth = 2,
 }: IconRendererProps) {
-  const Comp = (LucideIcons as Record<string, LucideIcons.LucideIcon>)[name] ??
+  const Comp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[name] ??
     LucideIcons.CheckCircle;
   return <Comp className={className} size={size} strokeWidth={strokeWidth} />;
 }
