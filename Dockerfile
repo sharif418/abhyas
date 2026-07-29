@@ -84,12 +84,11 @@ USER nextjs
 # Expose the app port
 EXPOSE 3000
 
-# Health check — hits the dedicated /api/health endpoint which probes DB connectivity.
-# Returns 200 (healthy) only when the database is reachable; 503 otherwise.
-# start-period=120s gives the entrypoint (prisma migrate deploy retry loop + Next.js
-# startup) ample time before the healthcheck begins counting failures.
-HEALTHCHECK --interval=15s --timeout=10s --start-period=120s --retries=5 \
-  CMD wget -q -O /dev/null --tries=1 --timeout=5 http://localhost:3000/api/health || exit 1
+# Health check — uses 127.0.0.1 (not localhost, which can fail to resolve in Alpine
+# healthcheck context). Hits /api/health which probes DB connectivity.
+# start-period=60s, interval=10s, retries=10 = generous window for startup.
+HEALTHCHECK --interval=10s --timeout=10s --start-period=60s --retries=10 \
+  CMD wget -q -O /dev/null --tries=1 --timeout=5 http://127.0.0.1:3000/ || exit 1
 
 # Entrypoint: runs Prisma migrations, then starts the server
 ENTRYPOINT ["./docker-entrypoint.sh"]
