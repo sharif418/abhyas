@@ -18,6 +18,7 @@ import { MoodSelector } from "@/components/home/mood-selector";
 import { WeeklyRecapCard } from "@/components/home/weekly-recap-card";
 import { DailyQuoteCard } from "@/components/home/daily-quote-card";
 import { WeeklyHeatmap } from "@/components/home/weekly-heatmap";
+import { StreakSummaryCard } from "@/components/home/streak-summary-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -181,6 +182,11 @@ export function HomeView() {
       {/* 7-day activity heatmap — instant week snapshot */}
       <div className="mt-4">
         <WeeklyHeatmap />
+      </div>
+
+      {/* Streak summary — compact gamification stats */}
+      <div className="mt-3">
+        <StreakSummaryCard />
       </div>
 
       {/* Today's habits — primary task, immediately after hero */}

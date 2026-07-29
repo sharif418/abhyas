@@ -8,6 +8,8 @@ import { api } from "@/lib/api-client";
 import { useHabits } from "@/hooks/use-habits";
 import { toBn } from "@/lib/date-bn";
 import { fireConfetti } from "@/lib/confetti";
+import { playCompletionSound, playLevelUpSound } from "@/lib/sounds";
+import { useSettingsStore } from "@/stores/settings-store";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { IconTile } from "@/components/shared/icon-renderer";
 import { FocusDailyChart } from "@/components/focus/focus-daily-chart";
@@ -126,6 +128,29 @@ export function FocusView() {
     if (mode === "work") {
       setCompletedCount((c) => c + 1);
       fireConfetti({ count: 60, duration: 600 });
+      // Play completion sound if enabled
+      const soundEnabled = useSettingsStore.getState().sound;
+      if (soundEnabled) playCompletionSound();
+      // Browser notification (if permitted)
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("ফোকাস সেশন সম্পন্ন!", {
+          body: "বিশ্রামের সময়। কিছুক্ষণ বিশ্রাম নিন।",
+          icon: "/icon.svg",
+          tag: "abhyas-focus-complete",
+        });
+      }
+    } else {
+      // Break complete — gentle level-up sound
+      const soundEnabled = useSettingsStore.getState().sound;
+      if (soundEnabled) playLevelUpSound();
+      // Browser notification
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("বিশ্রাম শেষ!", {
+          body: "আবার কাজে ফিরে যাওয়ার সময়।",
+          icon: "/icon.svg",
+          tag: "abhyas-focus-break-done",
+        });
+      }
     }
     // auto-switch mode
     setTimeout(() => {

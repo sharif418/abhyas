@@ -2620,3 +2620,63 @@ placeholder forever.
   by its owner (likely the 5-a / 5-b agent) — same fix pattern applies
   (render-time setState with a "mounted" guard, or migration to
   `useSyncExternalStore` for the localStorage-backed theme).
+
+---
+Task ID: EVOLVE-4 (Autonomous Evolution — Premium Polish + Focus Enhancements)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit 8db1ac5). The app is stable with:
+- 0 TypeScript errors, 0 lint errors, 0 `as any` (only in comments)
+- Dark mode, push notifications, social view all working
+- Sound system exists but wasn't used in Focus view
+- Home view had heatmap but lacked a compact streak summary widget
+- No reusable empty state component — each view had its own inline implementation
+
+Key opportunities identified:
+1. Focus view: no sound effects on session completion (missed premium feel)
+2. Focus view: no browser notifications when timer ends (user might tab away)
+3. Home view: lacked a compact gamification summary between heatmap and habits
+4. No reusable EmptyState component for consistent empty states
+
+### Executed Work
+
+**1. StreakSummaryCard component** (`src/components/home/streak-summary-card.tsx`)
+- New compact 3-tile widget showing active streaks, best streak, perfect days
+- Each tile has color-coded icon + Bengali numeral + label
+- Framer Motion hover scale animation
+- Uses existing /api/stats data (no new API needed)
+- Positioned between heatmap and habits on Home for immediate gamification feedback
+
+**2. Focus view sound effects + browser notifications**
+- Added `playCompletionSound()` when work session completes
+- Added `playLevelUpSound()` when break ends
+- Respects user's sound setting via `useSettingsStore.getState().sound`
+- Added browser notifications on session completion:
+  - Work complete: "ফোকাস সেশন সম্পন্ন!" / "বিশ্রামের সময়"
+  - Break complete: "বিশ্রাম শেষ!" / "আবার কাজে ফিরে যাওয়ার সময়"
+- Only fires if Notification.permission === "granted"
+
+**3. EmptyState component** (`src/components/shared/empty-state.tsx`)
+- Reusable premium empty state with animated icon, gradient background, CTA
+- Framer Motion entrance animation (scale + opacity spring)
+- Props: icon, title, description, action (optional)
+- Can be used across views for consistent empty states
+
+**4. Home view integration**
+- Added StreakSummaryCard between WeeklyHeatmap and habits sections
+- Creates a visual rhythm: hero → heatmap → streak summary → habits
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: Home renders with new streak summary card
+- ✅ Focus view renders correctly with sound + notification code added
+- ✅ All existing features still work (dark mode, habits, stats)
+
+### Next Steps
+- Use EmptyState component across all views for consistent empty states
+- Add habit drag-and-drop reordering (@dnd-kit is installed but not wired)
+- Implement Web Push API for real push notifications (VAPID infrastructure exists)
+- Add AI-powered habit suggestions based on completion patterns
+- Optimize bundle with next/dynamic for heavy views (Stats charts, Focus timer)
