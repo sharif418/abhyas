@@ -224,6 +224,12 @@ export function ProfileView() {
         />
         <DataRow
           icon="RotateCcw"
+          label="অনবোর্ডিং রিসেট"
+          desc="অনবোর্ডিং উইজার্ড পুনরায় দেখাবে"
+          action={<ResetOnboardingButton />}
+        />
+        <DataRow
+          icon="Trash2"
           label="সব রিসেট"
           desc="সমস্ত অভ্যাস ও ডেটা মুছবে"
           danger
@@ -699,7 +705,7 @@ function DataRow({
   danger?: boolean;
   last?: boolean;
 }) {
-  const Icons: Record<string, any> = { Download, RotateCcw, Info, Database: Info, FileSpreadsheet };
+  const Icons: Record<string, any> = { Download, RotateCcw, Info, Database: Info, FileSpreadsheet, Trash2: RotateCcw };
   const Icon = Icons[icon] ?? Info;
   return (
     <div
@@ -810,6 +816,26 @@ function ResetButton() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+/** Reset onboarding button — clears the onboarding localStorage flag so
+ *  the user sees the starter-habit picker again on next page load. */
+function ResetOnboardingButton() {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        localStorage.removeItem("abhyas-onboarding-done");
+        toast.success("অনবোর্ডিং রিসেট হয়েছে", {
+          description: "পেজ রিলোড হচ্ছে...",
+        });
+        setTimeout(() => window.location.reload(), 800);
+      }}
+    >
+      রিসেট
+    </Button>
   );
 }
 

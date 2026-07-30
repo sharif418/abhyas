@@ -108,12 +108,19 @@ const activityFeed: ActivityEvent[] = [];
 // ---- HTTP + Socket.io server ----
 const httpServer = createServer();
 const io = new Server(httpServer, {
-  // CRITICAL: path "/" — the Caddy gateway uses this to route XTransformPort=3003.
-  // Changing it breaks the gateway proxy. See examples/websocket/server.ts.
-  path: "/",
   cors: { origin: "*", methods: ["GET", "POST"] },
   pingTimeout: 60_000,
   pingInterval: 25_000,
+});
+
+// Health check endpoint — registered AFTER Socket.io so we use prependListener
+// to ensure it fires BEFORE Socket.io's request handler.
+// Returns 200 OK for Coolify/load balancer healthchecks.
+httpServer.prependListener("request", (req, res) => {
+  if (req.url === "/healthz" || req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", uptime: process.uptime(), ts: Date.now() }));
+  }
 });
 
 // ---------------------------------------------------------------------------

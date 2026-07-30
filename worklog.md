@@ -3086,3 +3086,66 @@ Key opportunities identified:
 - Deploy push-scheduler as third Coolify service
 - Add social service health endpoint (/healthz) for proper Coolify healthcheck
 - Add automated test for first-time user journey (regression prevention)
+
+---
+Task ID: EVOLVE-10 (Autonomous Evolution — Mini-services fixes + Profile onboarding reset)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit c34904f). The app is stable:
+- 0 TypeScript errors, 0 lint errors, 0 `as any`
+- All features working (milestone progress, daily streak badge, keyboard shortcuts)
+
+Key opportunities from the worklog "Next Steps":
+1. Social service had no /healthz endpoint — Coolify healthcheck failed
+2. Push-scheduler package.json missing @prisma/client dependency
+3. No "Reset onboarding" option in Profile settings
+4. Push-scheduler had no Dockerfile for Coolify deployment
+
+### Executed Work
+
+**1. Social service /healthz endpoint** (`mini-services/social/index.ts`)
+- Added /healthz and /health HTTP endpoints returning 200 OK with JSON status
+- Used `httpServer.prependListener("request", ...)` to ensure the healthz handler
+  fires BEFORE Socket.io's request handler (Socket.io intercepts all requests
+  by default, returning 400 "Transport unknown" for non-Engine.IO paths)
+- Changed Socket.io path from `/` to default `/socket.io/` — this is safe now
+  that production uses a dedicated subdomain (social.abhyas.ailearnersbd.com)
+- Updated client (`use-social.ts`) to use default path for production,
+  keep `path: "/"` only for local dev (XTransformPort pattern)
+- Updated Dockerfile to include wget and use /healthz for healthcheck
+- Verified: /healthz returns 200, /socket.io/ returns valid handshake
+
+**2. Push-scheduler fixes** (`mini-services/push-scheduler/`)
+- Fixed package.json: added `@prisma/client` and `prisma` dependencies
+  (previously only had `web-push`, causing import error)
+- New Dockerfile: `oven/bun:1-alpine` + OpenSSL + prisma generate + bun index.ts
+- No exposed port (background worker, not a server)
+- No healthcheck (process either runs or exits — Coolify monitors via restart)
+
+**3. Reset onboarding in Profile** (`src/components/profile/profile-view.tsx`)
+- New "অনবোর্ডিং রিসেট" (Reset onboarding) option in Data section
+- Clears the `abhyas-onboarding-done` localStorage flag
+- Shows toast confirmation and reloads the page
+- Users who skipped onboarding can now re-trigger the starter-habit picker
+- Separated from "সব রিসেট" (which clears ALL data) — less destructive
+
+**4. Social Dockerfile healthcheck** (`mini-services/social/Dockerfile`)
+- Installed wget via `apk add`
+- HEALTHCHECK now hits `/healthz` (returns 200) instead of `/` (returned 400)
+- 15s start-period, 5 retries — generous for Bun cold start
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ /healthz returns 200 OK with JSON status
+- ✅ /socket.io/ returns valid Engine.IO handshake
+- ✅ Profile shows "অনবোর্ডিং রিসেট" option in Data section
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Deploy push-scheduler as third Coolify service (Dockerfile ready)
+- Add automated test for first-time user journey (regression prevention)
+- Configure DNS for social.abhyas.ailearnersbd.com → 207.180.198.236
+- Add habit drag-and-drop reordering (@dnd-kit is installed, reorder API exists)
+- Consider adding habit categories analytics with 30-day trends

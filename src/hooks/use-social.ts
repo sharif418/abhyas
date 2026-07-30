@@ -83,7 +83,6 @@ export function useSocial(opts?: {
       (typeof window !== "undefined" ? window.location.origin : "");
 
     const socketOpts: Parameters<typeof io>[1] = {
-      path: "/",
       transports: ["polling", "websocket"],
       forceNew: true,
       reconnection: true,
@@ -97,7 +96,7 @@ export function useSocial(opts?: {
     const socket =
       socialUrl && process.env.NEXT_PUBLIC_SOCIAL_URL
         ? io(socialUrl, socketOpts)
-        : io("/?XTransformPort=3003", socketOpts);
+        : io("/?XTransformPort=3003", { ...socketOpts, path: "/" });
     socketRef.current = socket;
 
     // 5s safety net: if the handshake hasn't completed, surface an error
