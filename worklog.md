@@ -2886,3 +2886,81 @@ friction points.
 - Consolidate bottom nav at mobile widths (8 items is too many)
 - Add "Reset onboarding" link in Profile settings
 - Add automated test for first-time user journey (regression prevention)
+
+---
+Task ID: EVOLVE-8 (Autonomous Evolution — Insights + Freeze Indicator + Keyboard Shortcuts)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit 9360b94). The app is stable:
+- 0 TypeScript errors, 0 lint errors, 0 `as any`
+- First-time user journey fixed (no auto-seed, no duplicate habits)
+- Empty states, undo action, button visibility all fixed
+- Monthly calendar, sound effects, streak prediction all working
+
+Key opportunities identified:
+1. Home view lacked personalized insights (best day, best time, momentum)
+2. No streak freeze availability indicator — users don't know how many
+   freezes they have left this week
+3. No keyboard shortcuts — power users can't navigate efficiently
+
+### Executed Work
+
+**1. HabitInsightsCard** (`src/components/home/habit-insights-card.tsx`)
+- New card showing personalized analytics from /api/stats insights:
+  - Best weekday (highest completion count) with Calendar icon
+  - Best time of day (highest completion count) with Clock icon
+  - Momentum trend (up/down/stable) with TrendingUp/TrendingDown icon
+- Color-coded momentum: emerald (up), red (down), muted (stable)
+- Only appears when user has enough data for meaningful insights
+- Uses existing /api/stats response (no API changes needed)
+
+**2. StreakFreezeIndicator** (`src/components/home/streak-freeze-indicator.tsx`)
+- New card showing streak freeze availability for the current ISO week
+- Shows: total freezes available, freezes used, freezes remaining
+- Highlights at-risk habits (streak ≥3) that could benefit from a freeze
+- Uses sky-blue gradient for visual distinction
+- Added getISOWeekKey() to date-bn.ts for ISO week calculation
+- Only appears when user has at-risk habits (streak ≥3)
+
+**3. Keyboard shortcuts system** (`src/components/app/keyboard-shortcuts.tsx`)
+- New overlay component — press "?" to toggle
+- Shows all available shortcuts in a clean modal:
+  - Navigation: 1-8 for Home/Habits/Focus/Stats/Islamic/Journal/Social/Profile
+  - N for new habit
+  - ? for shortcuts menu
+  - Esc to close
+- Framer Motion entrance/exit animations
+- Bengali labels throughout
+- Doesn't trigger when typing in inputs
+
+**4. Keyboard navigation** (enhanced `app-shell.tsx`)
+- Number keys 1-8 switch views (Home/Habits/Focus/Stats/Islamic/Journal/Social/Profile)
+- N opens the add-habit sheet
+- ? toggles the shortcuts overlay
+- Esc closes overlays
+- Doesn't trigger when typing in inputs (input/textarea/contentEditable)
+
+**5. Home view integration**
+- Added HabitInsightsCard and StreakFreezeIndicator to secondary panels
+- New order: weekly goal → streak prediction → insights → freeze indicator → daily quote → mood → AI coach → calendar → weekly recap
+
+**6. getISOWeekKey utility** (added to `date-bn.ts`)
+- Returns ISO week key in "YYYY-Www" format (e.g., "2026-W31")
+- Uses the Thursday-of-week algorithm for correct year boundary handling
+- Used by StreakFreezeIndicator to track per-week freeze usage
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: Keyboard shortcuts overlay opens with "?"
+- ✅ agent-browser QA: Number key "4" switches to Stats view
+- ✅ agent-browser QA: Esc closes the shortcuts overlay
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Add aria-labels to all 40+ icon buttons in habit form
+- Add confirmation dialog before starting Focus session with no tag
+- Add "Reset onboarding" link in Profile settings
+- Add automated test for first-time user journey (regression prevention)
+- Consider habit category analytics (which category has best completion rate)

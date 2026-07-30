@@ -142,6 +142,24 @@ export function isoWeekday(date: Date): number {
   return date.getDay() === 0 ? 7 : date.getDay();
 }
 
+/**
+ * ISO week key in the format "YYYY-Www" (e.g., "2026-W31").
+ * Used for tracking per-week resources like streak freezes.
+ *
+ * Algorithm: finds the Thursday of the current week, then uses
+ * that date's year + ISO week number (this avoids edge cases at
+ * year boundaries where Jan 1 might belong to the previous year's
+ * last week or the next year's first week).
+ */
+export function getISOWeekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+}
+
 /** Bengali relative day label for a date key vs today. */
 export function bnRelativeDay(key: string, today: Date = new Date()): string {
   const d = fromDateKey(key);
