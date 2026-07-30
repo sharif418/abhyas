@@ -3026,3 +3026,63 @@ Root causes:
 - Fix push-scheduler package.json (missing @prisma/client)
 - Consider adding a health endpoint to the social service (GET /healthz
   returning 200) so Coolify healthcheck works properly
+
+---
+Task ID: EVOLVE-9 (Autonomous Evolution — Milestone Progress + Daily Streak Badge)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit 3365b66). The app is stable:
+- 0 TypeScript errors, 0 lint errors, 0 `as any`
+- Social service deployed to Coolify (container running, DNS pending)
+- All existing features working (dark mode, push, calendar, keyboard shortcuts)
+
+Key opportunities identified:
+1. Habit detail lacked a visual progress bar toward the next streak milestone
+2. Home hero card didn't show a daily completion streak badge (perfect days)
+3. Users couldn't see how close they were to breaking their best streak record
+
+### Executed Work
+
+**1. MilestoneProgress component** (`src/components/habits/milestone-progress.tsx`)
+- New visual progress bar showing progress toward next streak milestone
+- Milestones: 7, 14, 30, 60, 100, 180, 365 days
+- Shows: current streak / next milestone, days remaining, progress bar
+- Framer Motion animated width fill
+- Best streak comparison: "সেরা স্ট্রিক: X দিন — আগের রেকর্ড ভাঙতে আর Y দিন"
+- Special state when all milestones are reached (365+ days)
+- Color-coded to match the habit's own color
+
+**2. DailyStreakBadge component** (`src/components/home/daily-streak-badge.tsx`)
+- New badge on Home hero showing consecutive perfect days
+- Shows: "X নিখুঁত দিন" with CalendarCheck icon
+- Pulses when today is already perfect ("আজ সম্পূর্ণ!")
+- Motivational messages based on streak length:
+  - 3+: "চালিয়ে যান!"
+  - 7+: "এক সপ্তাহ!"
+  - 14+: "অসাধারণ ধারা!"
+  - 30+: "অবিশ্বাস্য!"
+- Emerald color when today is perfect, muted when not
+- Only appears when user has at least 1 perfect day or today is perfect
+
+**3. Home view integration**
+- Added DailyStreakBadge below the MiniStats in the hero card
+- Creates a visual feedback loop: stats → perfect day badge → XP bar
+
+**4. Habit detail integration**
+- Added MilestoneProgress between the stats trio and the completion rate ring
+- Creates a visual hierarchy: stats → milestone progress → completion ring → monthly calendar → heatmap → milestones → notes
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: Home shows "নিখুঁত দিন" badge
+- ✅ agent-browser QA: Habit detail shows "পরবর্তী মাইলস্টোন" with progress bar
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Add habit category analytics to Stats view (which category has best completion)
+- Add "Reset onboarding" link in Profile settings
+- Deploy push-scheduler as third Coolify service
+- Add social service health endpoint (/healthz) for proper Coolify healthcheck
+- Add automated test for first-time user journey (regression prevention)

@@ -23,6 +23,7 @@ import { WeeklyGoalCard } from "@/components/home/weekly-goal-card";
 import { StreakPredictionCard } from "@/components/home/streak-prediction-card";
 import { HabitInsightsCard } from "@/components/home/habit-insights-card";
 import { StreakFreezeIndicator } from "@/components/home/streak-freeze-indicator";
+import { DailyStreakBadge } from "@/components/home/daily-streak-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -158,6 +159,9 @@ export function HomeView() {
                 label="নিখুঁত দিন"
                 color="#7c3aed"
               />
+            </div>
+            <div className="mt-2">
+              <DailyStreakBadge />
             </div>
             {stats?.gamification && (
               <div className="mt-3">
