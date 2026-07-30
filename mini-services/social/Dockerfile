@@ -6,9 +6,6 @@
 
 FROM oven/bun:1-alpine AS base
 
-# Install wget for healthcheck (Alpine doesn't ship it by default)
-RUN apk add --no-cache wget
-
 WORKDIR /app
 
 # Copy package manifests
@@ -19,11 +16,6 @@ RUN bun install --frozen-lockfile 2>/dev/null || bun install
 
 # Copy source
 COPY index.ts ./
-
-# Healthcheck — Socket.io responds to HTTP GET / with {"code":0,"message":"Transport unknown"}
-# Start period of 30s gives Bun time to boot before healthcheck begins.
-HEALTHCHECK --interval=15s --timeout=10s --start-period=30s --retries=10 \
-  CMD wget -q -O /dev/null --tries=1 --timeout=5 http://localhost:3003/ || exit 1
 
 EXPOSE 3003
 
