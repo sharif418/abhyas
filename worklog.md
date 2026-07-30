@@ -2735,3 +2735,74 @@ Key opportunity identified:
 - Add streak recovery encouragement when a streak breaks
 - Add weekly review email/summary
 - Optimize the 6-month heatmap for mobile (horizontal scroll)
+
+---
+Task ID: EVOLVE-6 (Autonomous Evolution — Streak Prediction + Weekly Goal + Badge Filters)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit 6aed0f3). The app is stable:
+- 0 TypeScript errors, 0 lint errors, 0 `as any`
+- Monthly calendar, sound effects, streak badges all working
+- Page transitions, lazy loading, dark mode all functional
+
+Key opportunities identified:
+1. Home view lacked a weekly goal progress visualization
+2. No streak prediction — users couldn't see when they'd reach their next milestone
+3. Badges tab showed all 17 badges in a flat grid with no tier filtering
+
+### Executed Work
+
+**1. WeeklyGoalCard** (`src/components/home/weekly-goal-card.tsx`)
+- New card showing weekly completion progress with animated bar
+- Uses /api/stats `weekly` data (done/scheduled/rate)
+- Color-coded: emerald (≥80%), amber (≥50%), primary (below)
+- Gradient progress bar with Framer Motion width animation
+- Motivational messages based on completion percentage:
+  - 100%: "অসাধারণ! লক্ষ্য অর্জন!"
+  - 80%+: "প্রায় শেষ! চালিয়ে যান"
+  - 50%+: "অর্ধেক পথ পার হয়েছে"
+  - 25%+: "ভালো শুরু! চালিয়ে যান"
+  - >0%: "শুরু করুন — প্রতিটি ধাপ গুরুত্বপূর্ণ"
+  - 0%: "এই সপ্তাহে শুরু করুন"
+- Shows "X / Y সম্পন্ন" with checkmark icon
+
+**2. StreakPredictionCard** (`src/components/home/streak-prediction-card.tsx`)
+- New card showing top 3 active streaks with milestone predictions
+- For each habit shows:
+  - Habit name + current streak with flame icon
+  - Days remaining to next milestone (e.g., "৫ দিন বাকি ৩০ দিনের জন্য")
+  - Estimated date to reach milestone (Bengali weekday + date)
+  - "অর্জিত!" if all milestones are reached
+- Milestones: 7, 14, 30, 60, 100, 180, 365 days
+- Color-coded per habit (uses habit's own color)
+- Compact row layout with icon, name, streak, prediction
+
+**3. Badge tier filtering** (enhanced `stats-view.tsx`)
+- New BadgeGrid component with tier filter chips
+- Filter by: সব (All), ব্রোঞ্জ (Bronze), সিলভার (Silver), গোল্ড (Gold), প্লাটিনাম (Platinum)
+- Each chip shows earned/total count (e.g., "ব্রোঞ্জ (০/৫)")
+- Active filter highlighted with primary color
+- Filtered count displayed below chips (e.g., "ব্রোঞ্জ: ০/৫ অর্জিত")
+- Badges that don't exist in a tier are hidden from the filter
+- Smooth transition when switching filters
+
+**4. Home view integration**
+- Added WeeklyGoalCard and StreakPredictionCard at the top of secondary panels
+- New order: weekly goal → streak prediction → daily quote → mood → AI coach → calendar → weekly recap
+- Creates a goal-oriented visual flow before the existing content
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: WeeklyGoalCard shows 83% with progress bar
+- ✅ agent-browser QA: StreakPredictionCard shows "যোহরের নামাজ" with milestone
+- ✅ agent-browser QA: Badge tier filter works (clicked ব্রোঞ্জ → "ব্রোঞ্জ: ০/৫ অর্জিত")
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Add AI-powered habit suggestions based on completion patterns
+- Add streak recovery encouragement when a streak breaks
+- Add weekly review email/summary
+- Add habit categories analytics (which category has best completion rate)
+- Add social challenges (friend challenges via WebSocket)

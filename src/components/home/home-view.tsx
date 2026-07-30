@@ -19,6 +19,8 @@ import { WeeklyRecapCard } from "@/components/home/weekly-recap-card";
 import { DailyQuoteCard } from "@/components/home/daily-quote-card";
 import { WeeklyHeatmap } from "@/components/home/weekly-heatmap";
 import { StreakSummaryCard } from "@/components/home/streak-summary-card";
+import { WeeklyGoalCard } from "@/components/home/weekly-goal-card";
+import { StreakPredictionCard } from "@/components/home/streak-prediction-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -243,6 +245,8 @@ export function HomeView() {
 
       {/* Secondary panels — below the primary task */}
       <div className="mt-6 space-y-4">
+        <WeeklyGoalCard />
+        <StreakPredictionCard />
         <DailyQuoteCard />
         <MoodSelector />
         <AICoachPanel />

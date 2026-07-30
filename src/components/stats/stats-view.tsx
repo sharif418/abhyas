@@ -446,25 +446,99 @@ export function StatsView() {
             title={`ব্যাজ (${toBn(earnedBadges.length)}/${toBn(stats.badges.length)})`}
             subtitle="অর্জনের মাইলফলক"
           />
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {stats.badges.map((b) => {
-              const progress = getBadgeProgress(b.id, stats.badgeStats);
-              return (
-                <BadgeTile
-                  key={b.id}
-                  icon={b.icon}
-                  name={b.name}
-                  description={b.description}
-                  earned={b.earned}
-                  tier={b.tier}
-                  progress={b.earned ? 1 : progress}
-                />
-              );
-            })}
-          </div>
+          <BadgeGrid badges={stats.badges} badgeStats={stats.badgeStats} />
         </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Badge grid with tier filter — shows all badges, with filter chips for
+ *  bronze/silver/gold/platinum tiers and an "all" option. */
+function BadgeGrid({
+  badges,
+  badgeStats,
+}: {
+  badges: { id: string; icon: string; name: string; description: string; earned: boolean; tier: string }[];
+  badgeStats: {
+    totalCompletions: number;
+    bestStreak: number;
+    currentStreak: number;
+    habitsTracked: number;
+    perfectDays: number;
+    fajrStreak: number;
+    quranPages: number;
+    fastingDays: number;
+    level: number;
+  };
+}) {
+  const [tierFilter, setTierFilter] = useState<string>("all");
+  const tiers = ["all", "bronze", "silver", "gold", "platinum"];
+  const tierLabels: Record<string, string> = {
+    all: "সব",
+    bronze: "ব্রোঞ্জ",
+    silver: "সিলভার",
+    gold: "গোল্ড",
+    platinum: "প্লাটিনাম",
+  };
+
+  const filtered = tierFilter === "all" ? badges : badges.filter((b) => b.tier === tierFilter);
+  const filteredEarned = filtered.filter((b) => b.earned).length;
+
+  return (
+    <div>
+      {/* Tier filter chips */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {tiers.map((tier) => {
+          const count = tier === "all"
+            ? badges.length
+            : badges.filter((b) => b.tier === tier).length;
+          if (count === 0) return null;
+          const earned = tier === "all"
+            ? badges.filter((b) => b.earned).length
+            : badges.filter((b) => b.tier === tier && b.earned).length;
+          return (
+            <button
+              key={tier}
+              onClick={() => setTierFilter(tier)}
+              className={cn(
+                "rounded-full px-3 py-1 text-[11px] font-medium transition",
+                tierFilter === tier
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {tierLabels[tier]} ({toBn(earned)}/{toBn(count)})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Badge count for current filter */}
+      {tierFilter !== "all" && (
+        <div className="mb-2 text-[11px] text-muted-foreground">
+          {tierLabels[tierFilter]}: {toBn(filteredEarned)}/{toBn(filtered.length)} অর্জিত
+        </div>
+      )}
+
+      {/* Badge grid */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+        {filtered.map((b) => {
+          const progress = getBadgeProgress(b.id, badgeStats);
+          return (
+            <BadgeTile
+              key={b.id}
+              icon={b.icon}
+              name={b.name}
+              description={b.description}
+              earned={b.earned}
+              tier={b.tier}
+              progress={b.earned ? 1 : progress}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
