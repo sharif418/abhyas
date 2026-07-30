@@ -24,6 +24,7 @@ import { StreakPredictionCard } from "@/components/home/streak-prediction-card";
 import { HabitInsightsCard } from "@/components/home/habit-insights-card";
 import { StreakFreezeIndicator } from "@/components/home/streak-freeze-indicator";
 import { DailyStreakBadge } from "@/components/home/daily-streak-badge";
+import { WeeklyChallengeCard } from "@/components/home/weekly-challenge-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -252,6 +253,7 @@ export function HomeView() {
       {/* Secondary panels — below the primary task */}
       <div className="mt-6 space-y-4">
         <WeeklyGoalCard />
+        <WeeklyChallengeCard />
         <StreakPredictionCard />
         <HabitInsightsCard />
         <StreakFreezeIndicator />

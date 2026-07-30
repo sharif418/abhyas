@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Heatmap } from "@/components/shared/heatmap";
 import { MonthlyCalendar } from "@/components/habits/monthly-calendar";
 import { MilestoneProgress } from "@/components/habits/milestone-progress";
+import { CompletionTrendChart } from "@/components/habits/completion-trend-chart";
 import { IconTile, IconRenderer } from "@/components/shared/icon-renderer";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { useHabits, useToggleHabit, useDeleteHabit } from "@/hooks/use-habits";
@@ -191,6 +192,15 @@ export function HabitDetailSheet() {
                     এই সময়ে আপনি {toBn(Math.round(habit.completionRate * 30))} দিন অভ্যাসটি সম্পন্ন করেছেন।
                   </p>
                 </div>
+              </div>
+
+              {/* 7-day completion trend chart */}
+              <div className="mt-4">
+                <CompletionTrendChart
+                  completedDates={habit.completedDates}
+                  color={habit.color}
+                  days={7}
+                />
               </div>
 
               {/* Monthly calendar — current month with completed days */}

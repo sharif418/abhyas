@@ -3149,3 +3149,60 @@ Key opportunities from the worklog "Next Steps":
 - Configure DNS for social.abhyas.ailearnersbd.com → 207.180.198.236
 - Add habit drag-and-drop reordering (@dnd-kit is installed, reorder API exists)
 - Consider adding habit categories analytics with 30-day trends
+
+---
+Task ID: EVOLVE-11 (Autonomous Evolution — Completion Trend Chart + Weekly Challenge)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Started from a clean clone (commit 28aaf0d). The app is stable:
+- 0 TypeScript errors, 0 lint errors, 0 `as any`
+- All mini-services fixes (healthz, push-scheduler, onboarding reset) deployed
+- All existing features working (milestone progress, daily streak, keyboard shortcuts)
+
+Key opportunities identified:
+1. Habit detail lacked a 7-day completion trend chart — users could only see
+   the 6-month heatmap (tiny cells) but not a focused recent-activity view
+2. Home view lacked a gamified weekly challenge element — no tier-based
+   motivation to complete all habits consistently
+
+### Executed Work
+
+**1. CompletionTrendChart** (`src/components/habits/completion-trend-chart.tsx`)
+- New mini bar chart showing the last 7 days of habit completion
+- Completed days filled with the habit's color, missed days muted
+- Bengali weekday labels (রবি, সোম, মঙ্গল...)
+- Today highlighted with primary color
+- Framer Motion staggered bar growth animation (40ms delay per bar)
+- Shows completion count and percentage: "X/7 (Y%)"
+- Integrated into habit detail between the completion rate ring and monthly calendar
+
+**2. WeeklyChallengeCard** (`src/components/home/weekly-challenge-card.tsx`)
+- New gamification card with tier-based weekly challenge system
+- Tier system: শুরু (Start) → ব্রোঞ্জ (50%) → সিলভার (75%) → গোল্ড (90%) → প্লাটিনাম (100%)
+- Animated SVG circular progress ring showing weekly completion rate
+- Shows completed/scheduled count and days remaining in the week
+- Tier milestone markers at 50/75/90/100% with checkmarks when reached
+- Motivational messages based on progress and days left:
+  - 100%: "নিখুঁত সপ্তাহ! অসাধারণ!"
+  - 90%+: "প্রায় শেষ! আর একটু ধাক্কা!"
+  - 75%+: "ভালো অগ্রগতি! চালিয়ে যান!"
+  - 50%+: "অর্ধেক পথ পার! চালিয়ে যান।"
+  - Low with days left: "এখনো সময় আছে — শুরু করুন!"
+  - Last day: "শেষ দিন! সম্পন্ন করুন!"
+- Gradient background with violet accent for visual distinction
+- Integrated into Home secondary panels (after WeeklyGoalCard)
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: WeeklyChallengeCard shows "সিলভার" tier with progress ring
+- ✅ agent-browser QA: Habit detail shows "গত ৭ দিন" trend chart
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Deploy push-scheduler as third Coolify service
+- Configure DNS for social.abhyas.ailearnersbd.com
+- Add automated test for first-time user journey
+- Add habit drag-and-drop reordering (@dnd-kit installed, reorder API exists)
+- Consider adding monthly habit goals with progress tracking
