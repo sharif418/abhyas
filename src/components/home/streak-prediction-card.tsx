@@ -51,7 +51,27 @@ export function StreakPredictionCard() {
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 3);
 
-  if (topStreaks.length === 0) return null;
+  if (topStreaks.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="rounded-2xl border bg-card p-4 shadow-sm"
+      >
+        <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+          <TrendingUp size={16} className="text-primary" />
+          স্ট্রিক পূর্বাভাস
+        </div>
+        <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 text-xs text-muted-foreground">
+          <Flame size={20} className="shrink-0 text-muted-foreground/60" />
+          <span>
+            অভ্যাস সম্পন্ন করতে শুরু করুন — আপনার প্রথম স্ট্রিক মাইলস্টোন এখানে দেখা যাবে।
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

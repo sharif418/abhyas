@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, ChevronRight, Lightbulb } from "lucide-react";
 import {
@@ -23,7 +23,13 @@ const STORAGE_KEY = "abhyas-onboarding-done";
 /**
  * First-run onboarding modal.
  * Shows a 3-step welcome: intro → pick starter habits → done.
- * Persists completion in localStorage so it shows only once.
+ *
+ * Gating logic:
+ *   - Skip if localStorage flag is set (user already finished onboarding on this device).
+ *   - Skip if the user already has habits server-side (e.g. signed in from another
+ *     device, restored from a backup, or the DB was pre-seeded). This prevents
+ *     the modal from re-creating starter habits on top of existing ones.
+ *   - Otherwise, open after a short delay so it doesn't fight with initial hydration.
  */
 export function OnboardingModal() {
   const [open, setOpen] = useState(false);
@@ -37,17 +43,41 @@ export function OnboardingModal() {
   const [submitting, setSubmitting] = useState(false);
   const qc = useQueryClient();
 
-  // gate on first visit only
-  useState(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return;
+    let cancelled = false;
     try {
       if (localStorage.getItem(STORAGE_KEY)) return;
     } catch {
       /* ignore */
     }
-    // small delay so it doesn't fight with initial hydration
-    setTimeout(() => setOpen(true), 600);
-  });
+    // Probe server-side habit count so we don't show the modal to a user
+    // who already has habits (e.g. signed-in from another device). This
+    // avoids creating duplicate starter habits on top of existing ones.
+    api
+      .get<{ count?: number }[]>("/api/habits")
+      .then((habits) => {
+        if (cancelled) return;
+        if (Array.isArray(habits) && habits.length > 0) {
+          // user already has habits — permanently dismiss onboarding
+          try {
+            localStorage.setItem(STORAGE_KEY, new Date().toISOString());
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        // small delay so it doesn't fight with initial hydration
+        setTimeout(() => setOpen(true), 600);
+      })
+      .catch(() => {
+        // If the probe fails (network/DB error), still try to show onboarding
+        if (!cancelled) setTimeout(() => setOpen(true), 600);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const toggle = (id: string) =>
     setSelected((prev) =>

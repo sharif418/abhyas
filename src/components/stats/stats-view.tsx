@@ -428,13 +428,33 @@ export function StatsView() {
       {/* Mood tab */}
       {activeTab === "mood" && (
         <div role="tabpanel" id="stats-tabpanel-mood" aria-labelledby="stats-tab-mood" className="space-y-5">
-      {/* Mood trend chart */}
-      {stats.mood && <MoodTrendChart data={stats.mood.series} />}
+          {stats.mood && stats.mood.series.length > 0 ? (
+            <>
+              {/* Mood trend chart */}
+              <MoodTrendChart data={stats.mood.series} />
 
-      {/* Mood-habit correlation */}
-      {stats.moodCorrelations && (
-        <MoodCorrelationCard correlations={stats.moodCorrelations} />
-      )}
+              {/* Mood-habit correlation */}
+              {stats.moodCorrelations && (
+                <MoodCorrelationCard correlations={stats.moodCorrelations} />
+              )}
+            </>
+          ) : (
+            <Card>
+              <CardHeader title="মুড ট্র্যাকিং" subtitle="আপনার মুডের ধারা" />
+              <div className="flex flex-col items-center gap-3 p-8 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <IconRenderer name="Heart" size={26} />
+                </div>
+                <div>
+                  <h3 className="font-semibold">এখনো কোনো মুড লগ নেই</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    হোম পেজ থেকে প্রতিদিন আপনার মুড নির্বাচন করুন। কিছুদিন পর এখানে
+                    আপনার মুডের ধারা এবং অভ্যাসের সাথে সম্পর্ক দেখতে পাবেন।
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       )}
 

@@ -2806,3 +2806,83 @@ Key opportunities identified:
 - Add weekly review email/summary
 - Add habit categories analytics (which category has best completion rate)
 - Add social challenges (friend challenges via WebSocket)
+
+---
+Task ID: EVOLVE-7 (First-Time User Journey Polish)
+Agent: Z.ai Code (Elite Principal Engineer & Product Designer)
+
+### Assessment
+Launched a comprehensive QA subagent to audit the first-time user journey with
+a completely fresh database (no seed data). The subagent found 2 critical bugs
+and 14 UX friction points. The critical bugs were:
+
+1. **Auto-seed on page load** — `src/app/page.tsx` called `/api/seed` on every
+   fresh page load, creating 10 fake habits with 21 days of fabricated history.
+   New users saw inflated streaks, pre-earned badges, and an AI Coach that
+   congratulated them on streaks they never built.
+
+2. **Onboarding duplicate habits** — The onboarding modal used `useState(() => …)`
+   (anti-pattern) and only checked localStorage, so incognito/cross-device users
+   would see onboarding again and create duplicate starter habits on top of
+   existing ones.
+
+The QA subagent fixed both critical bugs. This task addresses the remaining UX
+friction points.
+
+### Executed Work
+
+**1. Fixed: Auto-seed removed (by QA subagent)**
+- Removed `useEffect` that called `api.post("/api/seed")` from `src/app/page.tsx`
+- Added explanatory comment documenting why auto-seeding was removed
+- First-time users now see a true empty state → onboarding → user-built data
+
+**2. Fixed: Onboarding duplicate habits (by QA subagent)**
+- Replaced `useState(() => …)` with proper `useEffect` in onboarding modal
+- Added server-side habit probe (`GET /api/habits`) — if user already has habits,
+  the modal self-dismisses and persists the localStorage flag
+- Prevents duplicate creation from incognito/cross-device sessions
+
+**3. StreakPredictionCard empty state**
+- Previously returned `null` when no active streaks, causing the heading to
+  disappear silently (looked like a rendering bug)
+- Now shows a helpful empty state: "অভ্যাস সম্পন্ন করতে শুরু করুন — আপনার প্রথম
+  স্ট্রিক মাইলস্টোন এখানে দেখা যাবে।"
+- Uses a Flame icon + muted background for visual consistency
+
+**4. Hide "Add habit" button on non-habit views**
+- TopBar now checks `currentView` from UIStore
+- The "+" button only shows on "home" and "habits" views
+- Hidden on Stats, Focus, Islamic, Journal, Social, Profile (where it's irrelevant)
+
+**5. Stats Mood tab empty state**
+- Previously showed a blank tab when no mood data existed
+- Now shows a helpful empty state with Heart icon: "এখনো কোনো মুড লগ নেই"
+- Includes guidance: "হোম পেজ থেকে প্রতিদিন আপনার মুড নির্বাচন করুন।"
+
+**6. Undo action on habit completion toast**
+- Added "পূর্বাবস্থা" (Undo) button to the XP toast when completing a habit
+- Clicking it re-toggles the habit (undoes the completion)
+- Invalidates queries to refresh the UI
+- Uses Sonner's built-in `action` prop
+
+**7. Emoji cleanup in toasts**
+- Removed 🔥 from streak milestone toast
+- Removed ⭐ from level-up toast
+- Removed 🏅 from badge unlock toast
+- Consistent with the emoji→lucide icon cleanup from EVOLVE-2
+
+### Verification Results
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ `bunx tsc --noEmit` clean (0 src/ errors)
+- ✅ agent-browser QA: Fresh DB → onboarding shows → 4 habits created (no duplicates)
+- ✅ Streak prediction empty state shows guidance message
+- ✅ "Add habit" button hidden on Stats view
+- ✅ Mood tab empty state shows with icon + guidance
+- ✅ No runtime errors in dev.log
+
+### Next Steps
+- Add aria-labels to all 40+ icon buttons in habit form
+- Add confirmation dialog before starting Focus session with no tag
+- Consolidate bottom nav at mobile widths (8 items is too many)
+- Add "Reset onboarding" link in Profile settings
+- Add automated test for first-time user journey (regression prevention)

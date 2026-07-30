@@ -171,14 +171,14 @@ export function useToggleHabit() {
 
         // Streak milestone feedback
         if ([7, 14, 30, 100, 365].includes(res.streak)) {
-          toast.success(`🔥 ${res.streak} দিনের স্ট্রিক!`, {
+          toast.success(`${res.streak} দিনের স্ট্রিক!`, {
             description: "অসাধারণ চালিয়ে যান!",
           });
           fireConfetti({ count: 120, duration: 900 });
           if (soundEnabled) playStreakSound();
         } else if (res.leveledUp) {
           const g = gamificationState(res.totalXp);
-          toast.success(`⭐ লেভেল আপ! এখন লেভেল ${g.level}`, {
+          toast.success(`লেভেল আপ! এখন লেভেল ${g.level}`, {
             description: `+${res.xpAwarded} XP অর্জন`,
           });
           fireConfetti({ count: 100, duration: 800 });
@@ -186,11 +186,22 @@ export function useToggleHabit() {
         } else {
           toast.success(`+${res.xpAwarded} XP`, {
             description: `স্ট্রিক: ${res.streak} দিন`,
+            action: {
+              label: "পূর্বাবস্থা",
+              onClick: () => {
+                // Re-toggle the habit (undo the completion)
+                api.post(`/api/habits/${vars.habitId}/toggle`).then(() => {
+                  qc.invalidateQueries({ queryKey: ["habits"] });
+                  qc.invalidateQueries({ queryKey: ["stats"] });
+                  qc.invalidateQueries({ queryKey: ["me"] });
+                });
+              },
+            },
           });
           if (soundEnabled) playCompletionSound();
         }
         if (res.newBadgeIds.length > 0) {
-          toast.success("🏅 নতুন ব্যাজ আনলক!", {
+          toast.success("নতুন ব্যাজ আনলক!", {
             description: res.newBadgeIds.join(", "),
           });
           fireConfetti({ count: 90, duration: 700 });

@@ -25,6 +25,10 @@ export function TopBar() {
     staleTime: 60_000,
   });
   const openAddHabit = useUIStore((s) => s.openAddHabit);
+  const currentView = useUIStore((s) => s.view);
+
+  // Only show the "add habit" button on views where it makes sense.
+  const showAddButton = currentView === "home" || currentView === "habits";
 
   const game = me ? gamificationState(me.xp) : null;
 
@@ -69,16 +73,18 @@ export function TopBar() {
           </button>
         )}
 
-        <button
-          onClick={openAddHabit}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            "hover:scale-105 active:scale-95"
-          )}
-          aria-label="নতুন অভ্যাস যোগ করুন"
-        >
-          <Plus size={22} aria-hidden />
-        </button>
+        {showAddButton && (
+          <button
+            onClick={openAddHabit}
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "hover:scale-105 active:scale-95"
+            )}
+            aria-label="নতুন অভ্যাস যোগ করুন"
+          >
+            <Plus size={22} aria-hidden />
+          </button>
+        )}
       </div>
     </header>
   );
