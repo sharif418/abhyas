@@ -2964,3 +2964,65 @@ Key opportunities identified:
 - Add "Reset onboarding" link in Profile settings
 - Add automated test for first-time user journey (regression prevention)
 - Consider habit category analytics (which category has best completion rate)
+
+---
+Task ID: MINI-SERVICES (Social WebSocket Service Production Deployment)
+Agent: Z.ai Code (DevOps Engineer)
+
+### Assessment
+Advanced subagent audit revealed the social service was never deployed to
+production. The `XTransformPort` gateway mechanism only works locally with
+Caddy — in production, Coolify's Traefik proxy doesn't understand query-param
+routing, so the social client always falls back to "ডেমো মোড" after 5s timeout.
+
+Root causes:
+1. Social service container never deployed (no Dockerfile, no Coolify app)
+2. `XTransformPort` mechanism incompatible with Coolify/Traefik
+3. Push-scheduler not deployed and has broken package.json
+
+### Executed Work
+
+**1. Social service Dockerfile** (`mini-services/social/Dockerfile`)
+- New production-grade Dockerfile using `oven/bun:1-alpine`
+- Copies package.json + index.ts, runs `bun install`
+- Exposes port 3003
+- Starts with `bun index.ts`
+
+**2. Client URL configuration** (`src/hooks/use-social.ts`)
+- Now reads `NEXT_PUBLIC_SOCIAL_URL` env var for production WebSocket URL
+- Falls back to `XTransformPort=3003` for local dev
+- Clean separation: production uses direct URL, dev uses Caddy gateway
+
+**3. Coolify deployment**
+- Created social service as separate Coolify app (UUID: geus73jhhje3xtae9mjluzn3)
+- Configured git source: github.com/sharif418/abhyas.git
+- Base directory: /mini-services/social
+- Domain: https://social.abhyas.ailearnersbd.com
+- Port: 3003
+- Disabled healthcheck (Socket.io returns 400 on root, not 200)
+- Container is running and logging: "WebSocket server running on port 3003"
+
+**4. Main app environment**
+- Set NEXT_PUBLIC_SOCIAL_URL=https://social.abhyas.ailearnersbd.com
+- Triggered main app rebuild with new env var
+
+**5. .env.example documentation**
+- Added NEXT_PUBLIC_SOCIAL_URL with explanation
+- Documents production vs dev behavior
+
+### Current Status
+- ✅ Social service container running on Coolify (verified via container logs)
+- ✅ Main app rebuilt with NEXT_PUBLIC_SOCIAL_URL env var
+- ⚠️ DNS for social.abhyas.ailearnersbd.com needs to be configured by user
+  (A record pointing to 207.180.198.236)
+- ⚠️ Traefik routing may need the domain to propagate before the social
+  service is accessible via HTTPS
+
+### Next Steps
+- User needs to add DNS A record: social.abhyas → 207.180.198.236
+- Once DNS propagates, the social view should connect to the live service
+  instead of showing "ডেমো মোড"
+- Deploy push-scheduler as third Coolify service
+- Fix push-scheduler package.json (missing @prisma/client)
+- Consider adding a health endpoint to the social service (GET /healthz
+  returning 200) so Coolify healthcheck works properly
