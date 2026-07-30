@@ -75,7 +75,14 @@ export function useSocial(opts?: {
   }
 
   useEffect(() => {
-    const socket = io("/?XTransformPort=3003", {
+    // Production: connect to the social service via NEXT_PUBLIC_SOCIAL_URL
+    // (e.g., "https://social.abhyas.ailearnersbd.com").
+    // Local dev: fall back to the XTransformPort gateway pattern.
+    const socialUrl =
+      process.env.NEXT_PUBLIC_SOCIAL_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "");
+
+    const socketOpts: Parameters<typeof io>[1] = {
       path: "/",
       transports: ["polling", "websocket"],
       forceNew: true,
@@ -83,7 +90,14 @@ export function useSocial(opts?: {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 20000,
-    });
+    };
+
+    // In dev (no NEXT_PUBLIC_SOCIAL_URL), use the XTransformPort pattern.
+    // In production, connect directly to the social service URL.
+    const socket =
+      socialUrl && process.env.NEXT_PUBLIC_SOCIAL_URL
+        ? io(socialUrl, socketOpts)
+        : io("/?XTransformPort=3003", socketOpts);
     socketRef.current = socket;
 
     // 5s safety net: if the handshake hasn't completed, surface an error
