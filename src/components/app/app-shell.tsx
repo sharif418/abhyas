@@ -16,6 +16,8 @@ import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { FloatingFocusButton } from "@/components/focus/floating-focus-button";
 import { ServiceWorkerRegister } from "@/components/app/sw-register";
 import { KeyboardShortcutsOverlay } from "@/components/app/keyboard-shortcuts";
+import { InstallBanner } from "@/components/pwa/install-banner";
+import { UpdatePrompt } from "@/components/pwa/update-prompt";
 
 /** True while any Radix dialog/sheet/drawer is mounted (focus is trapped in it). */
 function anyOverlayOpen(): boolean {
@@ -93,6 +95,10 @@ export function AppShell() {
 
       {/* Global focus-mode control — present on every view */}
       <FloatingFocusButton />
+
+      {/* PWA install invitation + auto-update flow */}
+      <InstallBanner />
+      <UpdatePrompt />
 
       {/* Global overlays */}
       <HabitFormSheet />

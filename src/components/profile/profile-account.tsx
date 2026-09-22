@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { toBn } from "@/lib/date-bn";
+import { APP_VERSION } from "@/constants/app";
 import type { Habit } from "@/types";
 import { Button } from "@/components/ui/button";
 import { IconRenderer } from "@/components/shared/icon-renderer";
@@ -36,7 +37,7 @@ export function ProfileAboutSection() {
           বাংলাদেশের ব্যবহারকারীদের জন্য সম্পূর্ণ বাংলা স্বশাসন ও অভ্যাস ট্র্যাকিং অ্যাপ।
           নামাজ, কুরআন, স্ট্রিক ও গেমিফিকেশন সহ।
         </p>
-        <div className="mt-2 text-[10px] text-muted-foreground">ভার্সন ১.০.০</div>
+        <div className="mt-2 text-[10px] text-muted-foreground">ভার্সন {APP_VERSION}</div>
       </div>
     </Section>
   );

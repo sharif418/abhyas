@@ -1,21 +1,76 @@
 {
+  "id": "/",
   "name": "অভ্যাস — স্বশাসন ও অভ্যাস ট্র্যাকার",
   "short_name": "অভ্যাস",
-  "description": "সম্পূর্ণ বাংলা অভ্যাস ট্র্যাকার — নামাজ, কুরআন, স্ট্রিক ও গেমিফিকেশন সহ।",
+  "description": "নামাজ, কুরআন, অভ্যাস ও লক্ষ্য — সব এক অ্যাপে। ফোকাস মোড, স্ট্রিক ও গেমিফিকেশন সহ সম্পূর্ণ বাংলা স্বশাসন অ্যাপ।",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#f0fdf4",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#04241c",
   "theme_color": "#059669",
   "lang": "bn",
   "dir": "ltr",
-  "categories": ["productivity", "lifestyle", "health"],
+  "categories": ["productivity", "lifestyle", "health", "education"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "নামাজ, কুরআন, অভ্যাস ও ফোকাস মোড — সব এক জায়গায়"
+    },
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "ডেস্কটপ থেকেও একই অভিজ্ঞতা"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ইসলামিক",
+      "short_name": "ইসলামিক",
+      "description": "নামাজের সময়, কুরআন ট্র্যাকার ও তাসবিহ",
+      "url": "/#/islamic",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ফোকাস মোড",
+      "short_name": "ফোকাস",
+      "description": "গভীর মনোযোগের টাইমার",
+      "url": "/#/focus",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "লক্ষ্য",
+      "short_name": "লক্ষ্য",
+      "description": "টার্গেট ও মাইলফলক",
+      "url": "/#/goals",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -5,8 +5,15 @@
 //  - network-first for /api/* with cache fallback (fresh data when online)
 //  - opaque fallback for the Aladhan prayer-times API
 
-// Bumped to v4: added `push` + `notificationclick` handlers for VAPID push.
-const CACHE_VERSION = "abhyas-v4";
+// Bumped to v5: controlled updates — the SW no longer auto-activates on
+// install. Instead it waits, the page detects `registration.waiting`, shows
+// the "নতুন আপডেট প্রস্তুত" toast, and only on the user's tap (or the next
+// clean visit) posts { type: "SKIP_WAITING" } to activate + reload. This is
+// the industry pattern (Twitter Lite / Instagram web) — no surprise reloads
+// mid-task, yet updates always land on app entry.
+//
+// v4 history: `push` + `notificationclick` handlers for VAPID push.
+const CACHE_VERSION = "abhyas-v5";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -18,7 +25,20 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
   );
-  self.skipWaiting();
+  // NOTE: no skipWaiting here (v5). Activation is user-approved via the
+  // update toast → postMessage { type: "SKIP_WAITING" }.
+});
+
+// Controlled update channel: the page asks a waiting worker to take over.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === "GET_VERSION") {
+    if (event.source) {
+      event.source.postMessage({ type: "SW_VERSION", version: CACHE_VERSION });
+    }
+  }
 });
 
 self.addEventListener("activate", (event) => {

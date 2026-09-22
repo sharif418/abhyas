@@ -33,6 +33,8 @@ interface DragState {
  * Resting `bottom` (px from viewport bottom) for a zone.
  * Mobile: floats 12px above the real bottom nav (safe-area aware because the
  * nav itself is measured). Desktop (lg): standard 24px margin — no nav there.
+ * While the PWA install banner is parked above the nav, the FAB re-stacks on
+ * top of it so the two never overlap (the banner nudges a resize on show).
  */
 function restingBottom(zone: "top" | "bottom"): number {
   if (typeof window === "undefined") return 84;
@@ -40,12 +42,15 @@ function restingBottom(zone: "top" | "bottom"): number {
     return Math.max(140, window.innerHeight - 96 - FAB_SIZE);
   }
   if (window.matchMedia("(min-width: 1024px)").matches) return 24;
+  const banner = document.querySelector<HTMLElement>('[data-install-banner]');
+  let bottom = 84;
   const nav = document.querySelector<HTMLElement>(NAV_SELECTOR);
   if (nav) {
     const rect = nav.getBoundingClientRect();
-    if (rect.height > 0) return window.innerHeight - rect.top + 12;
+    if (rect.height > 0) bottom = window.innerHeight - rect.top + 12;
   }
-  return 84;
+  if (banner) bottom += banner.offsetHeight + 10;
+  return bottom;
 }
 
 /**
