@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -33,6 +34,37 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- UsageGuard watchdog: re-checks per-app daily time budgets every
+             ~60s and fires a "সময় শেষ" notification when one is crossed.
+             specialUse FGS (API 34+ requires an explicit type + subtype; the
+             meta-data property tag is simply ignored on older versions). -->
+        <service
+            android:name=".UsageGuardService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <meta-data
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="app_usage_guard" />
+        </service>
+
+        <!-- ContentGuard DNS-filter VPN: a DNS-only TUN (no default route —
+             only resolver IPs /32 are routed) that blocks/forwards domain
+             lookups per the chosen mode. The BIND_VPN_SERVICE permission +
+             android.net.VpnService intent filter are REQUIRED by Android for
+             any VpnService so the system can show the official consent dialog. -->
+        <service
+            android:name=".DnsVpnService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="dns_filter" />
+        </service>
     </application>
 
     <!-- Permissions -->
@@ -43,4 +75,29 @@
          Granted by the user from Settings → Do Not Disturb access (one-time);
          the app can never READ notification contents with this permission. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
+    <!-- UsageGuard (app time budgets): signature-level "usage stats" appop —
+         NOT granted at install; the user approves it once from
+         Settings → Special app access → Usage access. With it the app can
+         read which app was in the foreground when (device-local only).
+         tools:ignore because normal apps must not hold it via <uses-permission>
+         alone — the appop grant is what actually matters. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- UsageGuard (app time budgets): list the installed apps so the budget
+         picker can show them. Everything stays device-local — no app list is
+         ever synced or uploaded. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Watchdog + filter notifications (runtime permission on API 33+).
+         When denied, both services degrade silently but keep enforcing. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground services for the UsageGuard watchdog + ContentGuard VPN.
+         Declaring the specialUse type permission is required when targeting
+         API 34+; harmless below. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 </manifest>

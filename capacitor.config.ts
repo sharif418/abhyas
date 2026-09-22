@@ -12,8 +12,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * OS-level capabilities the browser can never have:
  *
  *   • FocusMode plugin → system-wide Do-Not-Disturb (the floating button)
- *   • (roadmap) UsageStatsManager → per-app social-media time budgets
- *   • (roadmap) app blocking / forced switch-back during focus sessions
+ *   • UsageGuard plugin → per-app social-media time budgets + watchdog
+ *     notifications (“অভ্যাসে ফিরে আসুন”) when a budget is crossed
+ *   • ContentGuard plugin → DNS-level content filter (family/security/ads
+ *     modes + custom block/allow rules) via a DNS-only VpnService tunnel
  *
  * SERVER URL
  * ─────────────────────────────────────────────────────────────────────────

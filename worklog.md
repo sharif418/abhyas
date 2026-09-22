@@ -3657,3 +3657,173 @@ Stage Summary:
 - The floating button is the app's new signature control: silent, global,
   honest about what each platform can do.
 - Pushing to GitHub main → Coolify webhook auto-redeploy.
+
+---
+Task ID: 1 (PWA install + auto-update)
+Agent: Z.ai Code (Principal Architect)
+
+Task: Site visitor → install-the-app notification; installs as real Android
+app (PWA WebAPK); Settings install option; auto-update on app entry.
+
+Work Log:
+- src/lib/pwa/install.ts — install manager: beforeinstallprompt capture,
+  3-day dismissal tracking, standalone detection, iOS detection.
+- src/components/pwa/install-banner.tsx — smart banner (6s delay, parks above
+  bottom nav, FAB re-stacks via resize nudge; iOS → 3-step guide modal).
+- src/components/pwa/update-prompt.tsx — controlled SW update flow: waiting
+  worker → toast "নতুন আপডেট প্রস্তুত" → SKIP_WAITING → controllerchange reload;
+  15-min + on-focus re-checks.
+- public/sw.js v5 — no auto skipWaiting; message handler {SKIP_WAITING,GET_VERSION}.
+- scripts/generate-pwa-assets.mjs — PNG icons (192/512/maskable) + 2 install
+  screenshots via sharp; manifest upgraded (id, screenshots, shortcuts,
+  display_override, categories).
+- src/components/profile/profile-app-section.tsx — Settings অ্যাপ section:
+  install status/button, update check, SW version row.
+- APP_VERSION constant (src/constants/app.ts) wired into About section.
+
+Stage Summary:
+- Install + update UX is complete and industry-pattern (Twitter-Lite style).
+- Committed & pushed as f2c3d56.
+
+---
+Task ID: 2 (লক্ষ্য target-task system + home overhaul)
+Agent: Z.ai Code (Principal Architect)
+
+Task: Target/task system beyond habits; learning/skill/work organization;
+home page optimization.
+
+Work Log:
+- prisma Goal model (both PostgreSQL + dev SQLite schemas; db pushed).
+- /api/goals (GET+POST), /api/goals/[id] (PATCH+DELETE),
+  /api/goals/[id]/progress (POST) — milestone auto-complete, clamped values,
+  XP curve (+3/unit cap 25, +100 completion), un-complete on correction.
+- src/lib/goals-server.ts, src/types/goals.ts (6 categories incl. শেখা ও
+  দক্ষতা/কাজ ও পেশা, units, 4 starter templates).
+- src/hooks/use-goals.ts + components/goals/{goals-view,goal-card,goal-form}
+  — summary hero, filters, quick ±progress, milestone stepper, deadline chips.
+- Home: greeting (আসসালামু আলাইকুম + time-of-day), QuickActions grid (5),
+  GoalsSummaryCard; nav wiring (লক্ষ্য + নিয়ন্ত্রণ in MORE_ITEMS, ViewKey,
+  VIEW_KEYS, view-router dynamic imports).
+- api.patch() added to api-client.
+
+Stage Summary:
+- Goals CRUD + progress verified end-to-end via curl (milestone auto-complete
+  + XP + summary all correct).
+- Committed & pushed as c6e3545.
+- NOTE: dev server must be restarted with double-fork orphan pattern
+  `( ( bun run dev & ) ; )` — plain background jobs are reaped between tool
+  calls; orphans re-parented to PID 1 survive.
+
+---
+Task ID: 3-a (Android native plugins — UsageGuard + ContentGuard)
+Agent: Z.ai Code (Native Android Engineer)
+Task: Implement the UsageGuard (per-app daily time budgets) and ContentGuard
+(DNS-level content filtering) Capacitor plugins + their foreground services,
+matching the TS bridge contracts in src/lib/native/usage-plugin.ts and
+content-plugin.ts exactly. Java only; no web/src changes.
+
+Work Log:
+- Read the two TS bridge contracts line-by-line and the existing
+  FocusModePlugin.java / MainActivity / Manifest for style + code conventions
+  (Bengali reject messages, ERR_ code constants, honest-permission comments).
+- **UsageGuardPlugin.java** (510 lines): isAccessGranted/requestAccess via the
+  AppOpsManager OPSTR_GET_USAGE_STATS pattern (opens
+  ACTION_USAGE_ACCESS_SETTINGS, FocusMode-style `{granted, opened}` result);
+  getApps (queryIntentActivities CATEGORY_LAUNCHER, excludes own package,
+  ≤48px base64 PNG launcher icons with 32KB cap → nullable icon, label sort);
+  getUsageToday (shared static foregroundMillisSince() walks queryEvents
+  ACTIVITY_RESUMED/PAUSED — the API-29 renames of MOVE_TO_* with identical
+  wire values 1/2, so one code path serves API 24→36; open interval counted
+  up to "now" like Digital Wellbeing; rows for used-OR-budgeted apps;
+  enforcementActive = UsageGuardService.isRunning); setLimit/removeLimit
+  persist a {pkg→minutes} JSON map (0 removes); setEnforcement starts/stops
+  the watchdog via ContextCompat.startForegroundService, gated on Usage
+  access (rejects USAGE_ACCESS_REQUIRED).
+- **UsageGuardService.java** (334 lines): START_STICKY FGS, channel
+  "abhyas_usage_guard" (Bengali "অ্যাপ ব্যবহার নিয়ন্ত্রণ", IMPORTANCE_LOW) with the
+  persistent "অ্যাপ নিয়ন্ত্রণ চালু — সময়সীমা নজরে রাখা হচ্ছে" notification
+  (ic_menu_manage small icon); 60s Handler sweep reusing the plugin's
+  aggregation so UI and enforcement can never disagree; per-day-per-app
+  once-only alerting via date-keyed "notified_yyyy-MM-dd" JSON set (auto
+  resets at midnight, stale keys purged); IMPORTANCE_HIGH alerts channel with
+  "সময় শেষ: {app}" + "আজকের নির্ধারিত সময় পার হয়েছে — অভ্যাসে ফিরে আসুন।",
+  offending app's launcher icon as largeIcon, contentIntent → MainActivity
+  (FLAG_IMMUTABLE); areNotificationsEnabled() silent-fallback documented for
+  API 33+; onTaskRemoved re-schedules (swipe must not stop enforcement).
+- **ContentGuardPlugin.java** (211 lines): getStatus (DnsVpnService.isRunning
+  static flag + persisted mode + day counters), start(mode, rules?) (persists
+  FIRST → VpnService.prepare(): non-null consent intent → store pending +
+  launch system dialog → `{running:false, permissionNeeded:true}`; null →
+  startVpn → `{running:true}`; ActivityNotFoundException → reject
+  VPN_PERMISSION_REQUIRED), stop → `{ok:true}`, getStats, setRules (persist +
+  live volatile swap into a running service). Nested rules arrays read via
+  org.json optJSONArray (Capacitor JSObject has NO getArray — see below).
+- **DnsVpnService.java** (913 lines) — the DNS-only filter VPN: Builder with
+  session "অভ্যাস সামগ্রী নিয়ন্ত্রণ", MTU 1500, 10.111.0.1/24,
+  addDnsServer(firstUpstream) + /32 routes for the mode's upstreams AND the
+  12-resolver hijack list (8.8.8.8… OpenDNS) so hardcoded-DNS apps are
+  filtered too — deliberately NO 0.0.0.0/0 route (DNS-only: contents can
+  never be seen); setBlocking(true) reader thread parses IPv4/IHL/length/
+  frag/UDP-53; allow-list wins → forward; block-list → locally crafted
+  REFUSED response (QR=1, RCODE=3, RA=0, question echoed) written straight
+  back into the TUN; default → 4-thread executor forwards via protect()ed
+  DatagramSocket (5s timeout, secondary-upstream failover, DNS ID check),
+  responses re-injected spoofed as the ORIGINAL destination so both netd and
+  hardcoded resolvers accept them; fresh IPv4/UDP headers with real IP
+  checksum, legal zero UDP checksum, TC-bit truncation at MTU; bounded
+  inflight map (ID+client key, 256 cap) for dedupe + backpressure; counters
+  persisted every 10s/100 queries under yyyy-MM-dd keys (auto midnight reset
+  + restart re-seed); mode switch tears down + re-establishes; START_STICKY
+  null-intent restart re-reads prefs; persistent notification with "বন্ধ করুন"
+  stop action (ACTION_STOP handled in onStartCommand).
+- **MainActivity.java**: registered UsageGuardPlugin + ContentGuardPlugin
+  (FocusModePlugin kept, all before super.onCreate).
+- **AndroidManifest.xml**: xmlns:tools added; PACKAGE_USAGE_STATS
+  (tools:ignore=ProtectedPermissions), QUERY_ALL_PACKAGES, POST_NOTIFICATIONS,
+  FOREGROUND_SERVICE + FOREGROUND_SERVICE_SPECIAL_USE permissions with honest
+  Bengali+English comments; UsageGuardService + DnsVpnService declared as
+  exported=false specialUse FGS with PROPERTY_SPECIAL_USE_FGS_SUBTYPE
+  ("app_usage_guard" / "dns_filter"); DnsVpnService additionally carries
+  android:permission=BIND_VPN_SERVICE + android.net.VpnService intent-filter
+  (mandatory for VPN consent).
+- **VERIFIED COMPILATION without an Android SDK**: downloaded Eclipse ECJ
+  3.36 into the sandbox and compiled all 6 Java files against ~50 hand-written
+  API-faithful stubs (android.*, androidx.core.*, org.json.*, Capacitor 8.5.2
+  signatures cross-checked against the actual capacitor-android sources in
+  node_modules). Zero errors. This caught 3 real bugs pre-merge: (1)
+  JSObject.getArray() does not exist in Capacitor → switched nested rules to
+  org.json optJSONArray; (2) `catch (SecurityException | RuntimeException)`
+  is an illegal multi-catch (subclass) → single RuntimeException catch; (3)
+  unused import cleanup. Only remaining warnings are stub-induced "dead code"
+  for constant SDK_INT (live in a real build) — same class of warning as the
+  pre-existing FocusModePlugin.
+- Manifest validated with an XML parser (services/permissions/tools-ns all
+  correct); all files UTF-8 with Bengali strings; no file under src/ touched
+  (the two new TS bridge files are the parallel web agent's work).
+
+Stage Summary:
+- 4 files created: android/app/src/main/java/bd/abhyas/app/{UsageGuardPlugin,
+  UsageGuardService, ContentGuardPlugin, DnsVpnService}.java
+  (510/334/211/913 lines). 2 files modified: MainActivity.java (+2
+  registerPlugin lines), AndroidManifest.xml (5 permissions + 2 service
+  declarations + xmlns:tools). Zero contract deviations: every method name,
+  argument key and response key matches usage-plugin.ts / content-plugin.ts
+  exactly; ERR codes USAGE_ACCESS_REQUIRED / UNSUPPORTED /
+  VPN_PERMISSION_REQUIRED mirror the TS constants.
+- Key decisions: usage aggregation lives as a public static on the plugin so
+  scoreboard and watchdog share ONE implementation; two notification channels
+  per service (quiet heartbeat + loud alerts) so the persistent FGS
+  notification never rings; DNS filter fails OPEN on unparseable queries
+  (upstream family/security filtering still applies) and never adds a default
+  route; responses spoof the queried resolver (hijack-friendly); alert
+  notifications fire once per app per calendar day (date-keyed SharedPreferences).
+- Known limitations (documented in-file): DNS-over-HTTPS and IPv6-hardcoded
+  resolvers bypass any DNS filter (market-wide limitation); POST_NOTIFICATIONS
+  is not runtime-requestable from a service — watchdog degrades silently but
+  keeps enforcing; QUERY_ALL_PACKAGES needs a Play-Console justification for
+  store distribution (device-local use only); no gradle build was possible in
+  this sandbox (no Android SDK) — ECJ+stubs compilation is the strongest
+  available verification.
+- Next actions: web agent wires the নিয়ন্ত্রণ UI to these bridges; on a real
+  machine run `cd android && ./gradlew assembleDebug` and smoke-test the VPN
+  consent flow + a family-mode lookup, plus a budget-crossed alert.

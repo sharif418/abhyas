@@ -6,6 +6,7 @@ import {
   Download,
   Globe,
   RefreshCw,
+  ShieldCheck,
   Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/pwa/install";
 import { isNativeApp, getNativePlatform } from "@/lib/native/capacitor";
 import { Button } from "@/components/ui/button";
+import { useUIStore } from "@/stores/ui-store";
 import { APP_VERSION } from "@/constants/app";
 import { DataRow, Section } from "./profile-shared";
 
@@ -30,6 +32,7 @@ export function ProfileAppSection() {
   const platform = getNativePlatform();
   const [checking, setChecking] = useState(false);
   const [swVersion, setSwVersion] = useState<string | null>(null);
+  const setView = useUIStore((s) => s.setView);
 
   useEffect(() => {
     // Best-effort: read the active cache version from the Service Worker.
@@ -143,9 +146,19 @@ export function ProfileAppSection() {
               চেক
             </Button>
           }
-          last
         />
       )}
+
+      <DataRow
+        icon={ShieldCheck}
+        label="নিয়ন্ত্রণ কেন্দ্র"
+        desc="অ্যাপের সময়সীমা, সামগ্রী নিয়ন্ত্রণ (DNS) ও ফোকাস মোড"
+        action={
+          <Button size="sm" variant="outline" onClick={() => setView("guard")} className="h-8">
+            খুলুন
+          </Button>
+        }
+      />
 
       <DataRow
         icon={Smartphone}
