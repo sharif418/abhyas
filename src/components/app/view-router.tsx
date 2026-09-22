@@ -40,6 +40,10 @@ const GoalsView = dynamic(
   () => import("@/components/goals/goals-view").then((m) => ({ default: m.GoalsView })),
   { loading: () => <ViewSkeleton />, ssr: false }
 );
+const PlannerView = dynamic(
+  () => import("@/components/planner/planner-view").then((m) => ({ default: m.PlannerView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
 const GuardView = dynamic(
   () => import("@/components/guard/guard-view").then((m) => ({ default: m.GuardView })),
   { loading: () => <ViewSkeleton />, ssr: false }
@@ -59,6 +63,7 @@ const VIEWS: Record<string, ComponentType> = {
   focus: FocusView,
   goals: GoalsView,
   guard: GuardView,
+  planner: PlannerView,
   profile: ProfileView,
 } as const;
 

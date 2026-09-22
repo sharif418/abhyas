@@ -35,6 +35,7 @@ model User {
   moods         MoodEntry[]
   focusSessions FocusSession[]
   goals         Goal[]
+  plannerTasks  PlannerTask[]
   pushSubscriptions PushSubscription[]
 
   @@index([email])
@@ -209,6 +210,28 @@ model Goal {
 
   @@index([userId, active])
   @@index([userId, category])
+}
+
+// দৈনিক পরিকল্পনা (Daily Planner) — Phase 1 "জ্ঞান ও পরিকল্পনা" feature.
+// The morning-planning / evening-review ritual:
+//   • MIT = "Most Important Task" (আজকের ৩টি প্রধান কাজ)
+//   • todos = smaller personal/work items for the same date
+// One row per planned item, dated per Asia/Dhaka day like the rest of the app.
+model PlannerTask {
+  id        String    @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD (Asia/Dhaka)
+  title     String
+  isMit     Boolean   @default(false)
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
 }
 
 // Web Push subscriptions for sending push notifications to users' devices.

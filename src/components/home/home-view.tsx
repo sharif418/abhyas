@@ -27,6 +27,7 @@ import { DailyStreakBadge } from "@/components/home/daily-streak-badge";
 import { WeeklyChallengeCard } from "@/components/home/weekly-challenge-card";
 import { QuickActions } from "@/components/home/quick-actions";
 import { GoalsSummaryCard } from "@/components/home/goals-summary-card";
+import { TodayPlanCard } from "@/components/home/today-plan-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,9 @@ export function HomeView() {
   }
 
   if (!isLoading && habits && habits.length === 0) {
+    // New user: keep the "add first habit" hero, but the daily ritual (plan
+    // card, quick actions, daily ayat/hadith) must still be available —
+    // planning the day does not require habits to exist yet.
     return (
       <div className="mx-auto max-w-5xl px-4 py-6">
         <EmptyState
@@ -129,6 +133,15 @@ export function HomeView() {
             </div>
           }
         />
+        <div className="mt-5">
+          <QuickActions />
+        </div>
+        <div className="mt-4">
+          <TodayPlanCard />
+        </div>
+        <div className="mt-4">
+          <DailyQuoteCard />
+        </div>
       </div>
     );
   }
@@ -213,6 +226,11 @@ export function HomeView() {
       {/* Quick actions — the five things people open the app for */}
       <div className="mt-4">
         <QuickActions />
+      </div>
+
+      {/* আজকের পরিকল্পনা — morning plan / day run / evening review ritual */}
+      <div className="mt-4">
+        <TodayPlanCard />
       </div>
 
       {/* 7-day activity heatmap — instant week snapshot */}

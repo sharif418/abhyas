@@ -3865,3 +3865,117 @@ Stage Summary:
   0 console errors. Screenshots in /home/z/shots/.
 - Dev-server ops note: restarts must use the double-fork orphan pattern
   `( ( bun run dev … & ) ; )` or the harness reaps them between tool calls.
+
+---
+Task ID: P1-b
+Agent: Content Engineer (subagent)
+Task: Daily ayat/hadith content engine — upgrade of the daily quote card
+
+Work Log:
+- Read worklog.md last 3 sections + existing daily-quote-card.tsx / daily-quotes.ts
+  to match conventions (day-of-year modulo rotation, premium card classes,
+  no-emoji policy, sonner toasts).
+- Surveyed codebase Arabic typography: `.font-arabic` (Amiri already shipped via
+  next/font in layout.tsx, falls back to serif) + `dir="rtl"` pattern from
+  dua-library/tasbih-counter — reused it; no new fonts/deps added.
+- Created src/constants/daily-content.ts (321 lines, data only): 30 entries —
+  15 ayat + 15 hadith, strictly alternating; each entry { kind, arabic
+  (standard imla'i orthography, ۝ verse separators), bn (standard Bengali
+  translation), reflection (1–2 sentence Bengali tie-in to daily life /
+  self-discipline), source (Bengali numerals, e.g. "সূরা আল-আসর ১০৩:১–৩",
+  "সহিহ বুখারি ১"; partial quotes honestly marked "(আংশিক)") }.
+- Content-accuracy decisions: kept the recommended famous pool; corrected the
+  task's "73:20 (وَاذْكُرِ اسْمَ رَبِّكَ)" to সূরা আল-মুযযাম্মিল ৭৩:৮ — the actual
+  location of that phrase; DROPPED "إن الله يحب التوابين" (that exact wording
+  is Quran 2:222; not confident in it as a standalone hadith) → replaced with
+  the equally famous tawbah hadith "كُلُّ ابْنِ آدَمَ خَطَّاءٌ وَخَيْرُ
+  الْخَطَّائِينَ التَّوَّابُونَ" (তিরমিযী ২৪৯৯), preserving the streak-recovery
+  theme; collection-only citations (no number) where the task itself gave none
+  (أدومها وإن قل، الكلمة الطيبة صدقة، الدعاء هو العبادة, ইত্যাদি).
+- Rewrote src/components/home/daily-quote-card.tsx (123 lines): export name
+  `DailyQuoteCard` + path unchanged; "use client"; framer-motion fade-in;
+  rounded-3xl premium card (border, bg-gradient-to-br from-primary/8 via-card
+  to-card, p-4, shadow-sm, two blurred glow orbs incl. an islamic-tinted one);
+  header "আজকের আয়াত"/"আজকের হাদিস" + kind badge (bg-islamic/10 text-islamic);
+  Arabic block dir="rtl" lang="ar" font-arabic text-lg leading-loose text-center;
+  Bengali translation text-sm font-medium; reflection sub-box bg-primary/5
+  rounded-xl p-2.5 text-xs text-muted-foreground; source footer row with
+  BookOpen (lucide); share affordance (navigator.share → clipboard fallback +
+  sonner toast; labels "শেয়ার করুন"/"কপি হয়েছে!"); aria-label on the article
+  and share button; zero emojis anywhere.
+- Verified: `bunx tsc --noEmit` error set identical to the pre-change baseline
+  (6 pre-existing errors in goals/guard files — none from my files);
+  `bun run lint` exit 0 (whole project incl. my two files); bun import check:
+  30 entries, 15/15 ayah/hadith split, strictly alternating, all fields
+  non-empty, no emoji codepoints; grep confirms `export function
+  DailyQuoteCard` at the same path, so home-view.tsx's import works unchanged.
+
+Stage Summary:
+- 2 files touched, both strictly in scope: src/constants/daily-content.ts
+  (created, 321 lines) + src/components/home/daily-quote-card.tsx (rewritten,
+  123 lines) — both under the 400-line budget. No other file modified.
+- Rotation: day-of-year % 30 (same entry all day, changes at midnight; even
+  pool indices = ayah, odd = hadith) — matches the existing getDailyQuote
+  convention; legacy daily-quotes.ts left in place (out of scope; now unused).
+- 30 verified entries: আয়াতুল কুরসি, আল-ইখলাস, আল-আসর, 2:152, 13:28, 94:5–6,
+  39:53, 40:60, 3:139, 65:2–3, 2:286, 14:7, 29:69, 16:97, 73:8 + নিয়ত,
+  তহারাত, অনাবশ্যক বর্জন, শক্তিশালী মুমিন, কুরআন শিক্ষা, দামি আমল, উত্তম
+  কথা, দয়া, প্রতারণা নিষেধ, ভাইয়ের কল্যাণকামনা, জবান-হাতের হেফাজত,
+  নামাজ নূর, দোয়াই ইবাদত, তওবাকারী শ্রেষ্ঠ, বরদান দুই ওয়াক্ত.
+- tsc: 0 new errors; lint: clean; export name/path unchanged.
+- Next actions (for architect): optionally retire src/constants/daily-quotes.ts
+  now that nothing imports it; Phase-2 candidates — per-entry favorites,
+  audio recitation for ayat, reminder scheduling tied to the daily rotation.
+
+---
+Task ID: P1-a + P1-b (Phase 1: দৈনিক পরিকল্পনা + কনটেন্ট ইঞ্জিন)
+Agent: Z.ai Code (Principal Architect) + Content subagent
+
+Task: ROADMAP ফেজ ১ শুরু — Daily Planner (MIT system, morning plan /
+evening review) full-stack + daily ayat/hadith content engine.
+
+Work Log:
+- **P1-b (subagent)**: src/constants/daily-content.ts (30 verified entries —
+  15 ayat + 15 hadith alternating, Arabic RTL + Bengali translation +
+  reflection + source) + daily-quote-card.tsx rewritten as premium আয়াত/
+  হাদিস card (export name/path kept stable). Subagent dropped unsure
+  wordings — accuracy non-negotiable.
+- **P1-a (architect)**: PlannerTask Prisma model (both schemas, db pushed);
+  /api/planner (GET day + 7-day strip + plan-streak; POST with ≤3-MIT and
+  ≤33-task guards) + /api/planner/[id] (PATCH toggle/rename/promote with
+  symmetric XP +6 MIT/+4 todo, un-complete reverses, floor 0; DELETE);
+  planner-server.ts (serialize/sort/week-strip/streak); use-planner hook
+  (confetti + toast on all-MITs-done, level-up toast).
+- UI: planner-shared.tsx (TaskCheck numbered MIT circles, PlannerTaskRow,
+  AddTaskInput with MIT chip, EmptyMitSlot, phase helper), TodayPlanCard on
+  Home (morning nudge / day progress / evening 3-stat review grid),
+  planner-view (date strip + ±30d nav + আজ jump, MIT slots, todos, এক নজরে
+  আজ = habits + goal next-milestone strips, evening review CTA with journal
+  link). Nav: পরিকল্পনা in MORE_ITEMS + first quick action + VIEW_KEYS hash
+  deep-link.
+- Home empty-habits branch now still renders QuickActions + TodayPlanCard +
+  DailyQuoteCard (new users get the full daily ritual, not a dead end).
+- **PRODUCTION INCIDENT FOUND & FIXED**: /api/goals was 500ing on production
+  (abhyas.ailearnersbd.com) — Goal table shipped without a migration.
+  Added prisma/migrations/20260923090000_add_goal + 20260923091000
+  _add_planner_task (DDL rendered by prisma migrate diff itself); entrypoint
+  runs migrate deploy → next Coolify deploy repairs prod.
+- Pre-existing tsc errors fixed (0 project-wide now): milestonesForDb typed
+  as string (valid for SQLite AND InputJsonValue), goal-form void-mutation
+  test removed, app-limits-section icon union narrowed via "icon" in app.
+- Dev-server ops: prisma generate requires dev-server restart (stale client
+  in memory → db.plannerTask undefined). Restart uses the double-fork orphan
+  pattern. Local dev DB was wiped by --accept-data-loss push — acceptable:
+  demo data was purged long ago; fresh onboarding flow is the real UX.
+
+Stage Summary:
+- E2E (Playwright/Chromium, mobile 390×844 + desktop 1280×800): 22/22 PASS —
+  home card (phase-aware, ৩/৩ MITs, streak chip), planner view (date strip,
+  MIT/todo CRUD via UI, future-day planning, আজ jump), MORE sheet, #/planner
+  deep-link, RTL arabic card on both viewports, footer check, 0 console
+  errors. tsc 0 errors, eslint clean.
+- API curl suite: guards (4th MIT → 400 Bengali error), XP symmetry
+  (+6/−6), allMitsDone flag on last MIT, promote-to-MIT guard, DELETE,
+  future-date rows isolated per date, planStreak=1 after today's completions.
+- All new files ≤400 lines: planner-view 338, today-plan-card ~215,
+  planner-shared ~260, planner-day-context ~150, daily-content 321.

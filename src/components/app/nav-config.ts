@@ -24,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 /** Secondary views — reachable from the "আরও" bottom sheet (mobile) or sidebar (desktop). */
 export const MORE_ITEMS: NavItem[] = [
+  { key: "planner", label: "পরিকল্পনা", icon: "CalendarCheck", description: "দৈনিক কাজ ও রাতের রিভিউ" },
   { key: "goals", label: "লক্ষ্য", icon: "Target", description: "টার্গেট ও মাইলফলক" },
   { key: "focus", label: "ফোকাস", icon: "Timer", description: "গভীর মনোযোগের টাইমার" },
   { key: "guard", label: "নিয়ন্ত্রণ", icon: "ShieldCheck", description: "অ্যাপ সময় ও সামগ্রী নিয়ন্ত্রণ" },

@@ -164,7 +164,7 @@ export function AppLimitsSection() {
 // ── Rows & sheets ───────────────────────────────────────────────────────────
 
 function AppIcon({ app }: { app: AppUsage | AppInfo }) {
-  const icon = "icon" in app ? app.icon : null;
+  const icon = "icon" in app ? app.icon : undefined;
   if (icon) {
     return (
       <img

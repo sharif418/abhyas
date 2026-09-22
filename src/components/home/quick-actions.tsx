@@ -1,16 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BookOpen, BookHeart, Moon, Target, Timer } from "lucide-react";
+import { BookOpen, CalendarCheck, Moon, Target, Timer } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
 
 const ACTIONS = [
+  { key: "planner", label: "পরিকল্পনা", icon: CalendarCheck, className: "bg-primary/10 text-primary" },
   { key: "islamic", label: "নামাজ", icon: Moon, className: "bg-islamic/10 text-islamic" },
   { key: "islamic", label: "তাসবিহ", icon: BookOpen, className: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
   { key: "focus", label: "ফোকাস", icon: Timer, className: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
   { key: "goals", label: "লক্ষ্য", icon: Target, className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  { key: "journal", label: "জার্নাল", icon: BookHeart, className: "bg-rose-500/10 text-rose-600 dark:text-rose-400" },
 ] as const;
 
 /**

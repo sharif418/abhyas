@@ -1,39 +1,121 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { getDailyQuote } from "@/constants/daily-quotes";
+import { BookOpen, Check, Quote, Share2 } from "lucide-react";
+import { toast } from "sonner";
+import { getDailyContent } from "@/constants/daily-content";
 
 /**
- * Daily Motivation card — shows a curated Bengali quote that rotates daily.
- * Premium card design with gradient accent, no emojis.
+ * দৈনিক ইসলামিক কনটেন্ট কার্ড — rotates daily between আয়াত and হাদিস.
+ *
+ * Each entry shows the Arabic text (RTL), a standard Bengali translation,
+ * a short Bengali reflection and the source reference. Rotation follows the
+ * day-of-year modulo pool-length convention (same entry all day, changes at
+ * midnight). Premium card styling, no emojis, Bengali labels only.
  */
 export function DailyQuoteCard() {
-  const quote = getDailyQuote();
+  const entry = getDailyContent();
+  const [copied, setCopied] = useState(false);
+
+  const isAyah = entry.kind === "ayah";
+  const headerLabel = isAyah ? "আজকের আয়াত" : "আজকের হাদিস";
+  const kindLabel = isAyah ? "আয়াত" : "হাদিস";
+
+  const shareText = `${headerLabel}\n\n${entry.arabic}\n\n${entry.bn}\n\n${entry.reflection}\n\n— ${entry.source}`;
+
+  const handleShare = async () => {
+    // Prefer the native share sheet when available…
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({ title: headerLabel, text: shareText });
+        return;
+      } catch {
+        // User dismissed the sheet (or share failed) — fall back to clipboard.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      toast.success("কপি হয়েছে!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("শেয়ার করতে সমস্যা হয়েছে");
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      role="article"
+      aria-label={`${headerLabel} — ${entry.source}`}
       className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/8 via-card to-card p-4 shadow-sm"
     >
-      <div className="absolute -left-6 -bottom-6 h-28 w-28 rounded-full bg-primary/8 blur-3xl" />
-      <div className="relative flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary shadow-sm">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
-            <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
-          </svg>
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            আজকের অনুপ্রেরণা
+      <div
+        className="absolute -left-6 -bottom-6 h-28 w-28 rounded-full bg-primary/8 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-islamic/10 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative">
+        {/* Header — label + kind badge + share affordance */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-islamic/10 text-islamic shadow-sm"
+              aria-hidden
+            >
+              <Quote size={18} />
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {headerLabel}
+              </span>
+              <span className="rounded-full bg-islamic/10 px-2 py-0.5 text-[10px] font-bold text-islamic">
+                {kindLabel}
+              </span>
+            </div>
           </div>
-          <p className="mt-1 text-sm font-medium leading-snug">
-            {quote.text}
-          </p>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            — {quote.author}
-          </p>
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="শেয়ার করুন"
+            title="শেয়ার করুন"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {copied ? (
+              <Check size={15} aria-hidden />
+            ) : (
+              <Share2 size={15} aria-hidden />
+            )}
+          </button>
+        </div>
+
+        {/* Arabic — RTL, rendered with the app's Arabic serif stack */}
+        <p
+          dir="rtl"
+          lang="ar"
+          className="font-arabic mt-3 text-center text-lg leading-loose"
+        >
+          {entry.arabic}
+        </p>
+
+        {/* Bengali translation */}
+        <p className="mt-2.5 text-sm font-medium leading-snug">{entry.bn}</p>
+
+        {/* Bengali reflection */}
+        <div className="mt-3 rounded-xl bg-primary/5 p-2.5 text-xs leading-relaxed text-muted-foreground">
+          {entry.reflection}
+        </div>
+
+        {/* Source reference */}
+        <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <BookOpen size={12} className="shrink-0" aria-hidden />
+          <span className="truncate">{entry.source}</span>
         </div>
       </div>
     </motion.div>

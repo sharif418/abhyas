@@ -37,8 +37,10 @@ export function serializeGoal(raw: {
   };
 }
 
-export function milestonesForDb(milestones: GoalMilestone[]): any {
-  return prismaJson<GoalMilestone[], any>(milestones);
+export function milestonesForDb(milestones: GoalMilestone[]) {
+  // Target `string`: the SQLite client wants string, and the PostgreSQL
+  // client's InputJsonValue also accepts string — compiles under both.
+  return prismaJson<GoalMilestone[], string>(milestones);
 }
 
 /**
