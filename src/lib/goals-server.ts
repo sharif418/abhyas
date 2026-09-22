@@ -37,8 +37,8 @@ export function serializeGoal(raw: {
   };
 }
 
-export function milestonesForDb(milestones: GoalMilestone[]) {
-  return prismaJson(milestones);
+export function milestonesForDb(milestones: GoalMilestone[]): any {
+  return prismaJson<GoalMilestone[], any>(milestones);
 }
 
 /**

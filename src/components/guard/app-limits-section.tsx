@@ -164,11 +164,11 @@ export function AppLimitsSection() {
 // ── Rows & sheets ───────────────────────────────────────────────────────────
 
 function AppIcon({ app }: { app: AppUsage | AppInfo }) {
-  if (app.icon) {
+  const icon = "icon" in app ? app.icon : null;
+  if (icon) {
     return (
-       
       <img
-        src={`data:image/png;base64,${app.icon}`}
+        src={`data:image/png;base64,${icon}`}
         alt=""
         width={36}
         height={36}

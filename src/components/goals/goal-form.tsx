@@ -170,9 +170,10 @@ function GoalFormBody({
       note: form.note.trim() || null,
     };
 
-    const mutation = editing ? update.mutate({ id: editing.id, ...input }) : create.mutate(input);
-    if (mutation) {
-      // Mutations are fire-and-forget here — toasts come from the hooks.
+    if (editing) {
+      update.mutate({ id: editing.id, ...input });
+    } else {
+      create.mutate(input);
     }
     onDone();
   };
