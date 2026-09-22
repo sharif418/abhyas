@@ -13,6 +13,11 @@ import {
 import { TrendingUp, TrendingDown, Minus, Calendar, Clock } from "lucide-react";
 import { toBn } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
+import {
+  CHART_AXIS_PROPS,
+  CHART_TOOLTIP_CURSOR,
+  CHART_TOOLTIP_STYLE,
+} from "@/components/shared/chart-tooltip";
 
 export interface InsightsData {
   bestWeekday: string;
@@ -97,14 +102,14 @@ export function WeeklyInsights({ insights }: { insights: InsightsData }) {
           label="সেরা দিন"
           value={insights.bestWeekday}
           sub={`${toBn(insights.bestWeekdayCount)} বার সম্পন্ন`}
-          color="#7c3aed"
+          color="var(--color-violet-500)"
         />
         <InsightCard
           icon="Clock"
           label="সেরা সময়"
           value={insights.bestTime}
           sub={`${toBn(insights.bestTimeCount)} বার সম্পন্ন`}
-          color="#0d9488"
+          color="var(--chart-3)"
         />
       </div>
 
@@ -118,29 +123,16 @@ export function WeeklyInsights({ insights }: { insights: InsightsData }) {
             data={insights.weekdaySeries}
             margin={{ top: 4, right: 0, left: -28, bottom: 0 }}
           >
-            <XAxis
-              dataKey="name"
-              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-              axisLine={false}
-              tickLine={false}
-            />
+            <XAxis {...CHART_AXIS_PROPS} dataKey="name" />
             <YAxis
-              tick={{ fontSize: 9, fill: "var(--muted-foreground)" }}
-              tickFormatter={(v) => toBn(v)}
+              {...CHART_AXIS_PROPS}
+              tickFormatter={(v: number) => toBn(v)}
               allowDecimals={false}
-              axisLine={false}
-              tickLine={false}
               width={28}
             />
             <Tooltip
-              cursor={{ fill: "var(--muted)", opacity: 0.4 }}
-              contentStyle={{
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--popover)",
-                color: "var(--popover-foreground)",
-                fontSize: 12,
-              }}
+              cursor={CHART_TOOLTIP_CURSOR}
+              contentStyle={CHART_TOOLTIP_STYLE}
               formatter={(v: number) => [`${toBn(v)} বার`, "সম্পন্ন"]}
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={28}>

@@ -5,14 +5,23 @@ import { useMood, useSetMood } from "@/hooks/use-mood";
 import { IconRenderer } from "@/components/shared/icon-renderer";
 import { toBn } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
+import { MOODS as SHARED_MOODS } from "@/constants/moods";
 
-const MOODS = [
-  { value: 1, icon: "Frown", label: "খুব খারাপ", color: "#dc2626" },
-  { value: 2, icon: "Frown", label: "খারাপ", color: "#ea580c" },
-  { value: 3, icon: "Meh", label: "মোটামুটি", color: "#ca8a04" },
-  { value: 4, icon: "Smile", label: "ভালো", color: "#16a34a" },
-  { value: 5, icon: "Laugh", label: "খুব ভালো", color: "#059669" },
-];
+/** lucide icon names for the shared palette (string names for IconRenderer). */
+const MOOD_ICON_NAMES: Record<number, string> = {
+  1: "Frown",
+  2: "Frown",
+  3: "Meh",
+  4: "Smile",
+  5: "Laugh",
+};
+
+const MOODS = SHARED_MOODS.map((m) => ({
+  value: m.value,
+  icon: MOOD_ICON_NAMES[m.value],
+  label: m.label,
+  color: m.color,
+}));
 
 /**
  * Daily mood selector — appears on the Home view.

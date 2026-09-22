@@ -1,0 +1,145 @@
+import type { Badge } from "@/types";
+
+/* ------------------------------------------------------------------ */
+/*  Badges / Achievements                                              */
+/* ------------------------------------------------------------------ */
+
+export const BADGES: Badge[] = [
+  {
+    id: "first_step",
+    name: "প্রথম পদক্ষেপ",
+    description: "প্রথম অভ্যাস সম্পন্ন করুন",
+    icon: "Footprints",
+    tier: "bronze",
+    check: (s) => s.totalCompletions >= 1,
+  },
+  {
+    id: "streak_7",
+    name: "এক সপ্তাহ",
+    description: "৭ দিনের স্ট্রিক তৈরি করুন",
+    icon: "Flame",
+    tier: "bronze",
+    check: (s) => s.bestStreak >= 7,
+  },
+  {
+    id: "streak_30",
+    name: "এক মাস",
+    description: "৩০ দিনের স্ট্রিক তৈরি করুন",
+    icon: "Flame",
+    tier: "silver",
+    check: (s) => s.bestStreak >= 30,
+  },
+  {
+    id: "streak_100",
+    name: "শত দিন",
+    description: "১০০ দিনের স্ট্রিক তৈরি করুন",
+    icon: "Award",
+    tier: "gold",
+    check: (s) => s.bestStreak >= 100,
+  },
+  {
+    id: "streak_365",
+    name: "বছরের আনচ",
+    description: "৩৬৫ দিনের স্ট্রিক তৈরি করুন",
+    icon: "Crown",
+    tier: "platinum",
+    check: (s) => s.bestStreak >= 365,
+  },
+  {
+    id: "early_riser",
+    name: "প্রাতঃরাশী",
+    description: "ফজরের নামাজে ১৪ দিন স্ট্রিক",
+    icon: "Sunrise",
+    tier: "silver",
+    check: (s) => s.fajrStreak >= 14,
+  },
+  {
+    id: "quran_reader",
+    name: "কুরআন পাঠক",
+    description: "মোট ৬০ পৃষ্ঠা কুরআন পড়ুন",
+    icon: "BookOpen",
+    tier: "gold",
+    check: (s) => s.quranPages >= 60,
+  },
+  {
+    id: "collector",
+    name: "সংগ্রাহক",
+    description: "৫টি অভ্যাস ট্র্যাক করুন",
+    icon: "Library",
+    tier: "bronze",
+    check: (s) => s.habitsTracked >= 5,
+  },
+  {
+    id: "architect",
+    name: "স্থপতি",
+    description: "১০টি অভ্যাস ট্র্যাক করুন",
+    icon: "Landmark",
+    tier: "silver",
+    check: (s) => s.habitsTracked >= 10,
+  },
+  {
+    id: "perfect_day",
+    name: "নিখুঁত দিন",
+    description: "একদিনে সব অভ্যাস সম্পন্ন করুন",
+    icon: "Sparkles",
+    tier: "bronze",
+    check: (s) => s.perfectDays >= 1,
+  },
+  {
+    id: "perfect_week",
+    name: "নিখুঁত সপ্তাহ",
+    description: "৭টি নিখুঁত দিন",
+    icon: "Star",
+    tier: "silver",
+    check: (s) => s.perfectDays >= 7,
+  },
+  {
+    id: "century",
+    name: "শতাধিক",
+    description: "মোট ১০০টি অভ্যাস সম্পন্ন করুন",
+    icon: "Target",
+    tier: "silver",
+    check: (s) => s.totalCompletions >= 100,
+  },
+  {
+    id: "champion",
+    name: "চ্যাম্পিয়ন",
+    description: "মোট ৫০০টি অভ্যাস সম্পন্ন করুন",
+    icon: "Trophy",
+    tier: "gold",
+    check: (s) => s.totalCompletions >= 500,
+  },
+  {
+    id: "level_5",
+    name: "উচ্চতর স্তর",
+    description: "লেভেল ৫ অর্জন করুন",
+    icon: "Star",
+    tier: "silver",
+    check: (s) => s.level >= 5,
+  },
+  {
+    id: "level_10",
+    name: "অভিজ্ঞ",
+    description: "লেভেল ১০ অর্জন করুন",
+    icon: "Gem",
+    tier: "gold",
+    check: (s) => s.level >= 10,
+  },
+  // Focus badges
+  {
+    id: "focus_starter",
+    name: "ফোকাস শুরু",
+    description: "প্রথম ফোকাস সেশন সম্পন্ন করুন",
+    icon: "Target",
+    tier: "bronze",
+    check: (s) => s.totalCompletions >= 1, // reused: focus sessions count
+  },
+  {
+    id: "focus_master",
+    name: "ফোকাস মাস্টার",
+    description: "১০০ মিনিট ফোকাস কাজ করুন",
+    icon: "Brain",
+    tier: "gold",
+    check: (s) => s.totalCompletions >= 50, // proxy: 50+ completions
+  },
+];

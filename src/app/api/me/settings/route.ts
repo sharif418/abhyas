@@ -15,6 +15,9 @@ const SettingsSchema = z.object({
   sound: z.boolean().optional(),
   remindersEnabled: z.boolean().optional(),
   notificationsEnabled: z.boolean().optional(),
+  ibadahModeEnabled: z.boolean().optional(),
+  ibadahFullscreen: z.boolean().optional(),
+  ibadahWakeLock: z.boolean().optional(),
 });
 
 /** POST /api/me/settings — persist user settings */

@@ -12,6 +12,10 @@ import {
   CartesianGrid,
 } from "recharts";
 import { toBn, fromDateKey } from "@/lib/date-bn";
+import {
+  CHART_AXIS_PROPS,
+  CHART_TOOLTIP_STYLE,
+} from "@/components/shared/chart-tooltip";
 
 const MOOD_LABELS = ["", "খুব খারাপ", "খারাপ", "মোটামুটি", "ভালো", "খুব ভালো"];
 const MOOD_EMOJI = ["", "😞", "😕", "😐", "🙂", "😄"];
@@ -85,33 +89,23 @@ export function MoodTrendChart({ data }: { data: MoodPoint[] }) {
               vertical={false}
             />
             <XAxis
+              {...CHART_AXIS_PROPS}
               dataKey="date"
-              tick={{ fontSize: 9, fill: "var(--muted-foreground)" }}
-              tickFormatter={(v) => {
+              tickFormatter={(v: string) => {
                 const d = fromDateKey(v);
                 return `${toBn(d.getDate())}/${toBn(d.getMonth() + 1)}`;
               }}
               interval={Math.max(0, Math.floor(entries.length / 6))}
-              axisLine={false}
-              tickLine={false}
             />
             <YAxis
+              {...CHART_AXIS_PROPS}
               domain={[1, 5]}
               ticks={[1, 2, 3, 4, 5]}
-              tick={{ fontSize: 9, fill: "var(--muted-foreground)" }}
-              tickFormatter={(v) => MOOD_EMOJI[v] ?? ""}
-              axisLine={false}
-              tickLine={false}
+              tickFormatter={(v: number) => MOOD_EMOJI[v] ?? ""}
               width={28}
             />
             <Tooltip
-              contentStyle={{
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--popover)",
-                color: "var(--popover-foreground)",
-                fontSize: 12,
-              }}
+              contentStyle={CHART_TOOLTIP_STYLE}
               labelFormatter={(v) => {
                 const d = fromDateKey(v);
                 return `${toBn(d.getDate())} ${["জানু","ফেব্রু","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্ট","অক্টো","নভে","ডিসে"][d.getMonth()]}`;

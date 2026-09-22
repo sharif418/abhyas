@@ -8,4 +8,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   sound: true,
   remindersEnabled: true,
   notificationsEnabled: true,
+  ibadahModeEnabled: true,
+  ibadahFullscreen: true,
+  ibadahWakeLock: true,
 };

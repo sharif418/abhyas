@@ -37,6 +37,7 @@ const HabitUpdateSchema = z.object({
   reminderTime: z.string().regex(TIME_FORMAT).nullable().optional(),
   isIslamic: z.boolean().optional(),
   active: z.boolean().optional(),
+  note: z.string().max(280).nullable().optional(),
 });
 
 /** PUT /api/habits/:id — update a habit */
@@ -77,6 +78,7 @@ export async function PUT(
       ...(d.reminderTime !== undefined ? { reminderTime: d.reminderTime } : {}),
       ...(d.isIslamic !== undefined ? { isIslamic: d.isIslamic } : {}),
       ...(d.active !== undefined ? { active: d.active } : {}),
+      ...(d.note !== undefined ? { note: d.note } : {}),
     },
   });
   return NextResponse.json(serializeHabit(updated));

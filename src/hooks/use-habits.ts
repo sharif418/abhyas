@@ -6,10 +6,9 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import { useToast } from "@/hooks/use-toast";
 import { computeBestStreak, computeCurrentStreak } from "@/lib/streaks";
 import { xpForCompletion, gamificationState } from "@/lib/gamification";
-import { todayKey, toDateKey } from "@/lib/date-bn";
+import { todayKey, toDateKey, toBn } from "@/lib/date-bn";
 import { useSettingsStore } from "@/stores/settings-store";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
@@ -41,45 +40,46 @@ export interface HabitInput {
   timesPerWeek: number;
   timeOfDay: Habit["timeOfDay"];
   reminderTime?: string | null;
+  note?: string | null;
   isIslamic?: boolean;
 }
 
 export function useCreateHabit() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (input: HabitInput) => api.post<Habit>("/api/habits", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["habits"] });
       qc.invalidateQueries({ queryKey: ["stats"] });
-      toast({ title: "নতুন অভ্যাস যোগ হয়েছে", description: "শুভেচ্ছা! 🎉" });
+      toast.success("নতুন অভ্যাস যোগ হয়েছে", { description: "শুভেচ্ছা! আজই শুরু করুন।" });
     },
+    onError: () => toast.error("অভ্যাস যোগ করা যায়নি, আবার চেষ্টা করুন"),
   });
 }
 
 export function useUpdateHabit() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<HabitInput> }) =>
       api.put<Habit>(`/api/habits/${id}`, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["habits"] });
-      toast({ title: "অভ্যাস আপডেট হয়েছে" });
+      toast.success("অভ্যাস আপডেট হয়েছে");
     },
+    onError: () => toast.error("আপডেট করা যায়নি, আবার চেষ্টা করুন"),
   });
 }
 
 export function useDeleteHabit() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => api.del<{ ok: boolean }>(`/api/habits/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["habits"] });
       qc.invalidateQueries({ queryKey: ["stats"] });
-      toast({ title: "অভ্যাস মুছে ফেলা হয়েছে" });
+      toast.success("অভ্যাস মুছে ফেলা হয়েছে");
     },
+    onError: () => toast.error("মুছে ফেলা যায়নি, আবার চেষ্টা করুন"),
   });
 }
 
@@ -171,21 +171,21 @@ export function useToggleHabit() {
 
         // Streak milestone feedback
         if ([7, 14, 30, 100, 365].includes(res.streak)) {
-          toast.success(`${res.streak} দিনের স্ট্রিক!`, {
+          toast.success(`${toBn(res.streak)} দিনের স্ট্রিক!`, {
             description: "অসাধারণ চালিয়ে যান!",
           });
           fireConfetti({ count: 120, duration: 900 });
           if (soundEnabled) playStreakSound();
         } else if (res.leveledUp) {
           const g = gamificationState(res.totalXp);
-          toast.success(`লেভেল আপ! এখন লেভেল ${g.level}`, {
-            description: `+${res.xpAwarded} XP অর্জন`,
+          toast.success(`লেভেল আপ! এখন লেভেল ${toBn(g.level)}`, {
+            description: `+${toBn(res.xpAwarded)} XP অর্জন`,
           });
           fireConfetti({ count: 100, duration: 800 });
           if (soundEnabled) playLevelUpSound();
         } else {
-          toast.success(`+${res.xpAwarded} XP`, {
-            description: `স্ট্রিক: ${res.streak} দিন`,
+          toast.success(`+${toBn(res.xpAwarded)} XP`, {
+            description: `স্ট্রিক: ${toBn(res.streak)} দিন`,
             action: {
               label: "পূর্বাবস্থা",
               onClick: () => {
@@ -283,7 +283,7 @@ function checkPerfectDay(
     /* ignore */
   }
   setTimeout(() => {
-    toast.success("🎉 নিখুঁত দিন!", {
+    toast.success("নিখুঁত দিন!", {
       description: "আজকের সব অভ্যাস সম্পন্ন! অসাধারণ!",
     });
     fireConfetti({ count: 160, duration: 1200 });

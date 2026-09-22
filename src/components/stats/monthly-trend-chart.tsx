@@ -2,8 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -13,6 +11,11 @@ import {
   CartesianGrid,
 } from "recharts";
 import { toBn } from "@/lib/date-bn";
+import {
+  CHART_AXIS_PROPS,
+  CHART_TOOLTIP_STYLE,
+  pctLabel,
+} from "@/components/shared/chart-tooltip";
 
 export interface MonthlyTrendPoint {
   month: string;
@@ -65,36 +68,20 @@ export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
               opacity={0.4}
               vertical={false}
             />
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 9, fill: "var(--muted-foreground)" }}
-              axisLine={false}
-              tickLine={false}
-            />
+            <XAxis {...CHART_AXIS_PROPS} dataKey="label" />
             <YAxis
-              tick={{ fontSize: 9, fill: "var(--muted-foreground)" }}
-              tickFormatter={(v) => `${toBn(Math.round(v * 100))}%`}
+              {...CHART_AXIS_PROPS}
+              tickFormatter={(v: number) => `${toBn(Math.round(v * 100))}%`}
               domain={[0, 1]}
               ticks={[0, 0.25, 0.5, 0.75, 1]}
-              axisLine={false}
-              tickLine={false}
               width={36}
             />
             <Tooltip
-              contentStyle={{
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--popover)",
-                color: "var(--popover-foreground)",
-                fontSize: 12,
-              }}
+              contentStyle={CHART_TOOLTIP_STYLE}
               labelFormatter={(v) => `${v}`}
               formatter={(v: number, _name, props) => {
                 const p = props.payload as MonthlyTrendPoint;
-                return [
-                  `${toBn(Math.round(v * 100))}% (${toBn(p.done)}/${toBn(p.scheduled)})`,
-                  "সম্পন্নের হার",
-                ];
+                return [pctLabel(p.done, p.scheduled), "সম্পন্নের হার"];
               }}
             />
             <Area
@@ -134,7 +121,3 @@ export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
     </motion.div>
   );
 }
-
-// unused import suppression
-void LineChart;
-void Line;

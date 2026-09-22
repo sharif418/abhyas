@@ -42,6 +42,7 @@ const HabitCreateSchema = z.object({
   timeOfDay: z.enum(TIMES_OF_DAY).default("সকাল"),
   reminderTime: z.string().regex(TIME_FORMAT).nullable().optional(),
   isIslamic: z.boolean().default(false),
+  note: z.string().max(280).nullable().optional(),
 });
 
 /** POST /api/habits — create a new habit */
@@ -72,6 +73,7 @@ export async function POST(req: Request) {
       timeOfDay: d.timeOfDay,
       reminderTime: d.reminderTime ?? null,
       isIslamic: d.isIslamic,
+      note: d.note ?? null,
       sortOrder: count,
     },
   });

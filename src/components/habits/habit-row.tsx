@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { Flame, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -62,21 +61,20 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
               {habit.name}
             </span>
             {habit.isIslamic && (
-              <span className="shrink-0 rounded-full bg-islamic/10 px-1.5 py-0.5 text-[9px] font-bold text-islamic">
+              <span className="shrink-0 rounded-full bg-islamic/10 px-1.5 py-0.5 text-[10px] font-bold text-islamic">
                 ইসলামিক
               </span>
             )}
             {isFrozenToday && (
-              <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
-                <Snowflake size={9} aria-hidden /> ফ্রিজ
+              <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
+                <Snowflake size={10} aria-hidden /> ফ্রিজ
               </span>
             )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
             {habit.streak > 0 ? (
               <span
-                className="inline-flex items-center gap-0.5 font-medium"
-                style={getStreakStyle(habit.streak)}
+                className={cn("inline-flex items-center gap-0.5 font-medium", getStreakClass(habit.streak))}
                 aria-label={`স্ট্রিক ${toBn(habit.streak)} দিন`}
               >
                 <Flame
@@ -87,17 +85,17 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
                 />
                 {toBn(habit.streak)}
                 {habit.streak >= 100 && (
-                  <span className="ml-0.5 rounded-full bg-amber-500/20 px-1 text-[8px] font-bold text-amber-600 dark:text-amber-400">
+                  <span className="ml-0.5 rounded-full bg-amber-500/20 px-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
                     কিংবদন্তি
                   </span>
                 )}
                 {habit.streak >= 30 && habit.streak < 100 && (
-                  <span className="ml-0.5 rounded-full bg-orange-500/20 px-1 text-[8px] font-bold text-orange-600 dark:text-orange-400">
+                  <span className="ml-0.5 rounded-full bg-orange-500/20 px-1 text-[10px] font-bold text-orange-600 dark:text-orange-400">
                     তারকা
                   </span>
                 )}
                 {habit.streak >= 14 && habit.streak < 30 && (
-                  <span className="ml-0.5 rounded-full bg-amber-500/15 px-1 text-[8px] font-bold text-amber-600 dark:text-amber-400">
+                  <span className="ml-0.5 rounded-full bg-amber-500/15 px-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
                     দৃঢ়
                   </span>
                 )}
@@ -125,7 +123,11 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
         </div>
       </button>
 
-      {/* Freeze button (at-risk habits only) */}
+      {/* Freeze button (at-risk habits only).
+          Capability-based visibility: base opacity-100 keeps it VISIBLE on
+          touch devices (no hover capability), while pointer devices hide it
+          until row-hover / keyboard focus via [@media(hover:hover)] — removes
+          the invisible-but-tappable mis-tap hazard on phones. */}
       {canFreeze && (
         <button
           type="button"
@@ -136,7 +138,7 @@ export function HabitRow({ habit, onToggle, onOpen, compact = false }: HabitRowP
           disabled={freeze.isPending}
           title="স্ট্রিক ফ্রিজ করুন (সপ্তাহে ১ বার)"
           aria-label={`${habit.name} স্ট্রিক ফ্রিজ করুন`}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-300/50 bg-sky-50 text-sky-600 opacity-0 transition hover:bg-sky-100 group-hover:opacity-100 focus-visible:opacity-100 dark:bg-sky-950/30 dark:text-sky-400 dark:hover:bg-sky-950/50"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-300/50 bg-sky-50 text-sky-600 opacity-100 transition hover:bg-sky-100 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 dark:bg-sky-950/30 dark:text-sky-400 dark:hover:bg-sky-950/50"
         >
           <Snowflake size={15} aria-hidden />
           <span className="sr-only">স্ট্রিক ফ্রিজ করুন</span>
@@ -170,7 +172,7 @@ function CheckButton({
       aria-pressed={done}
       aria-label={done ? "সম্পন্ন বাতিল করুন" : "অভ্যাস সম্পন্ন করুন"}
       className={cn(
-        "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+        "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
         done ? "border-transparent text-white" : "border-foreground/20 text-transparent hover:border-foreground/40"
       )}
       style={done ? { background: color, boxShadow: `0 4px 12px -4px ${color}` } : {}}
@@ -200,16 +202,18 @@ function CheckButton({
 
 /**
  * Streak milestone styling — flame color intensifies with streak length.
- * 1-6: default streak color, 7-13: amber, 14-29: orange, 30+: deep red with glow.
+ * 1-6: streak token, 7-13: amber, 14-29: orange, 30-99: deep orange,
+ * 100+: red. Pure Tailwind color tokens (dark:-variant aware, zero hardcoded
+ * hex); the milestone glow uses currentColor so it always tracks the active
+ * theme token instead of a fixed rgba.
  */
-function getStreakStyle(streak: number): CSSProperties {
+function getStreakClass(streak: number): string {
   if (streak >= 100)
-    return { color: "#dc2626", textShadow: "0 0 8px rgba(220,38,38,0.5)" };
+    return "text-red-600 [text-shadow:0_0_8px_currentColor] dark:text-red-400";
   if (streak >= 30)
-    return { color: "#ea580c", textShadow: "0 0 6px rgba(234,88,12,0.4)" };
+    return "text-orange-600 [text-shadow:0_0_6px_currentColor] dark:text-orange-400";
   if (streak >= 14)
-    return { color: "#f97316", textShadow: "0 0 4px rgba(249,115,22,0.3)" };
-  if (streak >= 7)
-    return { color: "#f59e0b" };
-  return { color: "var(--streak)" };
+    return "text-orange-500 [text-shadow:0_0_4px_currentColor] dark:text-orange-400";
+  if (streak >= 7) return "text-amber-500 dark:text-amber-400";
+  return "text-streak";
 }

@@ -2,10 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, BookHeart, Smile, SmilePlus, Meh, Frown, Angry, type LucideIcon } from "lucide-react";
+import { Search, X, BookHeart, Check, WifiOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toBn, bnDayFirst, fromDateKey } from "@/lib/date-bn";
+import { getMood, MOODS } from "@/components/journal/mood-palette";
 import { IconTile } from "@/components/shared/icon-renderer";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,21 +33,8 @@ interface JournalResponse {
   today: string;
 }
 
-const MOOD_EMOJI = ["", "😞", "😕", "😐", "🙂", "😄"];
-const MOOD_LABEL = ["", "খুব খারাপ", "খারাপ", "মোটামুটি", "ভালো", "খুব ভালো"];
-const MOOD_COLOR = ["", "#dc2626", "#ea580c", "#ca8a04", "#16a34a", "#059669"];
-/** Lucide icons for the mood *filter* chips (display still uses MOOD_EMOJI). */
-const MOOD_ICONS: (LucideIcon | null)[] = [
-  null,
-  Angry,
-  Frown,
-  Meh,
-  Smile,
-  SmilePlus,
-];
-
 export function JournalView() {
-  const { data, isLoading } = useQuery<JournalResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<JournalResponse>({
     queryKey: ["journal"],
     queryFn: () => api.get<JournalResponse>("/api/journal?days=30"),
     staleTime: 30_000,
@@ -90,6 +78,31 @@ export function JournalView() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/50 p-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <WifiOff size={26} aria-hidden />
+          </div>
+          <div>
+            <h3 className="font-semibold">জার্নাল লোড করতে সমস্যা</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              জার্নাল ডেটা লোড করা যায়নি। আবার চেষ্টা করুন।
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="focus-visible:ring-ring rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition focus-visible:ring-2 focus-visible:outline-none active:scale-95"
+          >
+            আবার চেষ্টা করুন
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-5">
       <div>
@@ -103,20 +116,22 @@ export function JournalView() {
       {allDays.length > 0 && (
         <div className="space-y-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} aria-hidden />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="অভ্যাস, নোট বা মুড খুঁজুন..."
+              aria-label="জার্নালে খুঁজুন"
               className="h-9 pl-9 pr-9 text-sm"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+                className="focus-visible:ring-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:outline-none"
                 aria-label="মুছুন"
               >
-                <X size={14} />
+                <X size={14} aria-hidden />
               </button>
             )}
           </div>
@@ -124,22 +139,23 @@ export function JournalView() {
             <FilterChip
               active={moodFilter === null}
               onClick={() => setMoodFilter(null)}
+              aria-pressed={moodFilter === null}
             >
               সব
             </FilterChip>
-            {[5, 4, 3, 2, 1].map((m) => {
-              const MoodIcon = MOOD_ICONS[m];
-              return (
+            {MOODS.slice()
+              .reverse()
+              .map((m) => (
                 <FilterChip
-                  key={m}
-                  active={moodFilter === m}
-                  onClick={() => setMoodFilter(moodFilter === m ? null : m)}
+                  key={m.value}
+                  active={moodFilter === m.value}
+                  onClick={() => setMoodFilter(moodFilter === m.value ? null : m.value)}
+                  aria-pressed={moodFilter === m.value}
                 >
-                  {MoodIcon && <MoodIcon size={12} className="mr-0.5" aria-hidden />}
-                  {MOOD_LABEL[m]}
+                  <m.icon size={12} className="mr-0.5" aria-hidden />
+                  {m.label}
                 </FilterChip>
-              );
-            })}
+              ))}
           </div>
         </div>
       )}
@@ -188,6 +204,7 @@ function JournalDayCard({
   const date = fromDateKey(day.date);
   const completionPct =
     day.totalScheduled > 0 ? day.completedHabits.length / day.totalScheduled : 0;
+  const mood = day.mood ? getMood(day.mood.mood) : undefined;
 
   return (
     <motion.div
@@ -204,15 +221,9 @@ function JournalDayCard({
           "absolute left-[10px] top-3 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background",
           isToday ? "bg-primary" : day.mood ? "bg-card" : "bg-muted"
         )}
-        style={
-          day.mood
-            ? { background: MOOD_COLOR[day.mood.mood] }
-            : undefined
-        }
+        style={mood ? { background: mood.color } : undefined}
       >
-        {day.mood && (
-          <span className="text-[8px]">{MOOD_EMOJI[day.mood.mood]}</span>
-        )}
+        {mood && <span className="text-[8px]">{mood.emoji}</span>}
       </div>
 
       <div
@@ -239,16 +250,16 @@ function JournalDayCard({
               {completionPct === 1 && " • নিখুঁত!"}
             </div>
           </div>
-          {day.mood && (
+          {mood && (
             <div
               className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
               style={{
-                background: `color-mix(in srgb, ${MOOD_COLOR[day.mood.mood]} 15%, transparent)`,
-                color: MOOD_COLOR[day.mood.mood],
+                background: `color-mix(in srgb, ${mood.color} 15%, transparent)`,
+                color: mood.color,
               }}
             >
-              <span>{MOOD_EMOJI[day.mood.mood]}</span>
-              <span>{MOOD_LABEL[day.mood.mood]}</span>
+              <span aria-hidden>{mood.emoji}</span>
+              <span>{mood.label}</span>
             </div>
           )}
         </div>
@@ -279,7 +290,7 @@ function JournalDayCard({
                     </p>
                   )}
                 </div>
-                <span className="text-emerald-500">✓</span>
+                <Check size={14} className="mt-0.5 shrink-0 text-primary" aria-hidden />
               </div>
             ))}
           </div>
@@ -299,20 +310,23 @@ function FilterChip({
   active,
   onClick,
   children,
+  ...props
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-}) {
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-medium transition",
+        "focus-visible:ring-ring flex shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-medium transition focus-visible:ring-2 focus-visible:outline-none",
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "bg-card text-muted-foreground hover:border-foreground/20"
       )}
+      {...props}
     >
       {children}
     </button>

@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, ChevronRight, Lightbulb } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { ResponsiveModal } from "@/components/overlays/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { IconRenderer } from "@/components/shared/icon-renderer";
 import { STARTER_PRESETS } from "@/constants/starter-presets";
@@ -17,6 +11,7 @@ import { api } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
+import { toBn } from "@/lib/date-bn";
 
 const STORAGE_KEY = "abhyas-onboarding-done";
 
@@ -128,26 +123,26 @@ export function OnboardingModal() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
-        <VisuallyHidden>
-          <DialogTitle>অভ্যাস অনবোর্ডিং</DialogTitle>
-          <DialogDescription>
-            আপনার যাত্রা শুরু করতে স্টার্টার অভ্যাস বাছাই করুন
-          </DialogDescription>
-        </VisuallyHidden>
-        {/* Progress header */}
-        <div className="flex gap-1 bg-muted/50 px-5 pt-4">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={cn(
-                "h-1 flex-1 rounded-full transition-colors",
-                i <= step ? "bg-primary" : "bg-muted"
-              )}
-            />
-          ))}
-        </div>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={setOpen}
+      title="অভ্যাস অনবোর্ডিং"
+      description="আপনার যাত্রা শুরু করতে স্টার্টার অভ্যাস বাছাই করুন"
+      size="sm"
+      noScroll
+    >
+      {/* Progress header */}
+      <div className="flex gap-1 pt-0">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-colors",
+              i <= step ? "bg-primary" : "bg-muted"
+            )}
+          />
+        ))}
+      </div>
 
         <AnimatePresence mode="wait">
           {step === 0 && (
@@ -249,22 +244,18 @@ export function OnboardingModal() {
                 })}
               </div>
               <div className="mt-4 flex gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => setStep(0)}
-                  className="flex-1"
-                >
+                <Button variant="ghost" onClick={() => setStep(0)} className="flex-1 rounded-xl">
                   পেছনে
                 </Button>
                 <Button
                   onClick={() => setStep(2)}
                   disabled={selected.length === 0}
-                  className="flex-[2]"
+                  className="flex-[2] rounded-xl"
                 >
                   {selected.length > 0
-                    ? `${selected.length} টি যোগ করুন`
+                    ? `${toBn(selected.length)} টি যোগ করুন`
                     : "নির্বাচন করুন"}
-                  <ChevronRight size={16} />
+                  <ChevronRight size={16} aria-hidden />
                 </Button>
               </div>
             </motion.div>
@@ -288,8 +279,9 @@ export function OnboardingModal() {
               </motion.div>
               <h2 className="text-xl font-bold">প্রস্তুত!</h2>
               <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
-                আপনার <span className="font-bold text-primary">{selected.length}</span> টি অভ্যাস
-                যোগ হতে যাচ্ছে। প্রতিদিন এক ট্যাপে সম্পন্ন করুন, স্ট্রিক বাড়ান, ব্যাজ আনলক করুন।
+                আপনার <span className="font-bold text-primary">{toBn(selected.length)}</span> টি
+                অভ্যাস যোগ হতে যাচ্ছে। প্রতিদিন এক ট্যাপে সম্পন্ন করুন, স্ট্রিক বাড়ান, ব্যাজ
+                আনলক করুন।
               </p>
               <div className="mt-4 rounded-2xl bg-muted/50 p-3 text-left text-xs">
                 <div className="flex items-center gap-1 font-semibold">
@@ -311,8 +303,7 @@ export function OnboardingModal() {
             </motion.div>
           )}
         </AnimatePresence>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveModal>
   );
 }
 

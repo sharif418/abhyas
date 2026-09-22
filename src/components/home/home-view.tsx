@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useHabits, useTodayProgress, useToggleHabit } from "@/hooks/use-habits";
 import { toBn, bnDayFirst } from "@/lib/date-bn";
@@ -42,7 +42,7 @@ interface StatsLite {
 }
 
 export function HomeView() {
-  const { data: habits, isLoading, isError } = useHabits();
+  const { data: habits, isLoading, isError, refetch: refetchHabits } = useHabits();
   const { data: stats } = useQuery<StatsLite>({
     queryKey: ["stats"],
     queryFn: () => api.get<StatsLite>("/api/stats"),
@@ -52,7 +52,7 @@ export function HomeView() {
   const openHabitDetail = useUIStore((s) => s.openHabitDetail);
   const setView = useUIStore((s) => s.setView);
   const openAddHabit = useUIStore((s) => s.openAddHabit);
-
+  const openTemplates = useUIStore((s) => s.setTemplatesOpen);
   const { done, total, pct, byTime } = useTodayProgress(habits);
 
   if (isLoading) {
@@ -83,7 +83,7 @@ export function HomeView() {
             </p>
           </div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => refetchHabits()}
             className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             আবার চেষ্টা করুন
@@ -108,7 +108,12 @@ export function HomeView() {
               >
                 + নতুন অভ্যাস
               </button>
-              <SeedButton />
+              <button
+                onClick={() => openTemplates(true)}
+                className="rounded-xl border bg-card px-4 py-2 text-sm font-semibold shadow-sm"
+              >
+                টেমপ্লেট থেকে বাছাই
+              </button>
             </div>
           }
         />
@@ -286,25 +291,5 @@ function MiniStat({
       <span className="tabular text-sm font-bold">{toBn(value)}</span>
       <span className="text-[10px] text-muted-foreground">{label}</span>
     </div>
-  );
-}
-
-function SeedButton() {
-  const qc = useQueryClient();
-  const seed = useMutation({
-    mutationFn: () => api.post<{ ok: boolean }>("/api/seed"),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["habits"] });
-      qc.invalidateQueries({ queryKey: ["stats"] });
-    },
-  });
-  return (
-    <button
-      onClick={() => seed.mutate()}
-      disabled={seed.isPending}
-      className="rounded-xl border bg-card px-4 py-2 text-sm font-semibold shadow-sm disabled:opacity-50"
-    >
-      {seed.isPending ? "যোগ হচ্ছে…" : "নমুনা ডেটা যোগ করুন"}
-    </button>
   );
 }

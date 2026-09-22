@@ -53,6 +53,7 @@ model Habit {
   timesPerWeek   Int      @default(0)
   timeOfDay      String   @default("সকাল")
   reminderTime   String?
+  note           String? // motivation/goal note shown on the habit detail
   streak         Int      @default(0)
   bestStreak     Int      @default(0)
   totalDone      Int      @default(0)

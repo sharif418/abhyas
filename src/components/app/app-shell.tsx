@@ -3,42 +3,52 @@
 import { useEffect } from "react";
 import { useSettingsEffect } from "@/hooks/use-settings-effect";
 import { useNotifications } from "@/hooks/use-notifications";
-import { useUIStore } from "@/stores/ui-store";
+import { useUIStore, bindHistoryNavigation } from "@/stores/ui-store";
+import { ALL_VIEWS } from "./nav-config";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
 import { TopBar } from "./top-bar";
 import { ViewRouter } from "./view-router";
 import { HabitFormSheet } from "@/components/habits/habit-form";
 import { HabitDetailSheet } from "@/components/habits/habit-detail";
+import { TemplatesModal } from "@/components/habits/templates-modal";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
+import { IbadahModeOverlay } from "@/components/ibadah/ibadah-mode-overlay";
 import { ServiceWorkerRegister } from "@/components/app/sw-register";
 import { KeyboardShortcutsOverlay } from "@/components/app/keyboard-shortcuts";
-import type { ViewKey } from "@/types";
+
+/** True while any Radix dialog/sheet/drawer is mounted (focus is trapped in it). */
+function anyOverlayOpen(): boolean {
+  if (typeof document === "undefined") return false;
+  return (
+    document.querySelector('[role="dialog"][data-state="open"]') !== null ||
+    document.querySelector('[data-slot="drawer-content"]') !== null
+  );
+}
 
 /**
  * Root application shell.
  * Responsive: desktop = sidebar + content; mobile = bottom nav + content.
- * Hosts the global sheets (habit form, detail, onboarding) once.
+ * Hosts the global overlays (habit form, detail, onboarding, ibadah mode).
  */
 export function AppShell() {
   useSettingsEffect();
   useNotifications();
 
-  // Keyboard navigation: number keys 1-8 switch views, N opens add habit
+  const templatesOpen = useUIStore((s) => s.templatesOpen);
+  const setTemplatesOpen = useUIStore((s) => s.setTemplatesOpen);
+
+  // URL ↔ view sync: back/forward buttons + deep links (#/islamic …).
+  useEffect(() => bindHistoryNavigation(), []);
+
+  // Keyboard navigation: number keys 1–8 switch views, N opens add habit.
   useEffect(() => {
-    const viewMap: Record<string, ViewKey> = {
-      "1": "home",
-      "2": "habits",
-      "3": "focus",
-      "4": "stats",
-      "5": "islamic",
-      "6": "journal",
-      "7": "social",
-      "8": "profile",
-    };
+    const viewMap = Object.fromEntries(
+      ALL_VIEWS.map((v, i) => [String(i + 1), v.key])
+    ) as Record<string, (typeof ALL_VIEWS)[number]["key"]>;
 
     const handler = (e: KeyboardEvent) => {
-      // Don't trigger when typing in inputs
+      // Don't trigger when typing in inputs…
       const target = e.target as HTMLElement;
       if (
         target.tagName === "INPUT" ||
@@ -48,13 +58,18 @@ export function AppShell() {
         return;
       }
 
-      // Number keys for view navigation
+      // …or while any modal/sheet is open (focus is trapped inside it, so a
+      // stray "3" would silently discard in-progress form input).
+      const ui = useUIStore.getState();
+      if (ui.addHabitOpen || ui.selectedHabitId || ui.moreSheetOpen || anyOverlayOpen()) {
+        return;
+      }
+
       if (viewMap[e.key]) {
         e.preventDefault();
         useUIStore.getState().setView(viewMap[e.key]);
       }
 
-      // N for new habit
       if (e.key === "n" || e.key === "N") {
         e.preventDefault();
         useUIStore.getState().openAddHabit();
@@ -79,7 +94,9 @@ export function AppShell() {
       {/* Global overlays */}
       <HabitFormSheet />
       <HabitDetailSheet />
+      <TemplatesModal open={templatesOpen} onOpenChange={setTemplatesOpen} />
       <OnboardingModal />
+      <IbadahModeOverlay />
       <KeyboardShortcutsOverlay />
       <ServiceWorkerRegister />
     </div>

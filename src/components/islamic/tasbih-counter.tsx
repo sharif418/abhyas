@@ -16,12 +16,12 @@ export function TasbihCounter() {
 
   return (
     <div className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-islamic/10 via-card to-card p-5 shadow-sm">
-      <div className="absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-islamic/15 blur-3xl" />
+      <div className="absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-islamic/15 blur-3xl" aria-hidden />
       <div className="relative">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-islamic text-islamic-foreground shadow-sm">
-              <RotateCw size={18} />
+              <RotateCw size={18} aria-hidden />
             </div>
             <div>
               <h2 className="font-bold leading-tight">তাসবিহ কাউন্টার</h2>
@@ -29,22 +29,29 @@ export function TasbihCounter() {
             </div>
           </div>
           <button
+            type="button"
             onClick={reset}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition hover:bg-muted/70"
+            className="focus-visible:ring-ring flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition hover:bg-muted/70 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
             aria-label="রিসেট"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={15} aria-hidden />
           </button>
         </div>
 
         {/* Preset selector */}
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <div
+          className="mb-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar"
+          role="group"
+          aria-label="তাসবিহ নির্বাচন"
+        >
           {TASBIH_PRESETS.map((p) => (
             <button
               key={p.id}
+              type="button"
               onClick={() => setPreset(p.id)}
+              aria-pressed={presetId === p.id}
               className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                "focus-visible:ring-ring shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:ring-2 focus-visible:outline-none",
                 presetId === p.id
                   ? "border-islamic bg-islamic text-islamic-foreground"
                   : "bg-card text-muted-foreground hover:border-islamic/40"
@@ -59,8 +66,7 @@ export function TasbihCounter() {
         <div className="flex flex-col items-center gap-3">
           <div
             dir="rtl"
-            className="text-2xl font-bold text-islamic"
-            style={{ fontFamily: "var(--font-bengali), serif" }}
+            className="font-arabic text-2xl font-bold text-islamic"
           >
             {preset.arabic}
           </div>
@@ -69,8 +75,9 @@ export function TasbihCounter() {
           </div>
 
           <button
+            type="button"
             onClick={tap}
-            className="relative active:scale-95 transition"
+            className="focus-visible:ring-ring relative transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95"
             aria-label="গণনা করুন"
           >
             <ProgressRing
@@ -118,7 +125,7 @@ export function TasbihCounter() {
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-1 rounded-full bg-islamic/15 px-3 py-1 text-xs font-semibold text-islamic"
               >
-                <Check size={12} /> চক্র সম্পন্ন! মাশাআল্লাহ
+                <Check size={12} aria-hidden /> চক্র সম্পন্ন! মাশাআল্লাহ
               </motion.div>
             )}
           </AnimatePresence>

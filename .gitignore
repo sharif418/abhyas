@@ -66,3 +66,8 @@ schema.dev.prisma
 qa-*.png
 db/
 01-*.png
+
+# agent working directories (sandbox)
+/agent-ctx/
+/tool-results/
+/tsconfig.tsbuildinfo

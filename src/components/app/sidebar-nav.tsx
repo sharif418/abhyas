@@ -14,7 +14,7 @@ export function SidebarNav() {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar/60 p-4 lg:flex">
       <div className="mb-6 flex items-center gap-2.5 px-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[#0d9488] text-lg font-bold text-primary-foreground shadow-md">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-teal-600 text-lg font-bold text-primary-foreground shadow-md">
           অ
         </div>
         <div className="leading-tight">
@@ -86,7 +86,7 @@ export function SidebarNav() {
         })}
       </nav>
 
-      <div className="mt-auto rounded-2xl bg-gradient-to-br from-primary/10 to-[#0d9488]/10 p-4 text-xs">
+      <div className="mt-auto rounded-2xl bg-gradient-to-br from-primary/10 to-teal-600/10 p-4 text-xs">
         <div className="font-semibold">আজকের পরামর্শ</div>
         <p className="mt-1 text-muted-foreground">
           ছোট অভ্যাস দিয়ে শুরু করুন। ধারাবাহিকতাই আসল শক্তি।

@@ -1,72 +1,57 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { IconRenderer } from "@/components/shared/icon-renderer";
 import { NAV_ITEMS, MORE_ITEMS } from "./nav-config";
 import { useUIStore } from "@/stores/ui-store";
-import { useUIStore as useUI } from "@/stores/ui-store";
-import { useState, useRef, useEffect } from "react";
+import { BottomSheetMenu } from "@/components/overlays/bottom-sheet-menu";
 import type { ViewKey } from "@/types";
 
-/** Mobile bottom tab navigation — 5 primary tabs + More menu. */
+/**
+ * Mobile bottom tab navigation — 4 primary tabs + "আরও".
+ *
+ * The আরও tab opens a proper bottom sheet (drag-to-dismiss, backdrop,
+ * focus-trapped — via the unified BottomSheetMenu primitive) instead of the
+ * old floating popover. This is the native-app convention for overflow menus
+ * anchored to a bottom control.
+ */
 export function BottomNav() {
   const view = useUIStore((s) => s.view);
   const setView = useUIStore((s) => s.setView);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
+  const moreOpen = useUIStore((s) => s.moreSheetOpen);
+  const setMoreOpen = useUIStore((s) => s.setMoreSheetOpen);
 
-  // Close More menu when clicking outside
-  useEffect(() => {
-    if (!moreOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setMoreOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [moreOpen]);
-
-  // Check if current view is in the "more" list
   const isMoreActive = MORE_ITEMS.some((item) => item.key === view);
 
-  const handleMoreClick = () => {
-    setMoreOpen((v) => !v);
-  };
-
-  const handleMoreSelect = (key: ViewKey) => {
-    setView(key);
-    setMoreOpen(false);
-  };
-
   return (
-    <nav
-      className="glass fixed inset-x-0 bottom-0 z-40 border-t pb-safe lg:hidden"
-      aria-label="প্রধান নেভিগেশন"
-    >
-      <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
-        {NAV_ITEMS.map((item) => {
-          if (item.key === "more") {
-            return (
-              <div key="more" ref={moreRef} className="relative flex flex-1">
+    <>
+      <nav
+        className="glass fixed inset-x-0 bottom-0 z-40 border-t pb-safe lg:hidden"
+        aria-label="প্রধান নেভিগেশন"
+      >
+        <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
+          {NAV_ITEMS.map((item) => {
+            if (item.key === "more") {
+              const lit = isMoreActive || moreOpen;
+              return (
                 <button
-                  onClick={handleMoreClick}
-                  className="relative flex w-full flex-col items-center gap-0.5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
-                  aria-label={moreOpen ? "আরও মেনু বন্ধ করুন" : "আরও মেনু খুলুন"}
+                  key="more"
+                  type="button"
+                  onClick={() => setMoreOpen(!moreOpen)}
+                  aria-label="আরও মেনু"
                   aria-expanded={moreOpen}
                   aria-haspopup="menu"
                   aria-current={isMoreActive ? "page" : undefined}
+                  className="focus-visible:ring-ring/70 relative flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2.5 focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <span
                     className={cn(
                       "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
-                      isMoreActive || moreOpen
-                        ? "text-primary-foreground"
-                        : "text-muted-foreground"
+                      lit ? "text-primary-foreground" : "text-muted-foreground"
                     )}
                   >
-                    {(isMoreActive || moreOpen) && (
+                    {lit && (
                       <motion.span
                         layoutId="bottom-nav-active"
                         className="absolute h-8 w-12 rounded-full bg-primary"
@@ -74,100 +59,70 @@ export function BottomNav() {
                       />
                     )}
                     <span className="relative z-10" aria-hidden>
-                      <IconRenderer name={moreOpen ? "X" : "Menu"} size={20} />
+                      <IconRenderer name={item.icon} size={20} />
                     </span>
                   </span>
                   <span
                     className={cn(
                       "relative z-10 text-[10px] font-medium transition-colors",
-                      isMoreActive || moreOpen
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                      lit ? "text-primary" : "text-muted-foreground"
                     )}
                   >
-                    {moreOpen ? "বন্ধ" : "আরও"}
+                    {item.label}
                   </span>
                 </button>
+              );
+            }
 
-                <AnimatePresence>
-                  {moreOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      role="menu"
-                      aria-label="আরও ভিউ"
-                      className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 rounded-2xl border bg-popover p-1.5 shadow-xl"
-                    >
-                      {MORE_ITEMS.map((mItem) => {
-                        const active = view === mItem.key;
-                        return (
-                          <button
-                            key={mItem.key}
-                            role="menuitem"
-                            onClick={() => handleMoreSelect(mItem.key)}
-                            aria-current={active ? "page" : undefined}
-                            className={cn(
-                              "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                              active
-                                ? "bg-primary/10 text-primary font-semibold"
-                                : "text-foreground hover:bg-muted/50"
-                            )}
-                          >
-                            <IconRenderer name={mItem.icon} size={16} aria-hidden />
-                            {mItem.label}
-                            {active && (
-                              <span className="ml-auto h-2 w-2 rounded-full bg-primary" aria-hidden />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </motion.div>
+            const active = view === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setView(item.key)}
+                aria-label={item.label}
+                aria-current={active ? "page" : undefined}
+                className="focus-visible:ring-ring/70 relative flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2.5 focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <span
+                  className={cn(
+                    "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
+                    active ? "text-primary-foreground" : "text-muted-foreground"
                   )}
-                </AnimatePresence>
-              </div>
-            );
-          }
-
-          const active = view === item.key;
-          return (
-            <button
-              key={item.key}
-              onClick={() => setView(item.key)}
-              className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
-              aria-label={item.label}
-              aria-current={active ? "page" : undefined}
-            >
-              <span
-                className={cn(
-                  "flex h-8 w-12 items-center justify-center rounded-full transition-colors",
-                  active ? "text-primary-foreground" : "text-muted-foreground"
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="bottom-nav-active"
-                    className="absolute h-8 w-12 rounded-full bg-primary"
-                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                  />
-                )}
-                <span className="relative z-10" aria-hidden>
-                  <IconRenderer name={item.icon} size={20} />
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="bottom-nav-active"
+                      className="absolute h-8 w-12 rounded-full bg-primary"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative z-10" aria-hidden>
+                    <IconRenderer name={item.icon} size={20} />
+                  </span>
                 </span>
-              </span>
-              <span
-                className={cn(
-                  "relative z-10 text-[10px] font-medium transition-colors",
-                  active ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+                <span
+                  className={cn(
+                    "relative z-10 text-[10px] font-medium transition-colors",
+                    active ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <BottomSheetMenu
+        open={moreOpen}
+        onOpenChange={setMoreOpen}
+        title="আরও দেখুন"
+        items={MORE_ITEMS}
+        activeKey={view}
+        onSelect={(key: ViewKey) => setView(key)}
+      />
+    </>
   );
 }

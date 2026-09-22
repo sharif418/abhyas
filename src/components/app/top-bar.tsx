@@ -33,7 +33,7 @@ export function TopBar() {
   const game = me ? gamificationState(me.xp) : null;
 
   return (
-    <header className="sticky top-0 z-30 glass border-b">
+    <header className="pt-safe sticky top-0 z-30 glass border-b">
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
           <motion.div

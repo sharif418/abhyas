@@ -4,6 +4,7 @@ import { PrayerCard } from "./prayer-card";
 import { QuranTracker } from "./quran-tracker";
 import { DuaLibrary } from "./dua-library";
 import { TasbihCounter } from "./tasbih-counter";
+import { IbadahEntryCard } from "@/components/ibadah/ibadah-entry-card";
 
 export function IslamicView() {
   return (
@@ -16,6 +17,8 @@ export function IslamicView() {
       </div>
 
       <PrayerCard />
+
+      <IbadahEntryCard />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <QuranTracker />

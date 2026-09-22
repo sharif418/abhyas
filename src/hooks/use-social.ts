@@ -28,7 +28,8 @@ export interface ActivityEvent {
  * - `connecting` — socket is attempting to establish / re-establish a connection
  * - `connected`  — socket is live; leaderboard + activity events are streaming
  * - `error`      — the initial-connection timeout (5s) elapsed, or all reconnect
- *                  attempts were exhausted. UI should fall back to demo mode.
+ *                  attempts were exhausted. The view shows a reconnect banner
+ *                  and honest empty states (no demo data anywhere).
  */
 export type SocialConnectionState = "connecting" | "connected" | "error";
 
@@ -41,8 +42,9 @@ const CONNECT_TIMEOUT_MS = 5000;
  * current user's activity.
  *
  * The hook tracks a finite-state connection lifecycle so the UI can show a
- * proper loading skeleton, fall back to demo data on failure, and let the
- * user manually retry via `reconnect()`.
+ * proper loading skeleton, surface a clear error state on failure (empty
+ * leaderboard/feed + reconnect banner), and let the user manually retry
+ * via `reconnect()`.
  */
 export function useSocial(opts?: {
   name?: string;
@@ -91,11 +93,13 @@ export function useSocial(opts?: {
       timeout: 20000,
     };
 
-    // In dev (no NEXT_PUBLIC_SOCIAL_URL), use the XTransformPort pattern.
-    // In production, connect directly to the social service URL.
+    // In dev (no NEXT_PUBLIC_SOCIAL_URL), use the XTransformPort gateway
+    // pattern. In production, connect directly to the social service URL.
+    // Both use path "/" — the social service serves engine.io at "/" (its
+    // Dockerfile/gateway contract), NOT the default "/socket.io/".
     const socket =
       socialUrl && process.env.NEXT_PUBLIC_SOCIAL_URL
-        ? io(socialUrl, socketOpts)
+        ? io(socialUrl, { ...socketOpts, path: "/" })
         : io("/?XTransformPort=3003", { ...socketOpts, path: "/" });
     socketRef.current = socket;
 
@@ -103,7 +107,7 @@ export function useSocial(opts?: {
     // state to the UI instead of spinning forever. socket.io's own
     // reconnection logic may still be running in the background, but we
     // disconnect here so we don't surprise the user with a late connection
-    // while they're reading the demo data.
+    // while they're looking at the empty states.
     const timeoutId = window.setTimeout(() => {
       if (!socket.connected) {
         setConnectionState("error");

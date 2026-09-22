@@ -66,38 +66,11 @@ const PORT = 3003;
 const GLOBAL_ROOM = "global";
 const MAX_FEED = 30;
 const LEADERBOARD_SIZE = 20;
-const DEMO_TICK_MS = 18_000; // 18s — keeps the feed feeling alive
 
-/**
- * Seed demo users — Bengali names per spec so the leaderboard is never empty.
- * Ranked by XP (descending). Live connected users are merged in at runtime.
- */
-const DEMO_USERS: LeaderboardEntry[] = [
-  { id: "demo-1", name: "রহিম", xp: 3200, level: 9, bestStreak: 68 },
-  { id: "demo-2", name: "করিম", xp: 2840, level: 8, bestStreak: 52 },
-  { id: "demo-3", name: "ফাতেমা", xp: 2510, level: 7, bestStreak: 47 },
-  { id: "demo-4", name: "আব্দুল্লাহ", xp: 2180, level: 7, bestStreak: 33 },
-  { id: "demo-5", name: "আয়েশা", xp: 1890, level: 6, bestStreak: 42 },
-  { id: "demo-6", name: "হাসান", xp: 1620, level: 6, bestStreak: 28 },
-  { id: "demo-7", name: "জায়েদ", xp: 1340, level: 5, bestStreak: 19 },
-  { id: "demo-8", name: "মরিয়ম", xp: 1080, level: 5, bestStreak: 24 },
-  { id: "demo-9", name: "ওমর", xp: 760, level: 4, bestStreak: 12 },
-  { id: "demo-10", name: "খাদিজা", xp: 540, level: 3, bestStreak: 8 },
-];
-
-/** Periodic demo activities (uses the same Bengali names so the feed feels coherent). */
-const DEMO_ACTIVITIES: Omit<ActivityEvent, "id" | "timestamp">[] = [
-  { userName: "রহিম", type: "completion", habitName: "ফজরের নামাজ", streak: 47 },
-  { userName: "করিম", type: "streak", habitName: "কুরআন তিলাওয়াত", streak: 62 },
-  { userName: "ফাতেমা", type: "completion", habitName: "সকালের ব্যায়াম", streak: 12 },
-  { userName: "আব্দুল্লাহ", type: "completion", habitName: "পানি পান", streak: 28 },
-  { userName: "আয়েশা", type: "streak", habitName: "পড়াশোনা", streak: 51 },
-  { userName: "হাসান", type: "completion", habitName: "ডায়েরি লেখা", streak: 19 },
-  { userName: "জায়েদ", type: "completion", habitName: "তাসবিহ পাঠ", streak: 14 },
-  { userName: "মরিয়ম", type: "streak", habitName: "রাতের নামাজ", streak: 21 },
-  { userName: "ওমর", type: "completion", habitName: "সকাল হাঁটা", streak: 9 },
-  { userName: "খাদিজা", type: "completion", habitName: "সুন্নাহ রোজা", streak: 3 },
-];
+// NO demo/seed users — this is a production social service. The leaderboard
+// only contains REAL connected users; when nobody else is online the client
+// renders a proper empty state ("আপনি প্রথম ব্যবহারকারী") instead of fake
+// competitors. Real friends/leaderboard growth comes from real connections.
 
 // ---- In-memory state ----
 /** socket.id → live user entry. Demo users are NOT here (they're static seeds). */
@@ -108,6 +81,10 @@ const activityFeed: ActivityEvent[] = [];
 // ---- HTTP + Socket.io server ----
 const httpServer = createServer();
 const io = new Server(httpServer, {
+  // Path MUST stay "/" — the sandbox Caddy gateway forwards
+  // `/?XTransformPort=3003` requests by path+query, and production clients
+  // connect with `path: "/"` too. (Default "/socket.io/" breaks both.)
+  path: "/",
   cors: { origin: "*", methods: ["GET", "POST"] },
   pingTimeout: 60_000,
   pingInterval: 25_000,
@@ -152,29 +129,19 @@ if (REDIS_URL) {
 
 /** Broadcast presence count to the global room. */
 function broadcastPresence(): void {
-  // Demo users always count as "online" so the count never reads zero.
   io.to(GLOBAL_ROOM).emit("presence", {
-    count: liveUsers.size + DEMO_USERS.length,
+    count: liveUsers.size,
   });
 }
 
-/** Build the merged+sorted leaderboard (no isYou markers — pure ranking). */
+/** Build the sorted leaderboard (no isYou markers — pure ranking). */
 function buildLeaderboard(): LeaderboardEntry[] {
   const live = Array.from(liveUsers.values());
-  const merged = [...DEMO_USERS, ...live];
-
-  // Dedupe by id (live entries are keyed by socket.id, demos by "demo-N" — no overlap).
-  const seen = new Set<string>();
-  const unique = merged.filter((u) => {
-    if (seen.has(u.id)) return false;
-    seen.add(u.id);
-    return true;
-  });
 
   // Sort by XP desc, then streak desc, then name asc for stable ordering.
-  unique.sort((a, b) => b.xp - a.xp || b.bestStreak - a.bestStreak || a.name.localeCompare(b.name));
+  live.sort((a, b) => b.xp - a.xp || b.bestStreak - a.bestStreak || a.name.localeCompare(b.name));
 
-  return unique.slice(0, LEADERBOARD_SIZE);
+  return live.slice(0, LEADERBOARD_SIZE);
 }
 
 /** Build a leaderboard tagged for a specific viewer (their row marked isYou). */
@@ -243,7 +210,7 @@ io.on("connection", (socket) => {
   socket.emit("connected", { id: socket.id });
   socket.emit("rooms", { rooms: [GLOBAL_ROOM] });
   socket.emit("leaderboard", buildLeaderboardForYou(socket.id));
-  socket.emit("presence", { count: liveUsers.size + DEMO_USERS.length });
+  socket.emit("presence", { count: liveUsers.size });
   // Replay the last 10 activities as the initial feed (newest first).
   for (const a of activityFeed.slice(0, 10)) {
     socket.emit("activity", a);
@@ -340,18 +307,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// ---- Periodic demo activity to keep the feed feeling alive ----
-let demoIdx = 0;
-setInterval(() => {
-  const a = DEMO_ACTIVITIES[demoIdx % DEMO_ACTIVITIES.length]!;
-  demoIdx++;
-  pushActivity(a);
-}, DEMO_TICK_MS);
-
 // ---- Boot ----
 httpServer.listen(PORT, () => {
   console.log(`[social] WebSocket server running on port ${PORT}`);
-  console.log(`[social] global room ready — demo users: ${DEMO_USERS.length}`);
+  console.log(`[social] global room ready — real users only (no demo seeds)`);
 });
 
 // ---- Graceful shutdown ----

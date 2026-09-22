@@ -3,19 +3,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Flame, Pencil, Trash2, Trophy, Target, TrendingUp, Snowflake, StickyNote } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { ResponsiveModal } from "@/components/overlays/responsive-modal";
+import { ConfirmDialog } from "@/components/overlays/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Heatmap } from "@/components/shared/heatmap";
 import { MonthlyCalendar } from "@/components/habits/monthly-calendar";
 import { MilestoneProgress } from "@/components/habits/milestone-progress";
 import { CompletionTrendChart } from "@/components/habits/completion-trend-chart";
-import { IconTile, IconRenderer } from "@/components/shared/icon-renderer";
+import { IconRenderer } from "@/components/shared/icon-renderer";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { useHabits, useToggleHabit, useDeleteHabit } from "@/hooks/use-habits";
 import { useFreezeHabit } from "@/hooks/use-freeze";
@@ -24,17 +20,6 @@ import { ShareButton } from "@/components/habits/share-button";
 import { useUIStore } from "@/stores/ui-store";
 import { toBn, todayKey } from "@/lib/date-bn";
 import { CATEGORY_MAP } from "@/constants";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 export function HabitDetailSheet() {
   const habitId = useUIStore((s) => s.selectedHabitId);
@@ -44,226 +29,188 @@ export function HabitDetailSheet() {
   const toggle = useToggleHabit();
   const del = useDeleteHabit();
   const freeze = useFreezeHabit();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const habit = habits?.find((h) => h.id === habitId) ?? null;
   const cat = habit ? CATEGORY_MAP[habit.category] : null;
 
   return (
-    <Sheet open={!!habitId} onOpenChange={(o) => !o && close()}>
-      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md max-h-[100dvh]">
-        {habit && (
-          <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
-            <SheetHeader className="border-b px-5 pb-4 pt-5 shrink-0">
-              <div className="flex items-start gap-3">
-                <IconTile name={habit.icon} color={habit.color} size={48} />
-                <div className="min-w-0 flex-1">
-                  <SheetTitle className="text-lg leading-tight">
-                    {habit.name}
-                  </SheetTitle>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <span>{cat?.emoji} {habit.category}</span>
-                    <span>•</span>
-                    <span>{habit.timeOfDay}</span>
-                    <span>•</span>
-                    <span>{habit.frequency}</span>
-                  </div>
-                </div>
-              </div>
+    <ResponsiveModal
+      open={!!habitId}
+      onOpenChange={(o) => !o && close()}
+      title={habit?.name ?? "অভ্যাস"}
+      description={
+        habit ? `${cat?.emoji ?? ""} ${habit.category} • ${habit.timeOfDay} • ${habit.frequency}` : undefined
+      }
+      maxHeight="82dvh"
+    >
+      {habit && (
+        <div className="space-y-4">
+          {/* Motivation note (set from the form) */}
+          {habit.note && (
+            <blockquote className="rounded-2xl border-l-4 border-primary/50 bg-primary/5 px-4 py-3 text-sm leading-relaxed text-foreground/90">
+              {habit.note}
+            </blockquote>
+          )}
 
-              <div className="mt-4 flex gap-2">
-                <Button
-                  onClick={() => toggle.mutate({ habitId: habit.id })}
-                  className="flex-1"
-                  aria-pressed={habit.completedToday}
-                  variant={habit.completedToday ? "secondary" : "default"}
-                >
-                  {habit.completedToday ? "✓ সম্পন্ন হয়েছে" : "আজ সম্পন্ন করুন"}
-                </Button>
-                {!habit.completedToday &&
-                  habit.frozenDate !== todayKey() &&
-                  habit.streak >= 3 && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => freeze.mutate(habit.id)}
-                      disabled={freeze.isPending}
-                      title="স্ট্রিক ফ্রিজ করুন"
-                      aria-label="স্ট্রিক ফ্রিজ করুন"
-                      className="text-sky-600 hover:text-sky-700"
-                    >
-                      <Snowflake size={16} aria-hidden />
-                      <span className="sr-only">স্ট্রিক ফ্রিজ করুন</span>
-                    </Button>
-                  )}
-                <ShareButton habitId={habit.id} />
+          {/* Primary actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => toggle.mutate({ habitId: habit.id })}
+              className="flex-1 rounded-xl"
+              aria-pressed={habit.completedToday}
+              variant={habit.completedToday ? "secondary" : "default"}
+            >
+              {habit.completedToday ? "✓ সম্পন্ন হয়েছে" : "আজ সম্পন্ন করুন"}
+            </Button>
+            {!habit.completedToday &&
+              habit.frozenDate !== todayKey() &&
+              habit.streak >= 3 && (
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => {
-                    close();
-                    openEdit(habit.id);
-                  }}
-                  aria-label="অভ্যাস সম্পাদনা করুন"
+                  onClick={() => freeze.mutate(habit.id)}
+                  disabled={freeze.isPending}
+                  title="স্ট্রিক ফ্রিজ করুন"
+                  aria-label="স্ট্রিক ফ্রিজ করুন"
+                  className="rounded-xl text-sky-600 hover:text-sky-700"
                 >
-                  <Pencil size={16} aria-hidden />
-                  <span className="sr-only">সম্পাদনা করুন</span>
+                  <Snowflake size={16} aria-hidden />
+                  <span className="sr-only">স্ট্রিক ফ্রিজ করুন</span>
                 </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="text-destructive"
-                      aria-label="অভ্যাস মুছে ফেলুন"
-                    >
-                      <Trash2 size={16} aria-hidden />
-                      <span className="sr-only">মুছে ফেলুন</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>অভ্যাস মুছে ফেলবেন?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        «{habit.name}» এর সমস্ত ইতিহাস মুছে যাবে। এটি ফেরানো যাবে না।
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => {
-                          del.mutate(habit.id, { onSuccess: close });
-                        }}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        মুছে ফেলুন
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </SheetHeader>
+              )}
+            <ShareButton habitId={habit.id} />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                close();
+                openEdit(habit.id);
+              }}
+              aria-label="অভ্যাস সম্পাদনা করুন"
+              className="rounded-xl"
+            >
+              <Pencil size={16} aria-hidden />
+              <span className="sr-only">সম্পাদনা করুন</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setDeleteConfirm(true)}
+              className="rounded-xl text-destructive"
+              aria-label="অভ্যাস মুছে ফেলুন"
+            >
+              <Trash2 size={16} aria-hidden />
+              <span className="sr-only">মুছে ফেলুন</span>
+            </Button>
+          </div>
 
-            <div className="fancy-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">
-              {/* Stats trio */}
-              <div className="grid grid-cols-3 gap-2">
-                <StatBox
-                  icon="Flame"
-                  label="বর্তমান স্ট্রিক"
-                  value={habit.streak}
-                  color="var(--streak)"
-                />
-                <StatBox
-                  icon="Trophy"
-                  label="সেরা স্ট্রিক"
-                  value={habit.bestStreak}
-                  color="var(--primary)"
-                />
-                <StatBox
-                  icon="Target"
-                  label="মোট সম্পন্ন"
-                  value={habit.totalDone}
-                  color="#7c3aed"
-                />
-              </div>
+          {/* Stats trio */}
+          <div className="grid grid-cols-3 gap-2">
+            <StatBox icon="Flame" label="বর্তমান স্ট্রিক" value={habit.streak} color="var(--streak)" />
+            <StatBox icon="Trophy" label="সেরা স্ট্রিক" value={habit.bestStreak} color="var(--primary)" />
+            <StatBox icon="Target" label="মোট সম্পন্ন" value={habit.totalDone} color="#7c3aed" />
+          </div>
 
-              {/* Milestone progress — visual progress toward next streak milestone */}
-              <div className="mt-3">
-                <MilestoneProgress
-                  currentStreak={habit.streak}
-                  bestStreak={habit.bestStreak}
-                  color={habit.color}
-                />
-              </div>
+          {/* Milestone progress — visual progress toward next streak milestone */}
+          <div>
+            <MilestoneProgress
+              currentStreak={habit.streak}
+              bestStreak={habit.bestStreak}
+              color={habit.color}
+            />
+          </div>
 
-              {/* Completion rate ring */}
-              <div className="mt-4 flex items-center gap-4 rounded-2xl border bg-card p-4">
-                <ProgressRing value={habit.completionRate} size={76} stroke={8}>
-                  <div className="text-center">
-                    <div className="tabular text-base font-bold">
-                      {toBn(Math.round(habit.completionRate * 100))}%
-                    </div>
-                  </div>
-                </ProgressRing>
-                <div>
-                  <div className="flex items-center gap-1.5 text-sm font-semibold">
-                    <TrendingUp size={15} /> গত ৩০ দিন
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    এই সময়ে আপনি {toBn(Math.round(habit.completionRate * 30))} দিন অভ্যাসটি সম্পন্ন করেছেন।
-                  </p>
+          {/* Completion rate ring */}
+          <div className="flex items-center gap-4 rounded-2xl border bg-card p-4">
+            <ProgressRing value={habit.completionRate} size={76} stroke={8}>
+              <div className="text-center">
+                <div className="tabular text-base font-bold">
+                  {toBn(Math.round(habit.completionRate * 100))}%
                 </div>
               </div>
-
-              {/* 7-day completion trend chart */}
-              <div className="mt-4">
-                <CompletionTrendChart
-                  completedDates={habit.completedDates}
-                  color={habit.color}
-                  days={7}
-                />
+            </ProgressRing>
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-semibold">
+                <TrendingUp size={15} aria-hidden /> গত ৩০ দিন
               </div>
-
-              {/* Monthly calendar — current month with completed days */}
-              <div className="mt-4">
-                <MonthlyCalendar
-                  completedDates={habit.completedDates}
-                  color={habit.color}
-                  frozenDate={habit.frozenDate}
-                />
-              </div>
-
-              {/* Heatmap */}
-              <div className="mt-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">কার্যকলাপ (৬ মাস)</h3>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    কম
-                    <span className="ml-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-muted" />
-                    <span className="mx-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-primary/30" />
-                    <span className="mx-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-primary/60" />
-                    <span className="ml-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-primary" />
-                    বেশি
-                  </div>
-                </div>
-                <Heatmap
-                  completedDates={habit.completedDates}
-                  habit={habit}
-                  weeks={26}
-                  color={habit.color}
-                />
-              </div>
-
-              {/* Milestones */}
-              <div className="mt-5">
-                <h3 className="mb-2 text-sm font-semibold">মাইলস্টোন</h3>
-                <div className="flex flex-wrap gap-2">
-                  {[7, 14, 30, 100, 365].map((m) => {
-                    const reached = habit.bestStreak >= m;
-                    return (
-                      <div
-                        key={m}
-                        className={cnBadge(reached)}
-                      >
-                        <Flame
-                          size={12}
-                          fill={reached ? "currentColor" : "none"}
-                          className={reached ? "text-streak" : "text-muted-foreground"}
-                        />
-                        <span>{toBn(m)} দিন</span>
-                        {reached && <span className="ml-0.5">✓</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Notes / Journal */}
-              <NotesSection habitId={habit.id} completedToday={habit.completedToday} />
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                এই সময়ে আপনি {toBn(Math.round(habit.completionRate * 30))} দিন অভ্যাসটি সম্পন্ন করেছেন।
+              </p>
             </div>
           </div>
-        )}
-      </SheetContent>
-    </Sheet>
+
+          {/* 7-day completion trend chart */}
+          <div>
+            <CompletionTrendChart completedDates={habit.completedDates} color={habit.color} days={7} />
+          </div>
+
+          {/* Monthly calendar — current month with completed days */}
+          <div>
+            <MonthlyCalendar
+              completedDates={habit.completedDates}
+              color={habit.color}
+              frozenDate={habit.frozenDate}
+            />
+          </div>
+
+          {/* Heatmap */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">কার্যকলাপ (৬ মাস)</h3>
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                কম
+                <span className="ml-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-muted" />
+                <span className="mx-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-primary/30" />
+                <span className="mx-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-primary/60" />
+                <span className="ml-0.5 inline-block h-2.5 w-2.5 rounded-[2px] bg-primary" />
+                বেশি
+              </div>
+            </div>
+            <Heatmap completedDates={habit.completedDates} habit={habit} weeks={26} color={habit.color} />
+          </div>
+
+          {/* Milestones */}
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">মাইলস্টোন</h3>
+            <div className="flex flex-wrap gap-2">
+              {[7, 14, 30, 100, 365].map((m) => {
+                const reached = habit.bestStreak >= m;
+                return (
+                  <div key={m} className={cnBadge(reached)}>
+                    <Flame
+                      size={12}
+                      fill={reached ? "currentColor" : "none"}
+                      className={reached ? "text-streak" : "text-muted-foreground"}
+                      aria-hidden
+                    />
+                    <span>{toBn(m)} দিন</span>
+                    {reached && <span className="ml-0.5">✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Notes / Journal */}
+          <NotesSection habitId={habit.id} completedToday={habit.completedToday} />
+        </div>
+      )}
+
+      {/* Delete confirmation — unified ConfirmDialog */}
+      <ConfirmDialog
+        open={deleteConfirm}
+        onOpenChange={setDeleteConfirm}
+        variant="destructive"
+        title="অভ্যাস মুছে ফেলবেন?"
+        description={`«${habit?.name ?? ""}» এর সমস্ত ইতিহাস মুছে যাবে। এটি ফেরানো যাবে না।`}
+        confirmLabel="মুছে ফেলুন"
+        onConfirm={() => {
+          setDeleteConfirm(false);
+          if (habit) del.mutate(habit.id, { onSuccess: close });
+        }}
+      />
+    </ResponsiveModal>
   );
 }
 

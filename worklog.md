@@ -3206,3 +3206,368 @@ Key opportunities identified:
 - Add automated test for first-time user journey
 - Add habit drag-and-drop reordering (@dnd-kit installed, reorder API exists)
 - Consider adding monthly habit goals with progress tracking
+
+---
+Task ID: S1 (Sandbox environment setup for user-driven overhaul)
+Agent: Z.ai Code (Orchestrator)
+
+Task: Clone https://github.com/sharif418/abhyas into the sandbox, restore the full dev
+environment (Next.js :3000, social mini-service :3003, push-scheduler), and audit the
+codebase ahead of the user-requested production overhaul.
+
+Work Log:
+- Cloned the repo (token auth) into /home/z/abhyas-repo, then moved its .git + files into
+  /home/z/my-project (the sandbox dev root). Template files replaced. Kept sandbox Caddyfile.
+- Restored local dev DB pattern: created prisma/schema.dev.prisma (SQLite mirror of the
+  PostgreSQL schema — Json/Int[] stored as JSON-encoded String, see db-compat.ts).
+- .env: DATABASE_URL=file:/home/z/my-project/db/custom.db + NEXTAUTH + VAPID dev keys.
+- bun install → prisma generate + db push (dev schema). Dev server running on :3000.
+- mini-services/social on :3003 (healthz OK). push-scheduler with VAPID env (running).
+- Verified /api/health OK and the app renders (agent-browser) — DB currently contains old
+  seeded demo habits (31) which will be purged in the demo-removal task.
+
+Audit findings (feeds the overhaul plan):
+- Files >400 lines needing split: profile-view.tsx (914), stats-view.tsx (716),
+  constants/index.ts (585), focus-view.tsx (571), social-view.tsx (452),
+  habit-detail.tsx (426), api/stats/route.ts (411), habit-form.tsx (400).
+- Demo data to remove: /api/seed route + "নমুনা ডাটা যোগ করুন" button in home-view,
+  DEMO_LEADERBOARD in social-view + demo fallback in use-social, 9 seeded DEMO_USERS in
+  mini-services/social/index.ts, demo labeling in UI.
+- Bottom-nav "আরও" menu is a tiny floating popover (weak UX) — needs proper bottom sheet.
+- Two toast systems mounted simultaneously (radix Toaster + sonner) — must unify to sonner.
+- Single-route SPA with state-only view switching (no URL sync / back button support).
+- Repo artifacts to clean: download/ (UX-audit screenshots, test CSV), tests/ (build scripts),
+  stray db files. .gitignore already covers db/, .env, dev.log.
+
+Stage Summary:
+- Environment fully restored and verified (app + 2 mini-services healthy).
+- Audit complete; overhaul plan created (see orchestrator todos): unified overlay system,
+  bottom-sheet More menu, hash-synced routing, demo purge, Ibadah Focus Mode, file splits,
+  UI/UX polish, then lint + browser verification + git push.
+
+---
+Task ID: 3–7 core (Architecture: routing, unified overlays, nav, demo purge, Ibadah Mode)
+Agent: Z.ai Code (Orchestrator)
+
+Task: Implement the core architectural overhaul — URL-synced routing, unified overlay
+system, bottom-sheet More menu, nav reorder (ইসলামিক primary), demo-data purge, toast
+unification, and the new ইবাদত মোড (immersive focus mode) feature.
+
+Work Log:
+- **Hash-synced routing** (stores/ui-store.ts): view ↔ `#/view` URL sync via History API;
+  `bindHistoryNavigation()` wired in AppShell → browser/PWA back-forward buttons work,
+  deep links (`/#/islamic`) restore view, refresh keeps view. pushState + popstate handling.
+- **Nav reorder** (nav-config.ts): ইসলামিক promoted to primary tab (core daily-use USP);
+  More sheet now hosts ফোকাস/জার্নাল/সোশ্যাল/প্রোফাইল with descriptions. `ALL_VIEWS` is the
+  single source of truth for keyboard shortcuts (dedupe from keyboard-shortcuts.tsx).
+- **Unified overlay system** (src/components/overlays/):
+  - `responsive-modal.tsx` — THE one overlay primitive: vaul bottom Drawer (drag-dismiss,
+    rounded-t-3xl) on mobile / centered Radix Dialog on desktop. Unified header (title +
+    description + বন্ধ করুন close), scrollable body (fancy-scroll), sticky footer slot.
+  - `confirm-dialog.tsx` — the one confirmation pattern (destructive/confirm/info variants,
+    Bengali copy, icon chip, loading state).
+  - `bottom-sheet-menu.tsx` — the one menu-in-sheet pattern (48px rows, aria menu roles).
+  - `chart-tooltip.tsx` — shared Recharts tooltip/axis styles + Bengali pct helpers.
+- **BottomNav redesign**: আরও now opens a real BottomSheetMenu (backdrop, focus trap,
+  Escape) instead of the cramped w-40 floating popover. `moreSheetOpen` in ui-store.
+- **Overlay migrations done by orchestrator**: habit-form → ResponsiveModal (note field
+  now REALLY persists: new `Habit.note` column, migration 20260922000000_add_habit_note,
+  zod schemas + serializeHabit + HabitInput + form binding + detail view blockquote);
+  habit-detail → ResponsiveModal + ConfirmDialog; keyboard-shortcuts → ResponsiveModal;
+  TemplatesModal promoted to global overlay in AppShell (store-driven, opens from Home
+  empty state too).
+- **Toast unification**: radix use-toast/toaster/toast deleted; sonner only (layout.tsx);
+  use-habits migrated to sonner with toBn() Bengali numerals + error toasts.
+- **Demo purge (part 1)**: /api/seed route deleted; SeedButton removed from home-view
+  (empty state now offers নতুন অভ্যাস + টেমপ্লেট থেকে বাছাই); social mini-service DEMO_USERS +
+  DEMO_ACTIVITIES + fake presence count removed (real users only, real empty states).
+- **ইবাদত মোড (Ibadah Mode)** — the flagship focus feature:
+  - lib/ibadah.ts: Wake Lock + Fullscreen + haptics capability layer.
+  - stores/ibadah-store.ts: session state (quran/dhikr modes, 4 dhikr presets, target
+    rounds, elapsed); starts fullscreen + wake lock per settings; logs FocusSession
+    (type "ibadah") on stop.
+  - components/ibadah/ibadah-mode-overlay.tsx: full-screen serene night-gradient UI —
+    giant tap-to-count circle with Bengali numerals + target ring, dhikr carousel
+    (font-arabic), elapsed timer, honest capability status row (নোটিফিকেশন বন্ধ / স্ক্রিন
+    সক্রিয় / ফুলস্ক্রিন) + DND guidance, exit gate via ConfirmDialog.
+  - components/ibadah/ibadah-entry-card.tsx: entry card on Islamic view (কুরআন / জিকির doors).
+  - API /api/ibadah: writes `ibadahUntil` epoch into user settings.
+  - push-scheduler: skips ALL push sends to users inside an active ইবাদত window
+    (settings-aware, provider-polymorphic parse).
+  - UserSettings + settings-store + /api/me/settings: ibadahModeEnabled / ibadahFullscreen /
+    ibadahWakeLock toggles (profile section pending → subagent 8-a).
+- **Other fixes**: top-bar pt-safe (notch), AppShell keyboard-shortcut guard (no digit
+  hijack while overlays open), home error retry → refetch (not location.reload), Amiri
+  Arabic font + .font-arabic token, sidebar hardcoded #0d9488 → teal-600, dialog defaults
+  rounded-2xl + p-0 + showCloseButton=false handled by chrome.
+- **NEW API**: POST /api/me/reset — REAL destructive reset (all user data + XP) replacing
+  the old localStorage-only fake reset (profile wiring → subagent 8-a).
+
+Stage Summary:
+- Core architecture in place; lint passes (fixed setState-in-effect in ibadah overlay).
+- Remaining (dispatched to subagents): file splits ≤400 lines + per-view audit fixes +
+  remaining overlay migrations (templates/share/quran/onboarding) + social-view demo purge
+  + profile reset/ibadah-settings wiring + islamic/journal/habits polish.
+
+---
+
+Task ID: 8-e
+Agent: Senior Frontend Agent (habits view quality pass + overlay migrations)
+Task: Habits view audit fixes (skeleton/error states, tokenized colors, search clear, focus rings), habit-row touch/a11y fixes (touch-visible freeze, 44px check target, legible badges, tokenized streak colors), and migration of templates-modal + share-button to the unified ResponsiveModal primitive.
+
+Work Log:
+- Read worklog (Task 3–7 core section) + audited all 5 owned files; confirmed no `src/components/home/habit-row.tsx` exists (habit row is shared by home/habits/sortable lists — fixes propagate everywhere).
+- habits-view.tsx: added `isError, refetch` destructuring; structured loading skeleton (header actions + 3 quick-stat cards + search bar + 5 chip placeholders + 4× `h-16 rounded-2xl` habit-row skeletons, home-view pattern); error card with WifiOff icon + আবার চেষ্টা করুন refetch button; simplified now-redundant `!isLoading` guards.
+- habits-view.tsx: `#7c3aed` → `text-violet-600 dark:text-violet-400`; medal chips got `dark:bg-amber-500/80` / `dark:bg-slate-500/80` / `dark:bg-orange-500/80` + dark text tokens; search input got `pr-9` + conditional clear button (X, aria-label "সার্চ মুছুন", focus ring) matching journal pattern; Chip buttons got `focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none`.
+- Verified templates button already store-driven (`setTemplatesOpen(true)`) — NO leftover TemplatesModal import/local state in habits-view (A7 clean).
+- habit-row.tsx: freeze button now capability-visible — base `opacity-100` + `[@media(hover:hover)]:opacity-0` + existing group-hover/focus-visible reveals (visible on touch, subtle on pointer devices; kills the invisible-tappable mis-tap hazard); documented with an inline comment.
+- habit-row.tsx: check button `h-9 w-9` → `h-11 w-11` (44px touch target); all badges `text-[8px]/text-[9px]` → `text-[10px]` (ইসলামিক, ফ্রিজ, কিংবদন্তি, তারকা, দৃঢ়) + ফ্রিজ Snowflake icon 9→10.
+- habit-row.tsx: `getStreakStyle` (inline hex styles) → `getStreakClass` returning Tailwind tokens with dark variants (red-600/orange-600/orange-500/amber-500 + `text-streak` default); milestone glow preserved via `[text-shadow:…_currentColor]` (tracks active theme token instead of fixed rgba); removed dead `CSSProperties` import.
+- templates-modal.tsx: migrated raw Dialog+VisuallyHidden → `<ResponsiveModal title="টেমপ্লেট লাইব্রেরি" description="প্রস্তুত অভ্যাস থেকে দ্রুত শুরু করুন" size="lg" maxHeight="70dvh">`; kept ALL step transitions (AnimatePresence wait), bundle selection, install logic/query invalidation/sonner toasts; dropped the custom header block (primitive owns chrome); counts now use toBn(); ইসলামিক badge 8px→10px; bundle/back buttons got focus-visible rings.
+- share-button.tsx: migrated raw Dialog+VisuallyHidden → `<ResponsiveModal title="অগ্রগতি শেয়ার করুন" size="sm">`; preview card, WhatsApp/copy actions, loading skeleton and error toast logic unchanged; deleted local toBn() duplicate → import from @/lib/date-bn; removed dead framer-motion imports (motion/AnimatePresence were unused); ইসলামিক অভ্যাস badge 9px→10px.
+- sortable-habits-list.tsx: untouched — no fixes needed (wraps the shared HabitRow which was fixed directly).
+- Checked dev.log: zero compile errors for my files (log's only module-not-found was journal-view's `@lib/api-client` typo from a parallel agent, since fixed; trailing entries show clean compiles + GET / 200).
+
+Stage Summary:
+- src/components/habits/habits-view.tsx — loading skeleton + error retry card + violet token + medal dark variants + search clear button + Chip focus rings (370 lines).
+- src/components/habits/habit-row.tsx — touch-visible freeze button + 44px check target + 10px badges + tokenized streak colors w/ theme-aware glow (220 lines).
+- src/components/habits/templates-modal.tsx — migrated to ResponsiveModal primitive, store-driven global overlay (189 lines).
+- src/components/habits/share-button.tsx — migrated to ResponsiveModal primitive + shared toBn import (186 lines).
+- All functionality preserved: filters, search, reorder mode, dnd-kit sortable behavior, template install flow, share/copy/WhatsApp flow. Sonner-only toasts. No new deps.
+---
+Task ID: 8-d
+Agent: Senior Frontend Agent (Islamic + Journal views)
+Task: Fix all verified audit defects in the Islamic + Journal views — a11y state
+wiring, loading skeletons, silent-failure error states, ResponsiveModal migration,
+font-arabic typography, shared mood palette, focus-visible rings.
+
+Work Log:
+- Read worklog (3–7 core architecture) + audited the 6 owned files; read
+  /api/quran route to type the real response shape (Prisma QuranSession rows +
+  aggregates); read responsive-modal primitive, date-bn, use-prayer hooks,
+  home-view error pattern + home/mood-selector palette for pattern parity.
+- prayer-card.tsx: aria-pressed + Bengali aria-labels on 5 prayer toggles and
+  ExtraToggles; ✓ indicator aria-hidden; Skeleton banner + inline pulse time
+  placeholders while loading (toggles stay interactive); role="alert" error
+  card "নামাজের সময় লোড করা যায়নি" with আবার চেষ্টা করুন → refetch(); typed
+  progressToNext(PrayerTimes) + TIME_KEY map; toggle date UTC→todayKey()
+  (Asia/Dhaka, matches record query key); dead imports removed; focus rings.
+- quran-tracker.tsx: local QuranSessionRow/QuranData interfaces (no more
+  any[]); full-card loading skeleton; role="alert" error card + retry; log
+  form Dialog → ResponsiveModal (title "তিলাওয়াত লগ করুন", description
+  "আজকের পঠিত অংশ যোগ করুন", ResponsiveModalFooter with বাতিল/save, all form
+  logic preserved); Stat icons typed LucideIcon; progressbar aria; surah
+  Arabic names get font-arabic.
+- tasbih-counter.tsx: reset 32px → size-9 rounded-full + ring; font-arabic +
+  dir="rtl" for dhikr text (was inline --font-bengali); preset chips
+  aria-pressed + group label; tap circle focus ring.
+- dua-library.tsx: useId()-based accordion wiring (aria-expanded/
+  aria-controls + role="region"/aria-labelledby) + rotating ChevronDown;
+  font-arabic + dir="rtl" on Arabic; local toBnCount deleted → @/lib/date-bn
+  toBn; chips aria-pressed + focus rings.
+- journal/mood-palette.ts (NEW): typed MoodMeta + MOODS + getMood() with
+  TODO(worklog) for home/mood-selector adoption (constants/ owned elsewhere).
+- journal-view.tsx: isError error card (WifiOff chip, "জার্নাল ডেটা লোড করা
+  যায়নি", আবার চেষ্টা করুন → refetch()) matching home-view pattern; MOOD_*
+  consts replaced by mood-palette imports; text-emerald-500 ✓ → lucide Check
+  with text-primary; filter chips aria-pressed + rings; search input
+  aria-label + clear-button ring; skeleton/empty/filtered states preserved.
+- islamic-view.tsx untouched (IbadahEntryCard placement kept, headers fine).
+- Verified: bunx tsc --noEmit → zero errors in islamic/ + journal/ (4 project
+  errors are other agents' WIP files); dev.log trailing entries compile clean
+  with GET / 200 (one transient @lib/api-client typo mid-edit, fixed);
+  all files ≤ 400 lines; no lint/dev/git run; no tests; no new deps.
+
+Stage Summary:
+- Files: islamic/prayer-card.tsx (286), islamic/quran-tracker.tsx (287),
+  islamic/tasbih-counter.tsx (136), islamic/dua-library.tsx (163),
+  journal/journal-view.tsx (334), journal/mood-palette.ts (NEW, 36).
+- Fixes: prayer/quran silent failures now surface as skeletons + Bengali retry
+  error states; all toggle/chip state exposed to AT via aria-pressed/
+  aria-expanded; quran log form on the unified ResponsiveModal primitive;
+  Arabic rendered in Amiri (.font-arabic + dir="rtl"); journal has a real
+  error state + shared typed mood palette (TODO: unify with home).
+- Handoff notes: use-prayer.ts still types sessions as any[] (hook ownership);
+  prayer toggles now post Dhaka-anchored dates — other posters should match.
+
+---
+Task ID: 8-a
+Agent: Senior Frontend Agent
+Task: Refactor profile-view.tsx (914 lines) into focused section components (each ≤400) while fixing all 8 verified audit defects and adding the new ইবাদত মোড settings section.
+
+Work Log:
+- Read worklog (S1 audit + Task 3–7 core), the full 914-line profile-view.tsx, settings-store, constants/settings, api-client, use-settings-effect, use-theme-manager, push lib, ConfirmDialog/ResponsiveModal primitives, /api/me (+settings +reset) routes, gamification, Habit type, serializeHabit.
+- Split the monolith into 9 files under src/components/profile/** (all ≤231 lines): profile-shared (Section/ToggleRow/DataRow + FOCUS_RING + MeResponse), profile-header, profile-appearance, profile-preferences, profile-notifications, profile-ibadah (NEW), profile-data, profile-account, and a 53-line thin profile-view composition (ProfileView export preserved for view-router's dynamic import).
+- Audit fix #1 (fake reset): ResetAllButton → POST /api/me/reset via api-client, then removes abhyas-settings / abhyas-perfect-day-fired / abhyas-tasbih / abhyas-onboarding-done localStorage keys + queryClient.clear() + reload (600ms so the success toast shows). Unified ConfirmDialog, destructive variant, honest copy "আপনার সমস্ত অভ্যাস, ইতিহাস, XP ও ব্যাজ স্থায়ীভাবে মুছে যাবে। এটি ফেরানো যাবে না।"
+- Audit fix #2 (অতিথি flash): me query exposes isLoading → ProfileHeaderCard renders Skeleton set (level ring + name/title/meta) while loading.
+- Audit fix #3 (NameEditor): বাতিল button + Escape revert + Enter-to-save (trim + maxLength 60), pending spinner, toast.error on mutation error (removed the silent .catch swallow).
+- Audit fix #4 (polling): Notification.permission now synced on mount + visibilitychange only — 2s setInterval deleted.
+- Audit fix #5 (focus rings): FOCUS_RING utility applied to name button, accent swatches, theme/week buttons, archive expand button.
+- Audit fix #6: archive query typed useQuery<Habit[]> (was any[]); added loading spinner + restore error toast.
+- Audit fix #7: About gradient to-[#0d9488] → to-teal-600 (no #7c3aed existed in profile).
+- Audit fix #8: both notification test buttons h-7 → h-9 (36px); export/reset/restore actions also h-9.
+- NEW ইবাদত মোড section (profile-ibadah.tsx, Moon icon): 3 toggles wired to setIbadahModeEnabled/setIbadahFullscreen/setIbadahWakeLock + DND explainer line. Server mirror via useIbadahSettingsSync — debounced (600ms) best-effort POST /api/me/settings with the 3 booleans (global use-settings-effect can't be edited by me and doesn't cover them), hardened to skip the mount snapshot (no stale-localStorage overwrite) and flush on unmount.
+- NEW সপ্তাহ শুরু selector in profile-appearance (শনিবার/রবিবার) — store/API already supported it, syncs via existing global effect.
+- Verified: bunx tsc --noEmit → 0 errors in src/components/profile/** (remaining project errors are other agents' parallel files: mini-services/social, home-view, stats-badges-tab); dev.log clean compiles, zero profile mentions; all lucide icon exports confirmed present.
+
+Stage Summary:
+- Files: profile-view.tsx 914→53; created profile-shared 135, profile-header 150, profile-appearance 133, profile-preferences 116, profile-notifications 231, profile-ibadah 110, profile-data 197, profile-account 178 (all ≤400). No files outside src/components/profile/ touched.
+- All existing Bengali copy, export/import, onboarding-reset, push, archive, auth functionality preserved; audit defects 1–8 fixed; ইবাদত মোড settings live with server persistence.
+- Risks: reset correctness depends on /api/me/reset keeping DEFAULT_SETTINGS reset (it does); if use-settings-effect later gains ibadah booleans, the local mirror in profile-ibadah becomes a harmless duplicate and can be removed.
+
+---
+Task ID: 8-b
+Agent: Senior Frontend Agent (Stats split + API extraction)
+Task: Split stats-view.tsx (716 lines) into focused ≤400-line tab components, fix the 7 audited defects, and move /api/stats aggregation into lib/stats-server.ts with a thin route handler.
+
+Work Log:
+- Read worklog (3–7 core architecture), all stats components, api/stats/route.ts, shared/chart-tooltip primitives, ui/card, and home-view's StatsLite consumer to lock the response contract.
+- TASK A split: stats-view.tsx 716 → 243 (thin shell + WAI-ARIA tablist, roving-tabindex pattern preserved verbatim); new stats-shared.tsx (144: StatsResponse/BadgeSummary/BadgeStatsData types + shared LevelCard/QuickStat); stats-overview-tab.tsx (115); stats-trends-tab.tsx (106); stats-mood-tab.tsx (60); stats-badges-tab.tsx (226).
+- Defect 1 fixed: overview tabpanel (and all panels) now space-y-5 — WeeklyInsights/category card no longer render with zero gap.
+- Defect 2 fixed: local Card/CardHeader deleted; tab files import Card/CardHeader/CardTitle/CardDescription/CardContent from @/components/ui/card with compact overrides (gap-3 rounded-3xl p-4, px-0 header/content).
+- Defect 3 fixed: #7c3aed → var(--color-violet-500) (Tailwind 4 theme var, verified in compiled CSS); #999 unknown-category fallback → var(--muted-foreground) (dark-safe); tier glow hexes kept with dark: ring variants added; weekly-insights InsightCard hexes (#7c3aed/#0d9488) → violet var / var(--chart-3).
+- Defect 4 fixed: BadgeTile is now a motion.button with aria-label including description + earned state, aria-expanded, and tap-to-expand description (title attr was inaccessible on touch).
+- Defect 5 fixed: all 4 owned charts (stats-trends-tab, weekly-insights, monthly-trend-chart, mood-trend-chart) use shared CHART_TOOLTIP_STYLE / CHART_TOOLTIP_CURSOR / CHART_AXIS_PROPS (+ pctLabel in monthly trend; removed the `void LineChart` suppression hack). focus-daily-chart skipped (other agent owns it).
+- Defect 6 fixed: tabIndex={0} on every tabpanel for keyboard scrollability.
+- Defect 7 preserved: full loading skeleton in the shell; mood-tab empty state kept.
+- TASK B: created src/lib/stats-server.ts (399) — pure row-based helpers (countByDate, groupCompletionsByDate, seriesForDays, completionOverDays, countPerfectDays, categoryBreakdown, computeMoodCorrelations, computeInsights, computeMonthlyTrend, computeBadgeStats) + getDashboardStats() orchestrator; route.ts 411 → 22 thin GET handler (force-dynamic kept, JSON 500 on failure). Response shape preserved field-for-field (verified against home-view StatsLite + stats tabs contract); computation semantics preserved (tie-breaks, 30/60/365-day windows, last7-vs-prev7 momentum, badges from persisted achievements).
+- Error retry in stats now uses query refetch() instead of window.location.reload() (aligned with Task 3–7 home fix).
+- Verification: bunx tsc --noEmit → 0 errors in all owned files (3 remaining project errors are other agents' areas: examples/websocket, mini-services/social, home-view). Work record written to agent-ctx/8-b-senior-frontend-agent.md.
+
+Stage Summary:
+- src/components/stats/stats-view.tsx — 243 lines (was 716; shell + tabs)
+- src/components/stats/stats-shared.tsx — 144 lines (new: types + LevelCard + QuickStat)
+- src/components/stats/stats-overview-tab.tsx — 115 lines (new)
+- src/components/stats/stats-trends-tab.tsx — 106 lines (new)
+- src/components/stats/stats-mood-tab.tsx — 60 lines (new)
+- src/components/stats/stats-badges-tab.tsx — 226 lines (new)
+- src/components/stats/weekly-insights.tsx — 184 lines (chart primitives + token colors)
+- src/components/stats/monthly-trend-chart.tsx — 123 lines (chart primitives, void-hack removed)
+- src/components/stats/mood-trend-chart.tsx — 132 lines (chart primitives)
+- src/lib/stats-server.ts — 399 lines (new: aggregation, StatsDashboard types)
+- src/app/api/stats/route.ts — 22 lines (was 411; thin handler)
+- Risks: contribution-heatmap.tsx (328) is unreferenced dead code (left in place); client StatsResponse and server StatsDashboard are parallel contract definitions that must be kept in sync; var(--color-violet-500) depends on Tailwind 4 default theme var emission (verified today).
+
+---
+Task ID: 8-c
+Agent: Z.ai Code (Senior Frontend Agent — constants + focus + social)
+Task: Split constants/index.ts into focused modules (zero-breakage barrel), split focus-view.tsx & social-view.tsx into ≤400-line components, fix audit defects (lazy-init anti-pattern, hardcoded colors, tab-title countdown, wake lock, ReactNode formatActivity), add ইবাদত সেশন quick-start on Focus, and purge ALL demo data from the social experience.
+
+Work Log:
+- Read worklog.md (Task 3–7 core section) + all owned files + reference files (lib/ibadah, stores/ibadah-store, ibadah-entry-card, stat-pill EmptyState, lib/date-bn, globals.css tokens, /api/focus route, mini-services/social) before touching anything.
+- TASK 1 — constants split with a pure re-export barrel:
+  - constants/habits.ts: CATEGORIES/CATEGORY_MAP/CategoryMeta, TIMES_OF_DAY/TimeOfDayMeta, HABIT_COLORS, HABIT_ICONS + NEW canonical FREQUENCIES export (mirrors the Frequency union; additive, no consumer changes).
+  - constants/badges.ts: BADGES (verbatim).
+  - constants/gamification.ts: STREAK_MILESTONES + typed StreakMilestone interface (level-title FUNCTIONS stay in @/lib/gamification — behavior, not data).
+  - constants/misc.ts: BD_CITIES, PRAYERS, TASBIH_PRESETS, DUAS, SURAHS, ACCENT_PRESETS (Islamic + appearance data).
+  - constants/index.ts → 22-line `export *` barrel. Verified every existing `@/constants` import site (16 files incl. stats-server, prayer.ts, api routes, profile-appearance, tasbih-store, dua-library `type Dua`) resolves against the barrel — ZERO changes elsewhere.
+- TASK 2 — focus split (571 → 5 files):
+  - focus-timer.tsx (engine + dial): owns preset/mode/state/secondsLeft/custom state, logSession mutation, tick, completion, celebration. FIXED the useState(() => {…setCustomWork…}) side-effect-initializer anti-pattern → pure loadCustomInterval() lazy init (single localStorage read, no setter calls). ADDED document.title countdown "২৫:০০ — ফোকাস | অভ্যাস" while running + restore on stop + unmount safety. ADDED Screen Wake Lock via acquireWakeLock()/releaseWakeLock() from @/lib/ibadah while running. FIXED :477 #7c3aed → StatBox tone tokens; :356/:401 bg-amber-500 text-white → bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50. Completion moved out of the setState updater into a dedicated effect (no side effects inside updaters).
+  - focus-settings.tsx: FocusPresetConfig (preset bar + custom interval picker with local drafts — বাতিল discards, প্রয়োগ commits via onApplyCustom(work, brk)) + FocusSessionConfig (habit link + session tag, now with htmlFor/id labels + aria). FOCUS_PRESETS lives here (avoids circular imports).
+  - focus-history.tsx: FocusDailyChart + recent-session list; typed FocusSession/FocusData (was `any[]`); session rows now render type "ibadah" (Moon, ইবাদত label, islamic token) instead of mislabeling it as break; dates localized via bnDayFirst; check icon emerald-500 → text-primary.
+  - focus-ibadah-card.tsx (NEW): compact "ইবাদত সেশন" quick-start at the top of Focus — Moon icon, "জিকির/তিলাওয়াতের জন্য নিবিড় ফুলস্ক্রিন মোড", "ইবাদত মোড শুরু করুন" → start("dhikr") on useIbadahStore; gated by ibadahModeEnabled; night-gradient visual language copied from ibadah-entry-card.
+  - focus-view.tsx: shell + session stats (StatBox tones: primary/streak/violet-600 dark:violet-400), skeleton/error states, composes FocusTimer + FocusHistory + FocusIbadahCard.
+- TASK 3 — social split + REAL demo purge (452 → 4 files):
+  - DELETED DEMO_LEADERBOARD and every "ডেমো মোড" badge/label/branch (grep-verified zero matches in src/).
+  - social-leaderboard.tsx: rank hero + list; "empty" = no OTHER participants (only you / nobody) → proper EmptyState (from @/components/shared/stat-pill): Users icon, "এখনো কোনো বন্ধু অনলাইন নেই", "আপনার বন্ধুরাও অভ্যাস অ্যাপ ব্যবহার করলে এখানে লিডারবোর্ডে দেখা যাবে।", "বন্ধুদের আমন্ত্রণ জানান" button → navigator.share with clipboard fallback + sonner toast (AbortError on share-dismiss ignored).
+  - social-activity-feed.tsx: feed + honest empty state "লাইভ কার্যকলাপ এখনো নেই — কেউ অনলাইন নেই।"; formatActivity signature changed string → ReactNode (removed the `as unknown as string` hack); live dot bg-emerald-500 → bg-primary; completion icon emerald → text-primary/bg-primary/10.
+  - social-connection-status.tsx: status pill (connected → bg-primary/10 text-primary token; error → "সংযোগ নেই") + SocialReconnectBanner (amber, role=alert, "আবার চেষ্টা করুন") — demo copy removed from the banner body.
+  - social-view.tsx: 76-line shell composing the three + footer note; dropped the unused gamificationState import.
+  - use-social.ts: purged all demo-mode references from docs/comments; connection/retry skeleton logic, XTransformPort=3003 dev pattern + NEXT_PUBLIC_SOCIAL_URL production pattern preserved verbatim (zero behavioral change — the hook never shipped demo data; the demo lived in the view).
+- Verified via dev.log: zero compile errors mentioning my files; only pre-existing error is journal-view.tsx `@lib/api-client` (parallel agent's in-flight file, not my ownership). All files ≤400 lines (wc -l verified).
+
+Stage Summary:
+- Created: constants/habits.ts (200), constants/badges.ts (145), constants/gamification.ts (25), constants/misc.ts (247); focus/focus-timer.tsx (386), focus/focus-settings.tsx (237), focus/focus-history.tsx (127), focus/focus-ibadah-card.tsx (55); social/social-leaderboard.tsx (253), social/social-activity-feed.tsx (134), social/social-connection-status.tsx (104).
+- Modified: constants/index.ts (585 → 22-line barrel), focus/focus-view.tsx (571 → 134), social/social-view.tsx (452 → 76), hooks/use-social.ts (comment purge, 243).
+- Fixes: lazy-init anti-pattern, #7c3aed → violet-600/dark:violet-400 tokens, break-mode amber tokens w/ dark variants, tab-title countdown + restore, session wake lock, ibadah session rows, ReactNode formatActivity, emerald → primary tokens, demo purge (leaderboard + labels + empty states + invite CTA), typed FocusData/FocusSession (no any), a11y labels (htmlFor, aria-pressed, aria-label, role/status/alert).
+- Risks: (1) focus pause button intentionally re-acquires wake lock on resume and releases on pause — a deliberate reading of "while a session runs"; ibadah overlay shares the module-level lock singleton (edge: starting ইবাদত মোড while a focus timer is paused-then-resumed could steal/release the shared lock — acceptable, both features want the screen awake). (2) POST /api/focus zod enum only accepts work|break, so ইবাদত-mode session logging (type "ibadah") is rejected server-side until the API owner widens the enum — the view already renders ibadah rows correctly the moment the API accepts them. (3) Empty-leaderboard heuristic = "no non-you entries": a board containing ONLY the user still shows the invite empty state (by spec) while the rank hero keeps showing their #1 rank.
+
+---
+Task ID: 8–12 (Parallel refactor wave + integration + verification + push)
+Agent: Z.ai Code (Orchestrator + 5 specialist subagents 8-a…8-e)
+
+Task: Split every >400-line file, apply the full audit fix list, purge remaining
+demo data, fix cross-agent integration issues, verify end-to-end in the browser,
+and push to GitHub (Coolify auto-redeploy via webhook).
+
+Work Log (subagents):
+- 8-a: profile-view 914 → 53-line shell + 8 focused sections (≤231 lines each).
+  Real reset wired to POST /api/me/reset + ConfirmDialog; me-skeleton; NameEditor
+  বাতিল/Escape/error toast; permission polling → visibilitychange; focus rings;
+  ইবাদত মোড settings section (3 toggles + server sync + DND explainer).
+- 8-b: stats-view 716 → 243-line shell + 5 tab components; api/stats 411 → 22-line
+  route + lib/stats-server.ts (399); shared chart primitives adopted; overview
+  space-y bug fixed; BadgeTile a11y (aria-label + tap-to-expand); token colors.
+- 8-c: constants/index 585 → 22-line barrel + habits/badges/gamification/misc
+  modules; focus-view 571 → 134 + timer/settings/history (≤386); social-view 452 →
+  76 + leaderboard/feed/status; DEMO_LEADERBOARD + demo-mode UI purged → real
+  empty states + invite button; formatActivity ReactNode; wake lock + tab-title
+  countdown in focus timer; ইবাদত quick-start card on Focus view.
+- 8-d: islamic view — prayer aria-pressed + skeleton + error/retry (নামাজের সময়
+  লোড করা যায়নি); quran tracker typed + skeleton + error + ResponsiveModal log
+  form; tasbih 36px reset + font-arabic; dua accordion a11y + font-arabic; journal
+  error state + shared mood palette (mood-palette.ts); prayer toggle dates fixed
+  UTC→Asia/Dhaka (todayKey).
+- 8-e: habits-view skeleton + error state + search clear + medal dark variants;
+  habit-row freeze touch-visibility + 44px check + 10px badges + streak token
+  colors; templates-modal + share-button migrated to ResponsiveModal; toBn dedupe.
+
+Work Log (orchestrator integration):
+- /api/focus: type enum widened to work|break|ibadah; ibadah sessions count into
+  focus minutes/streak (1 XP/min); GET aggregates include ibadah.
+- use-settings-effect: ibadahModeEnabled/Fullscreen/WakeLock now sync to server
+  (single global mirror).
+- Mood palette unified: constants/moods.ts (canonical) → barrel re-export;
+  journal/mood-palette.ts is a back-compat shim; home/mood-selector adopts it.
+- Social socket FIX: social service now serves engine.io at path "/" (was default
+  /socket.io/ — never matched the gateway's XTransformPort path-"/" forwarding;
+  matches the sandbox demo contract). Client uses path "/" for both dev
+  (gateway) and production (NEXT_PUBLIC_SOCIAL_URL) connections. Verified live
+  via gateway: handshake 0{sid…} + "অতিথি যুক্ত হয়েছেন — এইমাত্র".
+- OnboardingModal migrated to ResponsiveModal (Bengali বন্ধ করুন close, toBn
+  counts) — last ad-hoc overlay eliminated.
+- tsconfig excludes examples/mini-services/download/upload (bun-run services have
+  their own pipelines; kills false TS errors).
+- Dead code deleted: ui/{sidebar,carousel,command,calendar,pagination,breadcrumb,
+  hover-card,context-menu,menubar,navigation-menu,input-otp,aspect-ratio,table,
+  resizable,collapsible,popover,dropdown-menu,sheet,scroll-area}.tsx (18 unused
+  primitives), stats/contribution-heatmap.tsx, shared/empty-state.tsx.
+- Repo artifacts removed from git: download/ (QA screenshots), tests/ (build
+  scripts); .gitignore += agent-ctx/, tool-results/, tsconfig.tsbuildinfo.
+- focus-timer lint fix: completion detection moved into the interval callback
+  (external-system subscription) instead of a synchronous effect body.
+- Ibadah overlay: framer-motion initial strokeDashoffset (no undefined animate).
+
+VERIFICATION (agent-browser, mobile 390×844 + desktop 1280×800, via gateway :81):
+- Fresh first-run: localStorage cleared + DB purged → onboarding wizard renders
+  (ResponsiveModal) → starter habits selection → 3 habits created server-side,
+  XP 0, Level 1 — REAL product journey, zero demo data.
+- Bottom nav: 5 tabs (হোম/অভ্যাস/ইসলামিক/পরিসংখ্যান/আরও); আরও opens the
+  BottomSheetMenu (48px rows, descriptions, active states).
+- Hash routing: #/focus ↔ #/islamic ↔ #/home via clicks AND browser back/forward
+  (history.pushState + popstate verified).
+- ইবাদত মোড: start → POST /api/ibadah 200 (notification suppression window) →
+  immersive overlay (timer 00:20+, dhikr tap ×3 counted, target ring, DND
+  guidance) → exit gate ConfirmDialog → FocusSession logged (type "ibadah",
+  tag জিকির) → API aggregates it.
+- Islamic: live Aladhan times (ঢাকা) render; যোহর toggle → persisted
+  (dhuhr: true in /api/prayer/log).
+- Habit toggle: +13 XP, level ring + hero update with Bengali numerals.
+- Habit form: name + note → POST → note persisted (verified via API) → detail
+  view renders the note as a styled blockquote.
+- Profile: ইবাদত মোড settings (3 switches on), সব রিসেট → destructive
+  ConfirmDialog (honest copy) — cancel tested.
+- Social (via gateway): connected, "অতিথি যুক্ত হয়েছেন" live activity, empty
+  leaderboard state + বন্ধুদের আমন্ত্রণ জানান, no demo users.
+- VLM visual audit of mobile home + islamic screenshots: clean, professional,
+  no overlap/clipping defects.
+- bunx tsc --noEmit: 0 errors. bun run lint: 0 errors. dev.log: clean.
+
+Stage Summary:
+- Production-grade overhaul complete: unified overlay system app-wide, hash
+  routing, Islamic-first nav, ইবাদত মোড flagship feature (fullscreen + wake
+  lock + server-side notification suppression + honest DND guidance), all demo
+  data purged (seed API, demo leaderboard, demo service users), every source
+  file ≤400 lines, real reset API, sonner-only toasts, 18 dead UI primitives
+  removed, repo artifacts cleaned.
+- Ready to commit + push to GitHub main → Coolify webhook auto-redeploy.

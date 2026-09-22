@@ -1,27 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Keyboard, X } from "lucide-react";
+import { Keyboard } from "lucide-react";
+import { ALL_VIEWS } from "./nav-config";
+import { ResponsiveModal } from "@/components/overlays/responsive-modal";
+import { toBn } from "@/lib/date-bn";
 
 interface Shortcut {
   key: string;
   description: string;
 }
 
+/** Navigation shortcuts are derived from nav-config — single source of truth. */
 const SHORTCUTS: { section: string; items: Shortcut[] }[] = [
   {
     section: "নেভিগেশন",
-    items: [
-      { key: "1", description: "হোম" },
-      { key: "2", description: "অভ্যাস" },
-      { key: "3", description: "ফোকাস" },
-      { key: "4", description: "পরিসংখ্যান" },
-      { key: "5", description: "ইসলামিক" },
-      { key: "6", description: "জার্নাল" },
-      { key: "7", description: "সোশ্যাল" },
-      { key: "8", description: "প্রোফাইল" },
-    ],
+    items: ALL_VIEWS.map((v, i) => ({
+      key: toBn(i + 1),
+      description: v.label,
+    })),
   },
   {
     section: "অন্যান্য",
@@ -35,7 +32,8 @@ const SHORTCUTS: { section: string; items: Shortcut[] }[] = [
 
 /**
  * Keyboard shortcuts overlay — press "?" to toggle.
- * Shows all available keyboard shortcuts in a clean modal.
+ * Rendered through the unified ResponsiveModal primitive (mobile bottom
+ * sheet / desktop dialog) instead of a hand-rolled fixed overlay.
  */
 export function KeyboardShortcutsOverlay() {
   const [open, setOpen] = useState(false);
@@ -55,8 +53,6 @@ export function KeyboardShortcutsOverlay() {
       if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
         setOpen((v) => !v);
-      } else if (e.key === "Escape") {
-        setOpen(false);
       }
     };
 
@@ -65,67 +61,38 @@ export function KeyboardShortcutsOverlay() {
   }, []);
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-2xl"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Keyboard size={20} className="text-primary" />
-                <h2 className="text-lg font-bold">কীবোর্ড শর্টকাট</h2>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted"
-                aria-label="বন্ধ করুন"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-5">
-              {SHORTCUTS.map((section) => (
-                <div key={section.section}>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {section.section}
-                  </h3>
-                  <div className="space-y-1.5">
-                    {section.items.map((item) => (
-                      <div
-                        key={item.key}
-                        className="flex items-center justify-between gap-3"
-                      >
-                        <span className="text-sm text-muted-foreground">
-                          {item.description}
-                        </span>
-                        <kbd className="flex h-7 min-w-7 items-center justify-center rounded-md border bg-muted px-2 text-xs font-bold shadow-sm">
-                          {item.key}
-                        </kbd>
-                      </div>
-                    ))}
-                  </div>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={setOpen}
+      title="কীবোর্ড শর্টকাট"
+      description="দ্রুত কাজের জন্য শর্টকাট"
+      size="sm"
+    >
+      <div className="mb-4 flex items-center gap-2 text-primary" aria-hidden>
+        <Keyboard size={20} />
+      </div>
+      <div className="space-y-5">
+        {SHORTCUTS.map((section) => (
+          <div key={section.section}>
+            <h3 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              {section.section}
+            </h3>
+            <div className="space-y-1.5">
+              {section.items.map((item) => (
+                <div key={item.key} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">{item.description}</span>
+                  <kbd className="flex h-7 min-w-7 items-center justify-center rounded-md border bg-muted px-2 text-xs font-bold shadow-sm">
+                    {item.key}
+                  </kbd>
                 </div>
               ))}
             </div>
-
-            <div className="mt-5 text-center text-[11px] text-muted-foreground">
-              কীবোর্ডে <kbd className="rounded border bg-muted px-1 font-bold">?</kbd> চাপলে এই মেনু খুলে
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+        ))}
+      </div>
+      <p className="mt-5 text-center text-[11px] text-muted-foreground">
+        কীবোর্ডে <kbd className="rounded border bg-muted px-1 font-bold">?</kbd> চাপলে এই মেনু খুলে
+      </p>
+    </ResponsiveModal>
   );
 }

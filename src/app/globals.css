@@ -278,6 +278,13 @@
   padding-top: max(env(safe-area-inset-top), 0.5rem);
 }
 
+/* Arabic typeface for Qur'anic text, duas & adhkar (Amiri Naskh). */
+.font-arabic {
+  font-family: var(--font-arabic), "Amiri", "Scheherazade New", serif;
+  font-feature-settings: "liga" 1;
+  line-height: 2;
+}
+
 /* Hide focus ring for mouse users, keep for keyboard */
 :focus:not(:focus-visible) {
   outline: none;

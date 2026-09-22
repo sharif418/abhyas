@@ -13,6 +13,9 @@ interface SettingsState extends UserSettings {
   toggleSound: () => void;
   toggleReminders: () => void;
   toggleNotifications: () => void;
+  setIbadahModeEnabled: (v: boolean) => void;
+  setIbadahFullscreen: (v: boolean) => void;
+  setIbadahWakeLock: (v: boolean) => void;
   hydrateFromServer: (s: Partial<UserSettings>) => void;
   reset: () => void;
 }
@@ -33,6 +36,9 @@ export const useSettingsStore = create<SettingsState>()(
       toggleReminders: () => set((s) => ({ remindersEnabled: !s.remindersEnabled })),
       toggleNotifications: () =>
         set((s) => ({ notificationsEnabled: !s.notificationsEnabled })),
+      setIbadahModeEnabled: (ibadahModeEnabled) => set({ ibadahModeEnabled }),
+      setIbadahFullscreen: (ibadahFullscreen) => set({ ibadahFullscreen }),
+      setIbadahWakeLock: (ibadahWakeLock) => set({ ibadahWakeLock }),
       hydrateFromServer: (s) => set({ ...s }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
@@ -47,6 +53,9 @@ export const useSettingsStore = create<SettingsState>()(
         sound: s.sound,
         remindersEnabled: s.remindersEnabled,
         notificationsEnabled: s.notificationsEnabled,
+        ibadahModeEnabled: s.ibadahModeEnabled,
+        ibadahFullscreen: s.ibadahFullscreen,
+        ibadahWakeLock: s.ibadahWakeLock,
       }),
     }
   )

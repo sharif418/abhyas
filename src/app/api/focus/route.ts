@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 
 const LogSchema = z.object({
   durationMin: z.number().int().min(1).max(180),
-  type: z.enum(["work", "break"]).default("work"),
+  /** "ibadah" = immersive Quran/Zikr session logged by ইবাদত মোড. */
+  type: z.enum(["work", "break", "ibadah"]).default("work"),
   habitId: z.string().nullable().optional(),
   tag: z.string().max(60).nullable().optional(),
   date: z.string().default(todayKey()),
@@ -30,17 +31,17 @@ export async function GET(req: Request) {
 
   const todaySessions = sessions.filter((s) => s.date === todayKey());
   const todayMinutes = todaySessions
-    .filter((s) => s.type === "work")
+    .filter((s) => s.type === "work" || s.type === "ibadah")
     .reduce((sum, s) => sum + s.durationMin, 0);
   const totalMinutes = sessions
-    .filter((s) => s.type === "work")
+    .filter((s) => s.type === "work" || s.type === "ibadah")
     .reduce((sum, s) => sum + s.durationMin, 0);
-  const totalSessions = sessions.filter((s) => s.type === "work").length;
+  const totalSessions = sessions.filter((s) => s.type === "work" || s.type === "ibadah").length;
 
   // daily series for chart
   const byDate = new Map<string, number>();
   for (const s of sessions) {
-    if (s.type === "work") {
+    if (s.type === "work" || s.type === "ibadah") {
       byDate.set(s.date, (byDate.get(s.date) ?? 0) + s.durationMin);
     }
   }
@@ -49,9 +50,9 @@ export async function GET(req: Request) {
     minutes: byDate.get(d) ?? 0,
   }));
 
-  // focus streak: consecutive days (ending today or yesterday) with ≥1 work session
+  // focus streak: consecutive days (ending today or yesterday) with ≥1 session
   const workDates = new Set(
-    sessions.filter((s) => s.type === "work").map((s) => s.date)
+    sessions.filter((s) => s.type === "work" || s.type === "ibadah").map((s) => s.date)
   );
   let focusStreak = 0;
   let cursor = new Date();
@@ -104,12 +105,17 @@ export async function POST(req: Request) {
     },
   });
 
-  // Award XP for completed work sessions (2 XP per minute)
+  // Award XP for completed work sessions (2 XP per minute);
+  // ইবাদত sessions count toward focus minutes (1 XP/min — ইবাদত is its own reward).
   let xpAwarded = 0;
   let totalXp = user.xp;
   let newLevel = user.level;
   if (type === "work") {
     xpAwarded = durationMin * 2;
+  } else if (type === "ibadah") {
+    xpAwarded = durationMin;
+  }
+  if (xpAwarded > 0) {
     totalXp = user.xp + xpAwarded;
     const { levelFromXp } = await import("@/lib/gamification");
     newLevel = levelFromXp(totalXp);

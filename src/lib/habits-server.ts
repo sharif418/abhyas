@@ -40,6 +40,7 @@ export function serializeHabit(h: any): Habit {
     timesPerWeek: h.timesPerWeek ?? 0,
     timeOfDay: h.timeOfDay,
     reminderTime: h.reminderTime ?? null,
+    note: h.note ?? null,
     streak: h.streak ?? 0,
     bestStreak: h.bestStreak ?? 0,
     totalDone: h.totalDone ?? 0,

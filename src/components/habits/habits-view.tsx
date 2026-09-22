@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ArrowUpDown, Check, LayoutGrid, Flame, TrendingUp, Target, GripVertical } from "lucide-react";
+import { Plus, Search, ArrowUpDown, Check, LayoutGrid, Flame, TrendingUp, Target, GripVertical, X, WifiOff } from "lucide-react";
 import { useHabits, useToggleHabit } from "@/hooks/use-habits";
 import { useUIStore } from "@/stores/ui-store";
 import { HabitRow } from "@/components/habits/habit-row";
 import { SortableHabitsList } from "@/components/habits/sortable-habits-list";
-import { TemplatesModal } from "@/components/habits/templates-modal";
 import { EmptyState } from "@/components/shared/stat-pill";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CATEGORIES, TIMES_OF_DAY } from "@/constants";
 import { cn } from "@/lib/utils";
 import { toBn } from "@/lib/date-bn";
@@ -19,7 +19,7 @@ import type { HabitCategory } from "@/types";
 type Filter = "all" | "active" | "done" | HabitCategory;
 
 export function HabitsView() {
-  const { data: habits, isLoading } = useHabits();
+  const { data: habits, isLoading, isError, refetch } = useHabits();
   const toggle = useToggleHabit();
   const openHabitDetail = useUIStore((s) => s.openHabitDetail);
   const openAddHabit = useUIStore((s) => s.openAddHabit);
@@ -27,7 +27,6 @@ export function HabitsView() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [reorderMode, setReorderMode] = useState(false);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   // reorder mode only valid when no filter/search applied
   const canReorder = filter === "all" && !query.trim() && habits && habits.length > 0;
@@ -57,6 +56,66 @@ export function HabitsView() {
     return map;
   }, [filtered]);
 
+  // Loading: structured skeleton mirroring the real layout (header actions,
+  // quick stats, search, chip row, habit rows) — never a blank list area.
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="space-y-1.5">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-10 w-10 rounded-full" />
+          </div>
+        </div>
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="mb-3 h-9 w-full" />
+        <div className="mb-5 flex gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-7 w-16 shrink-0 rounded-full" />
+          ))}
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error: actionable retry card (never a silent blank screen).
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/50 p-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <WifiOff size={26} aria-hidden />
+          </div>
+          <div>
+            <h3 className="font-semibold">ডেটা লোড করতে সমস্যা</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              অভ্যাস ডেটা লোড করা যায়নি। আবার চেষ্টা করুন।
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            আবার চেষ্টা করুন
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-5">
       <div className="mb-4 flex items-center justify-between">
@@ -83,7 +142,7 @@ export function HabitsView() {
             </button>
           )}
           <button
-            onClick={() => setTemplatesOpen(true)}
+            onClick={() => useUIStore.getState().setTemplatesOpen(true)}
             className="flex h-10 w-10 items-center justify-center rounded-full border bg-card text-foreground shadow-sm transition hover:scale-105 active:scale-95"
             aria-label="টেমপ্লেট লাইব্রেরি"
             title="টেমপ্লেট লাইব্রেরি"
@@ -120,7 +179,7 @@ export function HabitsView() {
             <div className="text-[9px] text-muted-foreground">আজ সম্পন্ন</div>
           </div>
           <div className="rounded-2xl border bg-card p-2.5 text-center">
-            <div className="flex items-center justify-center gap-1 tabular text-base font-bold" style={{ color: "#7c3aed" }}>
+            <div className="flex items-center justify-center gap-1 tabular text-base font-bold text-violet-600 dark:text-violet-400">
               <Target size={14} />
               {toBn(Math.max(...habits.map(h => h.bestStreak), 0))}
             </div>
@@ -147,7 +206,13 @@ export function HabitsView() {
                   >
                     <span className={cn(
                       "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
-                      i === 0 ? "bg-amber-400 text-amber-950" : i === 1 ? "bg-slate-300 text-slate-800" : i === 2 ? "bg-orange-400 text-orange-950" : "bg-muted text-muted-foreground"
+                      i === 0
+                        ? "bg-amber-400 text-amber-950 dark:bg-amber-500/80 dark:text-amber-50"
+                        : i === 1
+                          ? "bg-slate-300 text-slate-800 dark:bg-slate-500/80 dark:text-slate-50"
+                          : i === 2
+                            ? "bg-orange-400 text-orange-950 dark:bg-orange-500/80 dark:text-orange-50"
+                            : "bg-muted text-muted-foreground"
                     )}>
                       {toBn(i + 1)}
                     </span>
@@ -177,8 +242,18 @@ export function HabitsView() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="অভ্যাস খুঁজুন..."
-          className="pl-9"
+          className="pl-9 pr-9"
         />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            aria-label="সার্চ মুছুন"
+          >
+            <X size={14} aria-hidden />
+          </button>
+        )}
       </div>
 
       {/* Filter chips */}
@@ -201,7 +276,7 @@ export function HabitsView() {
         ))}
       </div>
 
-      {!isLoading && habits && habits.length === 0 && (
+      {habits && habits.length === 0 && (
         <EmptyState
           icon="ListChecks"
           title="কোনো অভ্যাস নেই"
@@ -217,7 +292,7 @@ export function HabitsView() {
         />
       )}
 
-      {!isLoading && filtered.length === 0 && habits && habits.length > 0 && (
+      {habits && habits.length > 0 && filtered.length === 0 && (
         <EmptyState
           icon="Search"
           title="কিছু পাওয়া যায়নি"
@@ -265,7 +340,6 @@ export function HabitsView() {
         </div>
       )}
 
-      <TemplatesModal open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </div>
   );
 }
@@ -283,7 +357,7 @@ function Chip({
     <button
       onClick={onClick}
       className={cn(
-        "flex shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition",
+        "flex shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "bg-card text-muted-foreground hover:border-foreground/20 hover:text-foreground"

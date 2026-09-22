@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Bengali, Geist_Mono } from "next/font/google";
+import { Noto_Sans_Bengali, Geist_Mono, Amiri } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 
@@ -15,6 +14,14 @@ const notoBengali = Noto_Sans_Bengali({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+});
+
+/** Amiri — classical Naskh typeface for Qur'anic Arabic & duas. */
+const amiri = Amiri({
+  variable: "--font-arabic",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "700"],
   display: "swap",
 });
 
@@ -45,8 +52,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "অভ্যাস — স্বশাসন ও অভ্যাস ট্র্যাকার",
-    description:
-      "সম্পূর্ণ বাংলা অভ্যাস ট্র্যাকার — নামাজ, কুরআন, স্ট্রিক ও গেমিফিকেশন সহ।",
+    description: "সম্পূর্ণ বাংলা অভ্যাস ট্র্যাকার — নামাজ, কুরআন, স্ট্রিক ও গেমিফিকেশন সহ।",
     type: "website",
     locale: "bn_BD",
   },
@@ -71,10 +77,10 @@ export default function RootLayout({
   return (
     <html lang="bn" suppressHydrationWarning>
       <body
-        className={`${notoBengali.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${notoBengali.variable} ${geistMono.variable} ${amiri.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
-        <Toaster />
+        {/* Unified toast system: sonner only (radix toaster removed). */}
         <SonnerToaster
           position="top-center"
           richColors

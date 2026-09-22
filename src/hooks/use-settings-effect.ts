@@ -13,8 +13,18 @@ import type { UserSettings } from "@/types";
  *  - server persistence (best-effort)
  */
 export function useSettingsEffect() {
-  const { theme, accent, weekStartsOn, haptics, sound, remindersEnabled, notificationsEnabled } =
-    useSettingsStore();
+  const {
+    theme,
+    accent,
+    weekStartsOn,
+    haptics,
+    sound,
+    remindersEnabled,
+    notificationsEnabled,
+    ibadahModeEnabled,
+    ibadahFullscreen,
+    ibadahWakeLock,
+  } = useSettingsStore();
   const { setTheme } = useThemeManager();
 
   // theme sync — use our custom theme manager which reliably updates
@@ -55,11 +65,25 @@ export function useSettingsEffect() {
           sound,
           remindersEnabled,
           notificationsEnabled,
+          ibadahModeEnabled,
+          ibadahFullscreen,
+          ibadahWakeLock,
         })
         .catch(() => {});
     }, 600);
     return () => clearTimeout(id);
-  }, [theme, accent, weekStartsOn, haptics, sound, remindersEnabled, notificationsEnabled]);
+  }, [
+    theme,
+    accent,
+    weekStartsOn,
+    haptics,
+    sound,
+    remindersEnabled,
+    notificationsEnabled,
+    ibadahModeEnabled,
+    ibadahFullscreen,
+    ibadahWakeLock,
+  ]);
 }
 
 /** Convert hex → oklch-ish by keeping hex but injecting via --primary overrides. */

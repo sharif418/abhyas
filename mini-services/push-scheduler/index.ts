@@ -104,6 +104,28 @@ function getTodayStr(): string {
   return fmt.format(now); // en-CA gives YYYY-MM-DD
 }
 
+/**
+ * ইবাদত মোড check: parse the user's settings (JSONB on PostgreSQL, JSON
+ * string on SQLite) and return true while an immersive ইবাদত session is
+ * suppressing this user's notifications (`now < ibadahUntil`).
+ */
+function isUserInIbadah(rawSettings: unknown): boolean {
+  let settings: Record<string, unknown> | null = null;
+  if (rawSettings == null) return false;
+  if (typeof rawSettings === "string") {
+    try {
+      settings = JSON.parse(rawSettings);
+    } catch {
+      return false;
+    }
+  } else if (typeof rawSettings === "object") {
+    settings = rawSettings as Record<string, unknown>;
+  }
+  if (!settings) return false;
+  const until = Number(settings.ibadahUntil ?? 0);
+  return Number.isFinite(until) && until > Date.now();
+}
+
 // ---------------------------------------------------------------------------
 // Core scheduling logic
 // ---------------------------------------------------------------------------
@@ -141,6 +163,9 @@ async function tick(): Promise<ReminderResult> {
         select: { id: true },
         take: 1,
       },
+      user: {
+        select: { settings: true },
+      },
     },
   });
 
@@ -153,6 +178,13 @@ async function tick(): Promise<ReminderResult> {
     // Skip if already completed today
     if (habit.completions.length > 0) {
       result.skipped++;
+      continue;
+    }
+
+    // ইবাদত মোড: never interrupt a user's immersive Quran/Zikr session.
+    if (isUserInIbadah(habit.user?.settings)) {
+      result.skipped++;
+      log(`Skipping "${habit.name}" — user is in ইবাদত মোড.`);
       continue;
     }
 
