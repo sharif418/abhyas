@@ -39,6 +39,8 @@ const VIEW_KEYS: ViewKey[] = [
   "social",
   "journal",
   "focus",
+  "goals",
+  "guard",
   "profile",
 ];
 

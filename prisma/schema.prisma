@@ -34,6 +34,7 @@ model User {
   achievements  Achievement[]
   moods         MoodEntry[]
   focusSessions FocusSession[]
+  goals         Goal[]
   pushSubscriptions PushSubscription[]
 
   @@index([email])
@@ -181,6 +182,33 @@ model FocusSession {
 
   @@index([userId, date])
   @@index([userId, type, date])
+}
+
+// লক্ষ্য (Target/Goal) — measurable targets with milestones & deadlines.
+// Complements habits (recurring) with FINITE outcomes: "কুরআন খতম ৩০ পারা",
+// "১০ কেজি ওজন কমানো", "ইংরেজি ৩০ দিনে শেখা", "৫০,০০০ টাকা জমা"।
+model Goal {
+  id           String    @id @default(cuid())
+  userId       String
+  title        String
+  category     String    @default("ব্যক্তিগত") // ইবাদত | শেখা ও দক্ষতা | কাজ ও পেশা | স্বাস্থ্য | আর্থিক | ব্যক্তিগত
+  icon         String    @default("Target")
+  color        String    @default("#059669")
+  unit         String    @default("ধাপ") // পাতা | পারা | কেজি | ঘণ্টা | টাকা | দিন | …
+  targetValue  Float     @default(100)
+  currentValue Float     @default(0)
+  deadline     DateTime?
+  milestones   Json      @default("[]") // [{ title, value, done }]
+  note         String?
+  active       Boolean   @default(true)
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@index([userId, category])
 }
 
 // Web Push subscriptions for sending push notifications to users' devices.

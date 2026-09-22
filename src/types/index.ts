@@ -167,6 +167,8 @@ export type ViewKey =
   | "social"
   | "journal"
   | "focus"
+  | "goals"
+  | "guard"
   | "profile"
   | "more"; // virtual — opens the More menu, not a real view
 

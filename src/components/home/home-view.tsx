@@ -25,6 +25,8 @@ import { HabitInsightsCard } from "@/components/home/habit-insights-card";
 import { StreakFreezeIndicator } from "@/components/home/streak-freeze-indicator";
 import { DailyStreakBadge } from "@/components/home/daily-streak-badge";
 import { WeeklyChallengeCard } from "@/components/home/weekly-challenge-card";
+import { QuickActions } from "@/components/home/quick-actions";
+import { GoalsSummaryCard } from "@/components/home/goals-summary-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
@@ -39,6 +41,16 @@ interface StatsLite {
     xpForNextLevel?: number;
     progress?: number;
   };
+}
+
+/** Time-of-day Bengali greeting. */
+function greetingBn(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "শুভ রাত";
+  if (h < 12) return "শুভ সকাল";
+  if (h < 16) return "শুভ দুপুর";
+  if (h < 19) return "শুভ বিকাল";
+  return "শুভ সন্ধ্যা";
 }
 
 export function HomeView() {
@@ -142,7 +154,12 @@ export function HomeView() {
             </div>
           </ProgressRing>
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold">আজকের অভ্যাস</h1>
+            <p className="text-xs font-semibold text-primary">
+              আসসালামু আলাইকুম{stats?.user?.name ? `, ${stats.user.name}` : ""}
+            </p>
+            <h1 className="text-lg font-bold">
+              {greetingBn()} — আজকের অভ্যাস
+            </h1>
             <p className="text-sm text-muted-foreground">
               {toBn(done)} / {toBn(total)} সম্পন্ন • {bnDayFirst()}
             </p>
@@ -192,6 +209,11 @@ export function HomeView() {
           </div>
         </div>
       </motion.div>
+
+      {/* Quick actions — the five things people open the app for */}
+      <div className="mt-4">
+        <QuickActions />
+      </div>
 
       {/* 7-day activity heatmap — instant week snapshot */}
       <div className="mt-4">
@@ -254,6 +276,11 @@ export function HomeView() {
       >
         <Plus size={16} aria-hidden /> নতুন অভ্যাস যোগ করুন
       </button>
+
+      {/* লক্ষ্য — target progress at a glance */}
+      <div className="mt-4">
+        <GoalsSummaryCard />
+      </div>
 
       {/* Secondary panels — below the primary task */}
       <div className="mt-6 space-y-4">

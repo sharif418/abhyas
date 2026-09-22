@@ -36,6 +36,14 @@ const JournalView = dynamic(
   () => import("@/components/journal/journal-view").then((m) => ({ default: m.JournalView })),
   { loading: () => <ViewSkeleton />, ssr: false }
 );
+const GoalsView = dynamic(
+  () => import("@/components/goals/goals-view").then((m) => ({ default: m.GoalsView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
+const GuardView = dynamic(
+  () => import("@/components/guard/guard-view").then((m) => ({ default: m.GuardView })),
+  { loading: () => <ViewSkeleton />, ssr: false }
+);
 const ProfileView = dynamic(
   () => import("@/components/profile/profile-view").then((m) => ({ default: m.ProfileView })),
   { loading: () => <ViewSkeleton />, ssr: false }
@@ -49,6 +57,8 @@ const VIEWS: Record<string, ComponentType> = {
   social: SocialView,
   journal: JournalView,
   focus: FocusView,
+  goals: GoalsView,
+  guard: GuardView,
   profile: ProfileView,
 } as const;
 
