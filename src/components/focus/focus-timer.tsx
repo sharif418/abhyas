@@ -9,7 +9,7 @@ import { toBn } from "@/lib/date-bn";
 import { fireConfetti } from "@/lib/confetti";
 import { playCompletionSound, playLevelUpSound } from "@/lib/sounds";
 import { useSettingsStore } from "@/stores/settings-store";
-import { acquireWakeLock, releaseWakeLock } from "@/lib/ibadah";
+import { acquireWakeLock, releaseWakeLock } from "@/lib/web-platform";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import {
   FocusPresetConfig,

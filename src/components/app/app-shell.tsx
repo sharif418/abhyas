@@ -13,7 +13,7 @@ import { HabitFormSheet } from "@/components/habits/habit-form";
 import { HabitDetailSheet } from "@/components/habits/habit-detail";
 import { TemplatesModal } from "@/components/habits/templates-modal";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
-import { IbadahModeOverlay } from "@/components/ibadah/ibadah-mode-overlay";
+import { FloatingFocusButton } from "@/components/focus/floating-focus-button";
 import { ServiceWorkerRegister } from "@/components/app/sw-register";
 import { KeyboardShortcutsOverlay } from "@/components/app/keyboard-shortcuts";
 
@@ -29,7 +29,7 @@ function anyOverlayOpen(): boolean {
 /**
  * Root application shell.
  * Responsive: desktop = sidebar + content; mobile = bottom nav + content.
- * Hosts the global overlays (habit form, detail, onboarding, ibadah mode).
+ * Hosts the global overlays (habit form, detail, templates, onboarding).
  */
 export function AppShell() {
   useSettingsEffect();
@@ -91,12 +91,14 @@ export function AppShell() {
       </div>
       <BottomNav />
 
+      {/* Global focus-mode control — present on every view */}
+      <FloatingFocusButton />
+
       {/* Global overlays */}
       <HabitFormSheet />
       <HabitDetailSheet />
       <TemplatesModal open={templatesOpen} onOpenChange={setTemplatesOpen} />
       <OnboardingModal />
-      <IbadahModeOverlay />
       <KeyboardShortcutsOverlay />
       <ServiceWorkerRegister />
     </div>

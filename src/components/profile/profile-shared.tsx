@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  *
  * profile-view.tsx was a 914-line monolith; it is now a thin composition of
  * focused section files (header / appearance / preferences / notifications /
- * ibadah / data / account) that all render through these primitives so the
+ * data / account) that all render through these primitives so the
  * visual language stays identical: rounded-3xl section cards, 8px muted icon
  * tiles, row separators, Bengali copy.
  */

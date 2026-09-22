@@ -6,7 +6,6 @@ import { ProfileHeaderCard } from "./profile-header";
 import { ProfileAppearanceSection } from "./profile-appearance";
 import { ProfilePreferencesSection } from "./profile-preferences";
 import { ProfileNotificationsSection } from "./profile-notifications";
-import { ProfileIbadahSection } from "./profile-ibadah";
 import { ProfileDataSection } from "./profile-data";
 import {
   ProfileAboutSection,
@@ -39,7 +38,6 @@ export function ProfileView() {
       <ProfileAppearanceSection />
       <ProfilePreferencesSection />
       <ProfileNotificationsSection />
-      <ProfileIbadahSection />
       <ProfileDataSection />
       <ProfileAboutSection />
       <ProfileArchiveSection />

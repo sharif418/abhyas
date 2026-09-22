@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
+import { isNativeApp } from "@/lib/native/capacitor";
 
 /**
  * Registers the Service Worker for offline-first PWA support + push notifications.
  *
- * Only runs in production to avoid interfering with Next.js HMR in dev.
+ * Only runs in production to avoid interfering with Next.js HMR in dev,
+ * and never inside the Capacitor native shell — there the site is loaded
+ * from the remote server inside a WebView, where the PWA SW only adds
+ * cache-update complexity and native push (FCM) will replace web push.
  *
  * The SW is critical for:
  *  - Offline caching (stale-while-revalidate)
@@ -20,7 +24,8 @@ export function ServiceWorkerRegister() {
     if (
       typeof window === "undefined" ||
       !("serviceWorker" in navigator) ||
-      process.env.NODE_ENV !== "production"
+      process.env.NODE_ENV !== "production" ||
+      isNativeApp()
     ) {
       return;
     }

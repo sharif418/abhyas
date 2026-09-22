@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- অভ্যাস brand (matches the web app's emerald/teal primary tokens) -->
+    <color name="colorPrimary">#059669</color>
+    <color name="colorPrimaryDark">#047857</color>
+    <color name="colorAccent">#0D9488</color>
+</resources>

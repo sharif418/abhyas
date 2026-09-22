@@ -7,13 +7,12 @@ import { useHabits } from "@/hooks/use-habits";
 import { toBn } from "@/lib/date-bn";
 import { FocusTimer } from "@/components/focus/focus-timer";
 import { FocusHistory, type FocusData } from "@/components/focus/focus-history";
-import { FocusIbadahCard } from "@/components/focus/focus-ibadah-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /**
- * Focus view shell — header, ইবাদত সেশন quick-start, the timer engine
- * (own component), session stats and the history panel (chart + list).
+ * Focus view shell — header, the timer engine (own component), session stats
+ * and the history panel (chart + list).
  */
 export function FocusView() {
   const { data: habits } = useHabits();
@@ -34,9 +33,6 @@ export function FocusView() {
           পোমোডোরো টেকনিকে দিয়ে গভীর কাজ করুন
         </p>
       </header>
-
-      {/* ইবাদত সেশন — immersive quick-start (hidden if the feature is off) */}
-      <FocusIbadahCard />
 
       {/* Timer engine + work/break config + session config */}
       <FocusTimer habits={habits} />

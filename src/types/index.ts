@@ -128,14 +128,6 @@ export interface UserSettings {
   sound: boolean;
   remindersEnabled: boolean;
   notificationsEnabled: boolean;
-  /** ইবাদত মোড — immersive distraction-free mode for Quran/Zikr sessions. */
-  ibadahModeEnabled: boolean;
-  /** Enter fullscreen automatically when Ibadah Mode starts. */
-  ibadahFullscreen: boolean;
-  /** Keep the screen awake (Wake Lock) during Ibadah Mode. */
-  ibadahWakeLock: boolean;
-  /** Server-side window (epoch ms) during which this user's push notifications are suppressed. */
-  ibadahUntil?: number;
 }
 
 export interface Badge {

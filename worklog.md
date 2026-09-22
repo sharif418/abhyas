@@ -3571,3 +3571,89 @@ Stage Summary:
   file ≤400 lines, real reset API, sonner-only toasts, 18 dead UI primitives
   removed, repo artifacts cleaned.
 - Ready to commit + push to GitHub main → Coolify webhook auto-redeploy.
+
+---
+Task ID: 13
+Agent: Z.ai Code (Principal Architect)
+Task: Replace the ইবাদত মোড feature with the user's actual vision — a GLOBAL
+floating focus button that silences the whole phone at the Android OS level
+(Do-Not-Disturb), delivered through a new hybrid Capacitor architecture
+(Android-first native shell around the live Coolify web deployment).
+
+Work Log:
+- AUDIT: git-diff e5ef93c..ad34041 proved the entire ইবাদত মোড feature set
+  (overlay, entry cards, store, lib, /api/ibadah, profile toggles, push-
+  scheduler suppression, FocusView ibadah card) was added in ad34041 — zero
+  ASCII-ibadah refs existed before. Bengali "ইবাদত" in starter presets,
+  calendar, leaderboard invite text = ORIGINAL product content → kept.
+- REMOVAL (user: "notun ta sorate paro, ager ja ja ache thik ache"):
+  deleted 7 files (src/components/ibadah/*, focus-ibadah-card, profile-ibadah,
+  lib/ibadah, stores/ibadah-store, api/ibadah) + reverted /api/focus enum to
+  work|break + removed the 3 ibadah settings from types/constants/store/
+  settings-effect/me-settings API + push-scheduler isUserInIbadah + all
+  render sites. The ORIGINAL Focus Pomodoro view stays fully intact.
+- web-platform.ts: extracted wake-lock/fullscreen/haptics into a neutral
+  shared lib (with a wakeLockWanted flag + reacquireWakeLockIfVisible);
+  focus-timer now imports from it.
+- FLOATING BUTTON (the requested feature): floating-focus-button.tsx — 56px
+  FAB on EVERY view (mounted once in AppShell), tap=toggle, long-press(480ms
+  or right-click)=contextual sheet, vertical drag with two-zone snap +
+  localStorage persistence, live Bengali elapsed-timer chip (tap → status
+  sheet), breathing halo + Moon→MoonStar spring morph, aria-pressed/label,
+  reduced-motion support, hydration-safe SSR (layoutTick gate), stale-closure
+  -proof drag via ref-tracked currentBottom, resting position measured from
+  the real bottom-nav rect (safe-area aware) / 24px on desktop.
+- focus-status-sheet.tsx: three variants through the unified ResponsiveModal
+  (permission: 4-step DND grant guide + privacy note; status: elapsed +
+  what's blocked incl. honest "অ্যালার্মও বন্ধ থাকবে" warning + web
+  re-fullscreen; info: Android-full vs web-limited capability cards).
+- focus-dnd-store.ts: Zustand+persist (active/startedAt/fabZone), init()
+  syncs TRUTH from the OS on native (adopts externally-enabled DND),
+  re-arms wake lock on web reload, DND_ACCESS_REQUIRED error → permission
+  sheet, Bengali duration toasts ("ফোকাস শেষ — ২ মিনিট ১০ সেকেন্ড।
+  আলহামদুলিল্লাহ!").
+- NATIVE LAYER: @capacitor/core+cli+android v8.5.2; capacitor.config.ts with
+  appId bd.abhyas.app, server.url = CAP_SERVER_URL ?? https://
+  abhyas.ailearnersbd.com (live site = always-newest UI in the app);
+  capacitor-web/index.html = Bengali offline fallback page.
+- FocusModePlugin.java (capacitor-android is pure Java → plugin in Java for
+  zero build-config risk): isAccessGranted/requestAccess(opens
+  ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)/getStatus/enable(saves previous
+  filter → INTERRUPTION_FILTER_NONE total silence)/disable(restores previous
+  filter from SharedPreferences, survives app kill). Registered in
+  MainActivity; ACCESS_NOTIFICATION_POLICY permission in Manifest.
+- js bridge: src/lib/native/{capacitor,focus-plugin}.ts — SSR-safe platform
+  detection, registerPlugin with honest web impl (soft focus: fullscreen +
+  wake lock, reports which capabilities actually granted).
+- Branded native assets: scripts/generate-native-assets.mjs (sharp) →
+  launcher icons (square+round, 5 densities), adaptive foregrounds, gradient
+  background drawable, splash PNGs (11 variants, Bengali wordmark);
+  values/colors.xml brand palette; android/README.md (Bengali build guide +
+  DND flow + roadmap: UsageStatsManager app-time budgets, app blocking).
+- sw-register: skips SW registration inside the native shell.
+- PROD-SAFETY FIX: postinstall now env-aware (DATABASE_URL file: →
+  schema.dev.prisma SQLite, else schema.prisma PostgreSQL) because
+  `bun add` had silently regenerated a Postgres client in the sandbox and
+  500-crashed every API (Dockerfile still pins postgres via its explicit
+  `bunx prisma generate`); added db:generate:dev script.
+- VERIFIED (agent-browser, 390×844 + 1280×800): FAB on home/islamic/focus/
+  profile; tap → active + toast + ticking Bengali chip; chip → status sheet;
+  ফোকাস বন্ধ করুন → inactive + duration toast; contextmenu → info sheet;
+  long-press works (synthetic PointerEvent); drag 720px up → top-zone snap
+  + fabZone persisted, drag back → bottom; desktop 24px / mobile 84px live
+  repositioning on resize; reload keeps active session counting (re-arm);
+  ইবাদত মোড fully gone (islamic view, focus view, profile), original
+  Pomodoro + nav + আরও menu intact; tsc 0 errors, eslint clean, zero console
+  errors, hydration warning FIXED (layoutTick gate).
+
+Stage Summary:
+- Architecture is now hybrid as requested: one Next.js UI codebase deployed
+  on Coolify + an Android Capacitor shell (android/) that loads the live site
+  and gains real OS-level phone control — FocusMode DND plugin first,
+  usage-stats/app-blocking roadmap documented.
+- All new files ≤400 lines: floating-focus-button (316), focus-status-sheet
+  (358), focus-dnd-store (237), focus-plugin (126), capacitor (44),
+  web-platform (112), FocusModePlugin.java (211).
+- The floating button is the app's new signature control: silent, global,
+  honest about what each platform can do.
+- Pushing to GitHub main → Coolify webhook auto-redeploy.

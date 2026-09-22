@@ -21,9 +21,6 @@ export function useSettingsEffect() {
     sound,
     remindersEnabled,
     notificationsEnabled,
-    ibadahModeEnabled,
-    ibadahFullscreen,
-    ibadahWakeLock,
   } = useSettingsStore();
   const { setTheme } = useThemeManager();
 
@@ -65,9 +62,6 @@ export function useSettingsEffect() {
           sound,
           remindersEnabled,
           notificationsEnabled,
-          ibadahModeEnabled,
-          ibadahFullscreen,
-          ibadahWakeLock,
         })
         .catch(() => {});
     }, 600);
@@ -80,9 +74,6 @@ export function useSettingsEffect() {
     sound,
     remindersEnabled,
     notificationsEnabled,
-    ibadahModeEnabled,
-    ibadahFullscreen,
-    ibadahWakeLock,
   ]);
 }
 

@@ -1,20 +1,13 @@
 "use client";
 
 /**
- * ইবাদত মোড — platform capability layer.
+ * Web platform capability primitives (fullscreen, wake lock, haptics).
  *
- * The web platform's strongest "take over the phone" primitives, used to give
- * users a distraction-free ইবাদত (Quran/Zikr) session:
+ * Extracted from the old ইবাদত মোড layer so every feature — the Focus
+ * Pomodoro timer, the global floating Focus button's web fallback — shares
+ * ONE hardened implementation instead of per-feature copies.
  *
- *  1. Fullscreen API        — hides browser UI; the app owns the whole screen.
- *  2. Screen Wake Lock API  — the screen never sleeps mid-ইবাদত.
- *  3. Vibration API         — haptic feedback on each তাসবিহ tap.
- *  4. Notification pause    — our own push notifications are suppressed
- *                             server-side while the session is active.
- *
- * (Blocking OTHER apps' notifications — WhatsApp/Messenger — is an OS-level
- * permission only native apps can request; the UI teaches users to enable
- * the device's Do-Not-Disturb instead, which is the honest platform limit.)
+ * All calls degrade gracefully: unsupported browsers get `false` / no-ops.
  */
 
 // ---------------------------------------------------------------------------
@@ -22,6 +15,8 @@
 // ---------------------------------------------------------------------------
 
 let wakeLock: WakeLockSentinel | null = null;
+/** True while some feature wants the screen kept awake (survives tab-hidden). */
+let wakeLockWanted = false;
 
 /** Whether this browser exposes the Screen Wake Lock API. */
 export function wakeLockSupported(): boolean {
@@ -30,6 +25,7 @@ export function wakeLockSupported(): boolean {
 
 /** Request a screen wake lock. Safe to call repeatedly (no-ops if held). */
 export async function acquireWakeLock(): Promise<boolean> {
+  wakeLockWanted = true;
   if (!wakeLockSupported()) return false;
   try {
     if (!wakeLock || wakeLock.released) {
@@ -47,6 +43,7 @@ export async function acquireWakeLock(): Promise<boolean> {
 
 /** Release the screen wake lock (no-op when not held). */
 export function releaseWakeLock(): void {
+  wakeLockWanted = false;
   try {
     wakeLock?.release();
   } catch {
@@ -55,18 +52,37 @@ export function releaseWakeLock(): void {
   wakeLock = null;
 }
 
+/**
+ * Re-acquire the wake lock after the tab becomes visible again — the browser
+ * silently releases wake locks whenever the document is hidden.
+ */
+export async function reacquireWakeLockIfVisible(): Promise<void> {
+  if (
+    wakeLockWanted &&
+    wakeLockSupported() &&
+    typeof document !== "undefined" &&
+    document.visibilityState === "visible"
+  ) {
+    await acquireWakeLock();
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Fullscreen
 // ---------------------------------------------------------------------------
 
 /** Whether the document can enter fullscreen (user gesture required). */
 export function fullscreenSupported(): boolean {
-  return typeof document !== "undefined" && !!document.documentElement.requestFullscreen;
+  return (
+    typeof document !== "undefined" &&
+    !!document.documentElement.requestFullscreen
+  );
 }
 
 /** Enter fullscreen on the whole document. */
 export async function enterFullscreen(): Promise<boolean> {
-  if (!fullscreenSupported() || document.fullscreenElement) return !!document.fullscreenElement;
+  if (!fullscreenSupported() || document.fullscreenElement)
+    return !!document.fullscreenElement;
   try {
     await document.documentElement.requestFullscreen({ navigationUI: "hide" });
     return true;

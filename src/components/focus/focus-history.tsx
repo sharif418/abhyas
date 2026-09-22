@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Brain, Coffee, Moon, Check } from "lucide-react";
+import { Brain, Coffee, Check } from "lucide-react";
 import { toBn, fromDateKey, bnDayFirst } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
 import { FocusDailyChart } from "@/components/focus/focus-daily-chart";
@@ -15,7 +15,7 @@ export interface FocusSession {
   habitId?: string | null;
   date: string; // YYYY-MM-DD
   durationMin: number;
-  /** "work" | "break" | "ibadah" (ibadah sessions are logged by ইবাদত মোড) */
+  /** "work" | "break" */
   type: string;
   tag?: string | null;
 }
@@ -39,22 +39,17 @@ interface HabitLite {
 /* ------------------------------------------------------------------ */
 
 function sessionMeta(type: string): { label: string; iconChip: string } {
-  switch (type) {
-    case "work":
-      return { label: "কাজ", iconChip: "bg-primary/15 text-primary" };
-    case "ibadah":
-      return { label: "ইবাদত", iconChip: "bg-islamic/15 text-islamic" };
-    default:
-      return {
-        label: "বিশ্রাম",
-        iconChip: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-      };
+  if (type === "work") {
+    return { label: "কাজ", iconChip: "bg-primary/15 text-primary" };
   }
+  return {
+    label: "বিশ্রাম",
+    iconChip: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  };
 }
 
 function SessionTypeIcon({ type }: { type: string }) {
   if (type === "work") return <Brain size={14} />;
-  if (type === "ibadah") return <Moon size={14} />;
   return <Coffee size={14} />;
 }
 

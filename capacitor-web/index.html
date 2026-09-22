@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>অভ্যাস — ইন্টারনেট সংযোগ নেই</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Noto Sans Bengali", "Hind Siliguri", system-ui, -apple-system, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: #f6faf8;
+      color: #0f2e24;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0b1512; color: #e7f4ef; }
+      .card { background: #12211c; border-color: #1e3a30; }
+      .mark { background: #0d9488; }
+      .retry { background: #059669; }
+    }
+    .card {
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      background: #ffffff;
+      border: 1px solid #d7e8e1;
+      border-radius: 28px;
+      padding: 40px 28px 32px;
+    }
+    .mark {
+      width: 72px; height: 72px;
+      margin: 0 auto 20px;
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      color: #ffffff;
+    }
+    .mark svg { width: 40px; height: 40px; }
+    h1 { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
+    p { font-size: 14px; line-height: 1.7; opacity: 0.75; margin-bottom: 8px; }
+    .retry {
+      margin-top: 24px;
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 15px 20px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .retry:active { transform: scale(0.98); }
+    .hint { font-size: 12px; opacity: 0.55; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3a9 9 0 1 0 9 9" />
+        <path d="M12 7v5l3 3" />
+      </svg>
+    </div>
+    <h1>ইন্টারনেট সংযোগ নেই</h1>
+    <p>অভ্যাস চালু করতে ইন্টারনেট সংযোগ দরকার।</p>
+    <p>ওয়াই-ফাই বা মোবাইল ডেটা চালু করে আবার চেষ্টা করুন।</p>
+    <button class="retry" type="button" onclick="location.reload()">আবার চেষ্টা করুন</button>
+    <p class="hint">আপনার সব ডেটা নিরাপদ — সংযোগ ফিরলেই অ্যাপ আগের মতো চলবে।</p>
+  </main>
+</body>
+</html>

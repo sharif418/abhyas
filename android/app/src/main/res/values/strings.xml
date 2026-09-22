@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">অভ্যাস</string>
+    <string name="title_activity_main">অভ্যাস</string>
+    <string name="package_name">bd.abhyas.app</string>
+    <string name="custom_url_scheme">bd.abhyas.app</string>
+</resources>
