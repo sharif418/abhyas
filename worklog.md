@@ -3979,3 +3979,28 @@ Stage Summary:
   future-date rows isolated per date, planStreak=1 after today's completions.
 - All new files ≤400 lines: planner-view 338, today-plan-card ~215,
   planner-shared ~260, planner-day-context ~150, daily-content 321.
+
+---
+Task ID: P1-verify (production deploy watch)
+Agent: Z.ai Code (Principal Architect)
+
+Task: Verify Coolify auto-redeploy of 1722242 (+740f1da empty re-trigger).
+
+Work Log:
+- Verified the exact production build path in an isolated copy at /tmp/prodcheck:
+  postgres-schema `bunx prisma generate` + `bunx tsc --noEmit` → ZERO errors
+  (Docker build cannot fail on types; ignoreBuildErrors=false is satisfied).
+- Production remained on the pre-planner build for 50+ min (uptime counter
+  continuous, /api/planner 404, /api/goals 500) after both pushes, while the
+  earlier cron-agent push deployed in ~6 min → webhook/build pipeline for
+  these pushes did not produce a new container. No COOLIFY_TOKEN in this
+  sandbox to force a redeploy via API.
+
+Stage Summary:
+- Code fully pushed: 1722242 (feature) + 740f1da (webhook re-trigger).
+- Migrations ready: 20260923090000_add_goal (repairs prod goals 500) +
+  20260923091000_add_planner_task. Entrypoint runs `migrate deploy` on boot.
+- ACTION FOR USER (if deploy still hasn't flipped when reading this): open
+  Coolify → অভ্যাস application → Deployments → "Redeploy" (or check the
+  GitHub webhook deliveries / Coolify webhook URL). Everything on the repo
+  side is verified green.
