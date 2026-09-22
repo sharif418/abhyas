@@ -3827,3 +3827,41 @@ Stage Summary:
 - Next actions: web agent wires the নিয়ন্ত্রণ UI to these bridges; on a real
   machine run `cd android && ./gradlew assembleDebug` and smoke-test the VPN
   consent flow + a family-mode lookup, plus a budget-crossed alert.
+
+---
+Task ID: 3-b + 4 (Control Center web UI + roadmap + verification)
+Agent: Z.ai Code (Principal Architect)
+
+Task: Web side of the নিয়ন্ত্রণ কেন্দ্র (Control Center) + product roadmap +
+end-to-end browser verification + final push.
+
+Work Log:
+- src/lib/native/{usage-plugin,content-plugin}.ts — TS bridge contracts
+  (written BEFORE the Java subagent ran, so both halves match exactly).
+  getRules() added to both contract + Java plugin (rules editor needs a read).
+- src/hooks/use-guard.ts — useUsageGuard + useContentGuard (visibility-aware
+  refresh, permission gating, Bengali toasts, error-code mapping).
+- src/components/guard/guard-shared.tsx — GuardSection, honest WebFallback
+  (install CTA), formatMinutesBn, UsageBar.
+- guard-view.tsx — header + privacy note + FocusQuickCard (shares FAB store).
+- app-limits-section.tsx — permission gate → enforcement master switch →
+  usage list (icon/label/bar/over-limit) → all-apps picker sheet with search →
+  limit editor sheet (presets + remove).
+- content-guard-section.tsx — master switch + one-tap বন্ধ করুন (hard
+  requirement: can be turned OFF), 4 mode cards (family/security/ads/custom),
+  live blocked/total counters, custom block/allow rules editor (ResponsiveModal,
+  drafts loaded via getRules), privacy footer.
+- Profile অ্যাপ section: নিয়ন্ত্রণ কেন্দ্র link row added.
+- ROADMAP.md — full product plan (4 phases, web-vs-native feature matrix,
+  Play Store checklist, privacy principles).
+- Hydration fix: ui-store initialView is always "home"; deep-link hash is
+  adopted post-mount in bindHistoryNavigation() (verification agent found
+  SSR≠client mismatch on #/goals deep links).
+
+Stage Summary:
+- Browser E2E (Playwright/Chromium): 8/8 PASS — Home hero/quick actions/goals
+  card, Goals milestone stepper + quick progress (12→13 persisted), Guard web
+  fallbacks, Profile অ্যাপ section, APIs, mobile 390×844, sticky layout.
+  0 console errors. Screenshots in /home/z/shots/.
+- Dev-server ops note: restarts must use the double-fork orphan pattern
+  `( ( bun run dev … & ) ; )` or the harness reaps them between tool calls.

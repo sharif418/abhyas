@@ -57,8 +57,15 @@ function pushViewToHistory(view: ViewKey) {
   window.history.pushState({ view }, "", `#/${view}`);
 }
 
-const initialView: ViewKey =
-  typeof window !== "undefined" ? (viewFromHash(window.location.hash) ?? "home") : "home";
+/**
+ * Initial view is ALWAYS "home" — even when the URL carries a deep link
+ * (#/islamic …). Reading location.hash at module scope would make the first
+ * CLIENT render differ from the SSR HTML (server can never see the hash) and
+ * trigger a React hydration mismatch. Instead, `bindHistoryNavigation()`
+ * adopts the deep-linked view right after mount (one frame of home, then a
+ * seamless switch — the standard SPA deep-link pattern).
+ */
+const initialView: ViewKey = "home";
 
 export const useUIStore = create<UIState>((set) => ({
   view: initialView,
@@ -91,12 +98,17 @@ export const useUIStore = create<UIState>((set) => ({
 export function bindHistoryNavigation() {
   if (typeof window === "undefined") return () => {};
 
-  // Normalize the initial entry so it carries the starting view.
-  window.history.replaceState(
-    { view: useUIStore.getState().view },
-    "",
-    `#/${useUIStore.getState().view}`
-  );
+  // Deep link (#/islamic from a notification/share): adopt it post-mount —
+  // hydration-safe because the first client render matched the server (home).
+  const hashView = viewFromHash(window.location.hash);
+  const current = useUIStore.getState().view;
+  if (hashView && hashView !== current) {
+    useUIStore.setState({ view: hashView });
+  }
+  const effective = useUIStore.getState().view;
+
+  // Normalize the initial entry so it carries the effective view.
+  window.history.replaceState({ view: effective }, "", `#/${effective}`);
 
   const onPopState = (e: PopStateEvent) => {
     const next =
