@@ -23,13 +23,24 @@ for p in \
 done
 
 # ---------------------------------------------------------------------------
-# Run Prisma migrations in the background (non-blocking).
+# Run the self-healing migration system in the background (non-blocking).
+#
+#   1. scripts/migrate-selfheal.mjs — converges the actual PostgreSQL schema
+#      to prisma/migrations (idempotent, object-existence guarded) AND repairs
+#      the _prisma_migrations bookkeeping table. Fixes "drifted" DBs where
+#      plain migrate deploy aborts and new migrations never apply.
+#   2. prisma migrate deploy — now a green no-op, but kept as a second layer
+#      of defense for freshly provisioned databases.
+#
 # The /api/health endpoint reports DB status once the server is up.
 # ---------------------------------------------------------------------------
 (
-  log "Background: running database migrations..."
+  log "Background: running self-healing migration system..."
+  node scripts/migrate-selfheal.mjs 2>&1 | while read line; do log "$line"; done
+  log "Background: selfheal finished."
+
+  log "Background: running prisma migrate deploy (verification layer)..."
   if [ -n "$PRISMA_CLI" ]; then
-    log "Background: using prisma at $PRISMA_CLI"
     node "$PRISMA_CLI" migrate deploy 2>&1 | while read line; do log "migration: $line"; done
     log "Background: migrations finished."
   else

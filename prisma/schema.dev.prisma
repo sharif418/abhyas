@@ -1,0 +1,248 @@
+// অভ্যাস (Abhyas) — Local development schema (SQLite).
+// Mirrors prisma/schema.prisma (PostgreSQL) with provider-specific type swaps:
+//   Json     → String (JSON-encoded — see src/lib/db-compat.ts)
+//   Int[]    → String (JSON-encoded integer array)
+//   Postgres extensions removed.
+//
+// `bun run dev` uses this via .env DATABASE_URL=file:.../db/custom.db
+// (postinstall picks the schema by inspecting the URL).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String   @default("অতিথি")
+  phone        String?  @unique
+  email        String?  @unique
+  passwordHash String?
+  avatar       String?
+  xp           Int      @default(0)
+  level        Int      @default(1)
+  city         String   @default("ঢাকা")
+  settings     String   @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  habits           Habit[]
+  completions      HabitCompletion[]
+  prayers          PrayerRecord[]
+  quran            QuranSession[]
+  achievements     Achievement[]
+  moods            MoodEntry[]
+  focusSessions    FocusSession[]
+  goals            Goal[]
+  plannerTasks     PlannerTask[]
+  pushSubscriptions PushSubscription[]
+
+  @@index([email])
+}
+
+model Habit {
+  id             String   @id @default(cuid())
+  userId         String
+  name           String
+  nameEn         String?
+  icon           String   @default("CheckCircle")
+  category       String   @default("জীবনধারা")
+  color          String   @default("#059669")
+  target         String   @default("প্রতিদিন")
+  frequency      String   @default("প্রতিদিন")
+  frequencyDays  String   @default("[]")
+  timesPerWeek   Int      @default(0)
+  timeOfDay      String   @default("সকাল")
+  reminderTime   String?
+  note           String?
+  streak         Int      @default(0)
+  bestStreak     Int      @default(0)
+  totalDone      Int      @default(0)
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  isIslamic      Boolean  @default(false)
+  frozenDate     String?
+  freezeUsedWeek String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions HabitCompletion[]
+
+  @@index([userId, active])
+  @@index([userId, timeOfDay])
+  @@index([userId, streak])
+}
+
+model HabitCompletion {
+  id          String   @id @default(cuid())
+  habitId     String
+  userId      String
+  date        String // YYYY-MM-DD (Asia/Dhaka)
+  completedAt DateTime @default(now())
+  note        String?
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+  @@index([habitId, date])
+}
+
+model PrayerRecord {
+  id          String  @id @default(cuid())
+  userId      String
+  date        String // YYYY-MM-DD
+  fajr        Boolean @default(false)
+  dhuhr       Boolean @default(false)
+  asr         Boolean @default(false)
+  maghrib     Boolean @default(false)
+  isha        Boolean @default(false)
+  sunnahFajr  Boolean @default(false)
+  sunnahOther Boolean @default(false)
+  tahajjud    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model QuranSession {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD
+  surah     Int
+  fromAyah  Int
+  toAyah    Int
+  pagesRead Int      @default(0)
+  juz       Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model Achievement {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+// Cache for Aladhan prayer-time API responses.
+model PrayerTimeCache {
+  id        String   @id @default(cuid())
+  date      String // YYYY-MM-DD
+  city      String
+  lat       Float
+  lng       Float
+  method    Int      @default(3)
+  times     String // JSON-encoded prayer times
+  fetchedAt DateTime @default(now())
+
+  @@unique([date, lat, lng, method])
+  @@index([date])
+}
+
+model MoodEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD
+  mood      Int // 1..5
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model FocusSession {
+  id          String   @id @default(cuid())
+  userId      String
+  habitId     String?
+  date        String // YYYY-MM-DD
+  durationMin Int
+  type        String   @default("work")
+  tag         String?
+  completed   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, type, date])
+}
+
+// লক্ষ্য (Target/Goal) — measurable targets with milestones & deadlines.
+model Goal {
+  id           String    @id @default(cuid())
+  userId       String
+  title        String
+  category     String    @default("ব্যক্তিগত")
+  icon         String    @default("Target")
+  color        String    @default("#059669")
+  unit         String    @default("ধাপ")
+  targetValue  Float     @default(100)
+  currentValue Float     @default(0)
+  deadline     DateTime?
+  milestones   String    @default("[]") // JSON: [{ title, value, done }]
+  note         String?
+  active       Boolean   @default(true)
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@index([userId, category])
+}
+
+// দৈনিক পরিকল্পনা (Daily Planner) — MITs + todos per Asia/Dhaka day.
+model PlannerTask {
+  id        String    @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD (Asia/Dhaka)
+  title     String
+  isMit     Boolean   @default(false)
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+// Web Push subscriptions for sending push notifications to users' devices.
+model PushSubscription {
+  id              String   @id @default(cuid())
+  userId          String
+  endpoint        String   @unique
+  p256dh          String
+  auth            String
+  expirationTime  Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

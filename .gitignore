@@ -62,7 +62,6 @@ server.log
 /skills/tool-results/
 tool-results/
 skills/
-schema.dev.prisma
 qa-*.png
 db/
 01-*.png

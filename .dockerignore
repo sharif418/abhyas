@@ -49,3 +49,6 @@ mini-services/
 examples/
 .zscripts/
 upload/
+
+# Sandbox skill templates (platform-injected, not project code)
+skills/
