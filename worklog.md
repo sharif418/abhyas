@@ -4302,3 +4302,23 @@ Stage Summary:
   a prayer notification's action buttons + reboot survival).
 - Next: Coolify scheduler dockerfile must COPY prayer.ts (deploy step of
   this task) + main app redeploy via push.
+
+---
+Task ID: P2-deploy (production rollout + verification)
+Agent: Z.ai Code (Principal Architect)
+
+Work Log:
+- Pushed ff02c87 to GitHub; triggered BOTH deploys via Coolify API.
+- Scheduler dockerfile discovery: the deployed abhyas-push-scheduler
+  (okuxyzj6lpx13tdovv6duu4n) CLONES the whole public repo — prayer.ts
+  arrived automatically (no COPY list to patch). Deployment kn6qhr3rg… →
+  finished.
+- Main app deploy kfnqgfdva… → finished (fresh container, uptime reset).
+- PROD VERIFIED: /api/health healthy (db ok, schemaDrift ok, migrations 6);
+  settings POST round-trip with the 4 new fields → 200 {"ok":true} and
+  persisted (offset 10 read back, then restored to 0); homepage 200.
+
+Stage Summary:
+- Native alarm engine LIVE in production on both services (main app +
+  push-scheduler). Android APK build (gradle) remains a machine-with-SDK
+  step, per ROADMAP.
