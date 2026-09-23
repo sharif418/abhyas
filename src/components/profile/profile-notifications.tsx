@@ -144,7 +144,7 @@ function PushNotificationsRow() {
   const handleTest = async () => {
     setSendingTest(true);
     try {
-      const data = await api.post<{ sent?: boolean }>("/api/push/test");
+      const data = await api.post<{ sent?: boolean }>("/api/push/send-test");
       if (data.sent) {
         toast.success("পরীক্ষামূলক পুশ পাঠানো হয়েছে");
       } else {
