@@ -277,13 +277,94 @@ public final class AlarmScheduler {
     }
 
     // =========================================================================
+    // Bedtime alarms — রাতের বিশ্রাম (wind-down + morning report)
+    // =========================================================================
+
+    /** Horizon for bedtime alarms (re-extended on every fire + boot). */
+    private static final int BEDTIME_HORIZON_DAYS = 3;
+
+    /**
+     * (Re)schedules the bedtime horizon: every day gets a "bedtime-on"
+     * alarm at cfg.startMin and a "bedtime-off" alarm at cfg.endMin (the
+     * next morning when end ≤ start). Deterministic ids + future-only, so
+     * regeneration replaces cleanly. The receiver re-extends the horizon on
+     * every fire — the bedtime engine keeps running offline forever.
+     *
+     * @return number of alarms actually scheduled (future only).
+     */
+    public static int scheduleBedtimeAlarms(Context ctx, AlarmStore.BedtimeConfig cfg) {
+        if (cfg == null || !cfg.enabled) return 0;
+
+        int scheduled = 0;
+        Calendar day = Calendar.getInstance();
+        for (int offset = 0; offset < BEDTIME_HORIZON_DAYS; offset++) {
+            Calendar d = (Calendar) day.clone();
+            d.add(Calendar.DAY_OF_YEAR, offset);
+            int y = d.get(Calendar.YEAR);
+            int m = d.get(Calendar.MONTH) + 1;
+            int dd = d.get(Calendar.DAY_OF_MONTH);
+            String dateKey = String.format(java.util.Locale.US, "%04d-%02d-%02d", y, m, dd);
+
+            long on = epochFor(y, m, dd, cfg.startMin);
+            if (on > System.currentTimeMillis()) {
+                AlarmStore.Spec s = new AlarmStore.Spec();
+                s.id = "bedtime-on-" + dateKey;
+                s.kind = "bedtime-on";
+                s.at = on;
+                s.channel = "bedtime";
+                s.title = "রাত হলো — ঘুমানোর সময়";
+                String endBn = hhmmBn(cfg.endMin);
+                s.body = cfg.dnd
+                        ? "ফোনটা রেখে দিন — " + endBn + " পর্যন্ত ফোন শান্ত থাকবে। ভালো ঘুম হোক।"
+                        : "কাল সকালে আবার দেখা হবে — ভালো ঘুম হোক।";
+                setAlarm(ctx, on, alarmPendingIntent(ctx, s));
+                scheduled++;
+            }
+
+            // The quiet window ENDS at endMin — on the next morning when the
+            // end time is at/before the start time (a 23:00→06:00 window).
+            Calendar od = (Calendar) d.clone();
+            if (cfg.endMin <= cfg.startMin) od.add(Calendar.DAY_OF_YEAR, 1);
+            long off = epochFor(od.get(Calendar.YEAR), od.get(Calendar.MONTH) + 1,
+                    od.get(Calendar.DAY_OF_MONTH), cfg.endMin);
+            if (off > System.currentTimeMillis()) {
+                AlarmStore.Spec s = new AlarmStore.Spec();
+                // Keyed by the ON day so a regenerated window replaces itself.
+                s.id = "bedtime-off-" + dateKey;
+                s.kind = "bedtime-off";
+                s.at = off;
+                s.channel = "bedtime";
+                s.title = "সুপ্রভাত";
+                s.body = "শান্ত রাত শেষ — সকালের অভ্যাসগুলো শুরু করুন।";
+                setAlarm(ctx, off, alarmPendingIntent(ctx, s));
+                scheduled++;
+            }
+        }
+        return scheduled;
+    }
+
+    /** Cancels every bedtime alarm in the horizon + one (disabled bedtime). */
+    public static void cancelBedtimeAlarms(Context ctx) {
+        Calendar day = Calendar.getInstance();
+        for (int offset = 0; offset < BEDTIME_HORIZON_DAYS + 2; offset++) {
+            Calendar d = (Calendar) day.clone();
+            d.add(Calendar.DAY_OF_YEAR, offset);
+            String dateKey = String.format(java.util.Locale.US, "%04d-%02d-%02d",
+                    d.get(Calendar.YEAR), d.get(Calendar.MONTH) + 1, d.get(Calendar.DAY_OF_MONTH));
+            cancel(ctx, "bedtime-on-" + dateKey);
+            cancel(ctx, "bedtime-off-" + dateKey);
+        }
+    }
+
+    // =========================================================================
     // Full reschedule — boot / package-replaced / clock-changed path
     // =========================================================================
 
     /**
      * Rebuilds every alarm from the persisted store — 100% offline:
      *   • habit specs whose time is still in the future,
-     *   • the full prayer horizon from PrayerTimesCalc (+ embedded today).
+     *   • the full prayer horizon from PrayerTimesCalc (+ embedded today),
+     *   • the bedtime horizon (wind-down + morning report).
      */
     public static void rescheduleAll(Context ctx) {
         List<AlarmStore.Spec> plan = AlarmStore.loadHabitPlan(ctx);
@@ -293,6 +374,10 @@ public final class AlarmScheduler {
         AlarmStore.PrayerConfig cfg = AlarmStore.loadPrayerConfig(ctx);
         if (cfg != null) {
             schedulePrayerAlarms(ctx, cfg);
+        }
+        AlarmStore.BedtimeConfig bedtime = AlarmStore.loadBedtimeConfig(ctx);
+        if (bedtime != null && bedtime.enabled) {
+            scheduleBedtimeAlarms(ctx, bedtime);
         }
     }
 
@@ -331,6 +416,14 @@ public final class AlarmScheduler {
             }
         }
         return out.toString();
+    }
+
+    /** Minutes-of-day (0..1439) → Bengali "HH:MM". Public: shared by the
+     *  bedtime receiver's dynamic morning copy. */
+    public static String hhmmBn(int minutesOfDay) {
+        int m = Math.max(0, Math.min(24 * 60 - 1, minutesOfDay));
+        return bnTime(String.format(java.util.Locale.US, "%02d:%02d",
+                Math.floorDiv(m, 60), m % 60));
     }
 
     /** int → Bengali digits. */

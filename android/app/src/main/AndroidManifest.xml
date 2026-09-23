@@ -133,6 +133,14 @@
          ever synced or uploaded. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
+    <!-- App Interceptor (block screen): draw the calm "অভ্যাসে ফিরে আসুন"
+         overlay OVER an app whose daily budget is already crossed — the
+         industry-standard app-blocker pattern. Granted by the user once from
+         Settings → Apps → Special app access → Display over other apps;
+         never silently. Without it the interceptor honestly degrades to the
+         once-per-day watchdog notification. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <!-- Watchdog + filter notifications (runtime permission on API 33+).
          When denied, both services degrade silently but keep enforcing. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

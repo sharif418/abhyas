@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, Search, ShieldAlert, TimerOff } from "lucide-react";
+import { Clock, Search, ShieldAlert, ShieldCheck, TimerOff } from "lucide-react";
 import { toBn } from "@/lib/date-bn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,9 @@ export function AppLimitsSection() {
         />
       </div>
 
+      {/* Block screen (interception) */}
+      <InterceptionCard guard={guard} />
+
       {/* Summary strip */}
       <div className="flex items-center gap-2 px-4 py-2.5 text-[11px] text-muted-foreground">
         <span>{toBn(guard.apps.length)}টি অ্যাপ আজ চালু হয়েছে</span>
@@ -162,6 +165,66 @@ export function AppLimitsSection() {
 }
 
 // ── Rows & sheets ───────────────────────────────────────────────────────────
+
+/** The block-screen (interception) sub-card — toggle + overlay permission. */
+function InterceptionCard({
+  guard,
+}: {
+  guard: ReturnType<typeof useUsageGuard>;
+}) {
+  const it = guard.interception;
+
+  return (
+    <div className="border-b">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            থামানোর স্ক্রিন
+            {it.enabled && it.blockedToday > 0 && (
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                আজ {toBn(it.blockedToday)}বার
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            সময় শেষ হওয়া অ্যাপ খুললেই উৎসাহমূলক স্ক্রিন — “৫ মিনিট বিরতি” নিতে পারবেন
+          </div>
+        </div>
+        <Switch
+          checked={it.enabled}
+          onCheckedChange={(v) => void guard.setInterception(v)}
+          aria-label="থামানোর স্ক্রিন চালু/বন্ধ"
+        />
+      </div>
+
+      {it.enabled && !it.overlayGranted && (
+        <div className="mx-4 mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="size-4 shrink-0 text-amber-600" aria-hidden />
+            <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
+              স্ক্রিনটি অন্য অ্যাপের উপরে দেখাতে একবার “অন্য অ্যাপের উপরে প্রদর্শন” অনুমতি
+              দিতে হবে। না দিলে শুধু নোটিফিকেশন আসবে।
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="mt-2 w-full font-bold"
+            onClick={() => void guard.requestOverlayPermission()}
+          >
+            অনুমতি দিন
+          </Button>
+        </div>
+      )}
+
+      {it.enabled && it.overlayGranted && (
+        <div className="mx-4 mb-3 flex items-center gap-1.5 rounded-xl bg-primary/5 px-3 py-2 text-[11px] font-medium text-primary">
+          <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+          ওভারলে অনুমতি আছে — অ্যাপ খুললে স্ক্রিন সঙ্গে সঙ্গেই আসবে
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AppIcon({ app }: { app: AppUsage | AppInfo }) {
   const icon = "icon" in app ? app.icon : undefined;
@@ -371,8 +434,8 @@ function LimitEditorSheet({
         </Button>
       )}
       <p className="mt-3 rounded-lg bg-muted/60 p-2.5 text-[11px] leading-relaxed text-muted-foreground">
-        সময় পার হলে নোটিফিকেশন আসবে — অ্যাপ তালাবদ্ধ হবে না। আপনিই শাসক, অ্যাপ শুধু মনে
-        করিয়ে দেয়।
+        সময় পার হলে নোটিফিকেশন আসবে; “থামানোর স্ক্রিন” চালু থাকলে অ্যাপ খুললেই উৎসাহমূলক
+        স্ক্রিন দেখা যাবে। সিদ্ধান্ত সবসময় আপনার — অ্যাপ শুধু মনে করিয়ে দেয়।
       </p>
     </ResponsiveModal>
   );

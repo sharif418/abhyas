@@ -6,6 +6,7 @@ import { api } from "@/lib/api-client";
 import { useHabits } from "@/hooks/use-habits";
 import { toBn } from "@/lib/date-bn";
 import { FocusTimer } from "@/components/focus/focus-timer";
+import { ScreenPinToggle } from "@/components/focus/focus-settings";
 import { FocusHistory, type FocusData } from "@/components/focus/focus-history";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,9 @@ export function FocusView() {
 
       {/* Timer engine + work/break config + session config */}
       <FocusTimer habits={habits} />
+
+      {/* ডিস্ট্রাকশন-ফ্রি ইবাদত: screen pin during focus (Android only) */}
+      <ScreenPinToggle />
 
       {/* Today stats */}
       {isLoading ? (

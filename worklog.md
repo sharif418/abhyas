@@ -4322,3 +4322,112 @@ Stage Summary:
 - Native alarm engine LIVE in production on both services (main app +
   push-scheduler). Android APK build (gradle) remains a machine-with-SDK
   step, per ROADMAP.
+---
+Task ID: P3 (Phase 2 completion — ফোন-নিয়ন্ত্রণ ডিপেন)
+Agent: Z.ai Code (Principal Architect)
+Task: Continue the roadmap with the remaining Android/app features in the
+best industry-expert approach. Pulled origin/main first (sandbox trust
+reset — in sync). Delivered the four remaining Phase-2 features, closing
+the "phone-control" promise of the roadmap.
+
+Work Log:
+- Pulled origin/main (already at 3c46e9e); studied the full Phase-2 surface:
+  UsageGuard plugin/service, DndControl, AlarmScheduler/Store/Receiver,
+  FocusModePlugin, guard web components, focus store/settings.
+- ARCHITECTURE (industry app-blocker pattern, e.g. Opal/AppBlock):
+  interception via TYPE_APPLICATION_OVERLAY (SYSTEM_ALERT_WINDOW special
+  access, user-granted once) — a full-screen Activity is NOT possible from
+  a background service since Android 10, the overlay IS the standard.
+  Trust model: visible exit always, 90s auto-dismiss, cooldowns per
+  app/day, "৫ মিনিট বিরতি" kitty-break — a nudge with an open door,
+  never a lock.
+- JAVA (2 new files, 7 extended, all ≤400 lines each):
+  AppInterceptor.java — the overlay engine: current-foreground detection
+  (same UsageEvents pairing as the scoreboard so they can never disagree),
+  dark card + emerald accent + Bengali copy, buttons [অভ্যাসে ফিরে আসুন]
+  (PendingIntent.send — always allowed) / [৫ মিনিট বিরতি] (5-min cooldown),
+  scrim-tap 60s grace, 90s auto-dismiss, per-day blocked-count stat,
+  stale-key purge. Programmatic views (no XML resources), sp/dp aware.
+  SleepEstimate.java — honest device-local sleep estimate: longest
+  ≥45-min usage gap in yesterday-18:00→now window; open-gap counts to
+  "now" (honest "at least"); guards: no markers → null, gap must start
+  after first marker; per-day history (night_YYYY-MM-DD) + 8-day purge.
+  UsageGuardService — second fast loop (4s) running AppInterceptor
+  .maybeIntercept ONLY while interception armed (one prefs read otherwise);
+  re-reads the pref every tick so the web toggle is live without restart.
+  UsageGuardPlugin — setInterception (implies the watchdog service),
+  getInterceptionStatus (enabled/overlayGranted/serviceRunning/blockedToday),
+  requestOverlayPermission (ACTION_MANAGE_OVERLAY_PERMISSION + package Uri),
+  getUsageRange(days ≤14) (one events walk, day-end attribution, label
+  cache, per-day sorted apps), getSleepEstimate (record-if-new + history).
+  AlarmStore — BedtimeConfig (enabled/startMin/endMin/dnd, clamped) +
+  save/load; AlarmScheduler — scheduleBedtimeAlarms (3-day horizon,
+  deterministic ids bedtime-on/off-DATE, next-day endMin when end ≤ start,
+  Bengali hhmm copy) + cancelBedtimeAlarms + rescheduleAll now covers
+  bedtime (boot-safe) + public hhmmBn; AlarmReceiver — bedtime-on (notify
+  + DndControl.enable, restored by the morning alarm) & bedtime-off
+  (DND restore + SleepEstimate.recordIfNew + honest morning notification
+  "রাতে X ঘণ্টা ফোন স্পর্শ করেননি") + CHANNEL_BEDTIME + horizon
+  self-extension on every fire; NativeAlarmPlugin — saveBedtimeConfig /
+  getBedtimeConfig (+ cancelAll now clears bedtime).
+  FocusModePlugin — isScreenPinSupported / startScreenPin / stopScreenPin
+  (Activity.startLockTask on the UI thread; self-pinning needs NO
+  permission; honest idempotent unpins).
+  Manifest — SYSTEM_ALERT_WINDOW with full justification comment
+  (Play-recognized app-blocker category).
+- WEB (2 new components, 1 new hook, 7 extended):
+  usage-plugin.ts — full contract mirror + honest web no-ops;
+  alarm-plugin.ts — BedtimeConfig contract; focus-plugin.ts — screen-pin
+  contract (web honest "unsupported"). use-guard.ts — interception state
+  + setInterception/requestOverlayPermission with Bengali toasts;
+  use-screen-time.ts — useScreenTime (14-day range + sleep + blockedToday,
+  all setState behind awaits; initial load via setTimeout — the lint-clean
+  codebase pattern) + useBedtime (config load/save via the alarm plugin).
+  app-limits-section.tsx — new "থামানোর স্ক্রিন" sub-card (toggle +
+  amber overlay-permission prompt + granted-chip + আজ Xবার badge); the
+  honest note updated to reflect the optional interception.
+  screen-time-section.tsx (NEW) — আজ মোট hero + day-over-day delta chip,
+  WoW celebration ("এই সপ্তাহে X কম স্ক্রিনে ছিলেন 🎉") / honest
+  increase-copy, 7-day bars (Bengali weekday labels, today highlighted),
+  সেরা ৫ অ্যাপ bars, সীমার-ভেতরে-ছিলেন per-budget health, আজ-কতবার-
+  থামানো celebration strip. sleep-section.tsx (NEW) — গতকাল রাতে
+  (window times + honest "অনুমান" label), 7-night trend bars, bedtime
+  configurator (master toggle, time selects, DND switch, dirty-save),
+  honest footer. guard-view.tsx — owns ONE useScreenTime (no double
+  fetch), mounts both sections, copy updated.
+  focus-dnd-store.ts — screenPin pref (persisted) wired into enable/
+  disable (native only, fire-and-forget with honest catch);
+  focus-settings.tsx — ScreenPinToggle (android-gated, pin/ピンoff icons,
+  exit-instructions copy); focus-view.tsx mounts it.
+- VERIFICATION:
+  * Rebuilt the ECJ stub tree at /tmp/astubs from scratch (the old
+    /tmp/jstub was incomplete): API-faithful android.app/content/graphics/
+    net/os/provider/util/view/widget + androidx + capacitor (JSObject.put
+    overrides swallow JSONException — the REAL Capacitor signature) +
+    org.json (AOSP puts declare throws). All 14 Java files compile with
+    0 errors (38 classes). Two latent lessons encoded: Calendar has no
+    MINUTE_OF_DAY; overlay adds/removes are main-thread only.
+  * tsc 0 errors; eslint clean (react-hooks/set-state-in-effect solved
+    by the setTimeout-deferred initial-load pattern, matching the
+    use-native-alarms convention).
+  * agent-browser E2E (390×844 + 1280×800): নিয়ন্ত্রণ কেন্দ্র renders all
+    5 sections in order (ফোকাস → সময়সীমা → স্ক্রিন-টাইম → রাতের বিশ্রাম →
+    সামগ্রী); new sections show the honest install CTA on web; focus
+    view works with screen-pin correctly ABSENT on web; home + stats
+    fine; 0 console/page errors; dev.log clean.
+- Play Store note: SYSTEM_ALERT_WINDOW joins QUERY_ALL_PACKAGES +
+  VpnService in the declaration forms (all three are recognized
+  app-blocker/DNS-filter use cases); APK build still needs an
+  Android-SDK machine (gradle assembleDebug).
+
+Stage Summary:
+- Phase 2 COMPLETE (all 4 remaining roadmap items shipped): থামানোর
+  স্ক্রিন, স্ক্রিন-টাইম রিপোর্ট, রাতের বিশ্রাম ও ঘুম (bedtime DND + honest
+  sleep estimate — grayscale consciously deferred with the reason
+  documented), ডিস্ট্রাকশন-ফ্রি ইবাদত (screen pin).
+- Artifacts: AppInterceptor.java + SleepEstimate.java (new), 7 Java files
+  extended, 2 guard components + 1 hook (new), 7 web files extended,
+  ROADMAP v1.4.0, complete reusable ECJ stub tree (/tmp/astubs).
+- Remaining per ROADMAP: ফেজ ৩ (পরিবার মোড, মসজিদ কমিউনিটি, স্টাডি রুম) +
+  ফেজ ৪ (Play checklist: justification forms, privacy policy page, data
+  safety, Sentry opt-in; iOS shell; cloud sync).

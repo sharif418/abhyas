@@ -6,20 +6,28 @@ import { useUIStore } from "@/stores/ui-store";
 import { useFocusDndStore } from "@/stores/focus-dnd-store";
 import { Switch } from "@/components/ui/switch";
 import { isNativeApp } from "@/lib/native/capacitor";
+import { useScreenTime } from "@/hooks/use-screen-time";
 import { AppLimitsSection } from "./app-limits-section";
 import { ContentGuardSection } from "./content-guard-section";
+import { ScreenTimeSection } from "./screen-time-section";
+import { SleepSection } from "./sleep-section";
 import { cn } from "@/lib/utils";
 
 /**
  * নিয়ন্ত্রণ কেন্দ্র (Control Center) — the phone-control hub:
  *  1. ফোকাস মোড — system-wide DND (floating button's home base)
- *  2. অ্যাপ ব্যবহারের সময়সীমা — per-app daily budgets
- *  3. সামগ্রী নিয়ন্ত্রণ — DNS-level content filter
+ *  2. অ্যাপ ব্যবহারের সময়সীমা — per-app daily budgets + থামানোর স্ক্রিন
+ *  3. স্ক্রিন-টাইম রিপোর্ট — 7-day usage, week-over-week, top apps
+ *  4. রাতের বিশ্রাম ও ঘুম — bedtime wind-down DND + sleep estimate
+ *  5. সামগ্রী নিয়ন্ত্রণ — DNS-level content filter
  *
  * Everything degrades honestly on the web (install CTA instead of fake
  * switches), and every control can be turned OFF — trust before control.
  */
 export function GuardView() {
+  // One shared data source for the report + sleep sections (no double fetch).
+  const screenTime = useScreenTime();
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-5">
       <div className="flex items-center gap-2.5">
@@ -29,7 +37,7 @@ export function GuardView() {
         <div>
           <h1 className="text-xl font-bold">নিয়ন্ত্রণ কেন্দ্র</h1>
           <p className="text-xs text-muted-foreground">
-            ফোকাস, অ্যাপের সময় ও সামগ্রী — আপনার হাতে পুরো নিয়ন্ত্রণ
+            ফোকাস, অ্যাপের সময়, রাতের বিশ্রাম ও সামগ্রী — আপনার হাতে পুরো নিয়ন্ত্রণ
           </p>
         </div>
       </div>
@@ -42,12 +50,14 @@ export function GuardView() {
       <div className="mt-4 space-y-4">
         <FocusQuickCard />
         <AppLimitsSection />
+        <ScreenTimeSection screenTime={screenTime} />
+        <SleepSection screenTime={screenTime} />
         <ContentGuardSection />
       </div>
 
       <p className="mt-6 pb-2 text-center text-[10px] leading-relaxed text-muted-foreground">
-        ইবাদতের সময় ফোকাস মোড দিয়ে নোটিফিকেশন বন্ধ রাখুন • সোশ্যাল মিডিয়ায় সময়সীমা
-        দিন • পরিবারকে অশ্লীল সামগ্রী থেকে বাঁচান
+        ইবাদতের সময় ফোকাস মোড দিয়ে নোটিফিকেশন বন্ধ রাখুন • সোশ্যাল মিডিয়ায় সময়সীমা ও
+        থামানোর স্ক্রিন দিন • রাতে ফোন রেখে ঘুমান • পরিবারকে অশ্লীল সামগ্রী থেকে বাঁচান
       </p>
     </div>
   );

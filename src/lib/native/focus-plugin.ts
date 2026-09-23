@@ -62,6 +62,18 @@ export interface FocusModePlugin {
   getStatus(): Promise<FocusStatus>;
   enable(): Promise<FocusToggleResult>;
   disable(): Promise<FocusToggleResult>;
+  /** ডিস্ট্রাকশন-ফ্রি ইবাদত: pin our own activity (Android 6.0+). */
+  isScreenPinSupported(): Promise<ScreenPinSupport>;
+  startScreenPin(): Promise<ScreenPinResult>;
+  stopScreenPin(): Promise<ScreenPinResult>;
+}
+
+export interface ScreenPinSupport {
+  supported: boolean;
+}
+
+export interface ScreenPinResult {
+  pinned: boolean;
 }
 
 /** Error code the Kotlin plugin rejects with when DND access is missing. */
@@ -101,6 +113,19 @@ class FocusModeWeb implements FocusModePlugin {
     await exitFullscreen();
     releaseWakeLock();
     return { active: false };
+  }
+
+  async isScreenPinSupported(): Promise<ScreenPinSupport> {
+    // Browser tabs cannot be pinned against the OS — honest no.
+    return { supported: false };
+  }
+
+  async startScreenPin(): Promise<ScreenPinResult> {
+    return { pinned: false };
+  }
+
+  async stopScreenPin(): Promise<ScreenPinResult> {
+    return { pinned: false };
   }
 }
 

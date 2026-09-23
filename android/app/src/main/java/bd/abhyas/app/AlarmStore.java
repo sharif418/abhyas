@@ -32,6 +32,7 @@ public final class AlarmStore {
     private static final String PREFS = "abhyas_alarms";
     private static final String KEY_HABIT_PLAN = "habit_plan";
     private static final String KEY_PRAYER_CFG = "prayer_cfg";
+    private static final String KEY_BEDTIME_CFG = "bedtime_cfg";
     private static final String KEY_PENDING = "pending_actions";
 
     /** Hard cap for the pending-action queue (oldest dropped beyond this). */
@@ -230,6 +231,66 @@ public final class AlarmStore {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // =========================================================================
+    // Bedtime config (রাতের বিশ্রাম — scheduled DND + morning report)
+    // =========================================================================
+
+    /** Bedtime defaults: 23:00 → 06:00 with DND, off until the user opts in. */
+    public static final class BedtimeConfig {
+        public boolean enabled = false;
+        /** Minutes-of-day the wind-down starts (default 23:00). */
+        public int startMin = 23 * 60;
+        /** Minutes-of-day the quiet window ends (default 06:00). */
+        public int endMin = 6 * 60;
+        /** Total-silence DND during the window (needs DND access). */
+        public boolean dnd = true;
+
+        JSONObject toJson() throws Exception {
+            JSONObject o = new JSONObject();
+            o.put("enabled", enabled);
+            o.put("startMin", startMin);
+            o.put("endMin", endMin);
+            o.put("dnd", dnd);
+            return o;
+        }
+
+        static BedtimeConfig fromJson(JSONObject o) {
+            BedtimeConfig c = new BedtimeConfig();
+            c.enabled = o.optBoolean("enabled", false);
+            c.startMin = clampMinutes(o.optInt("startMin", c.startMin));
+            c.endMin = clampMinutes(o.optInt("endMin", c.endMin));
+            c.dnd = o.optBoolean("dnd", true);
+            return c;
+        }
+
+        private static int clampMinutes(int m) {
+            return (m < 0) ? 0 : (m > 24 * 60 - 1) ? 24 * 60 - 1 : m;
+        }
+    }
+
+    public static void saveBedtimeConfig(Context ctx, BedtimeConfig cfg) {
+        if (cfg == null) {
+            prefs(ctx).edit().remove(KEY_BEDTIME_CFG).apply();
+            return;
+        }
+        try {
+            prefs(ctx).edit().putString(KEY_BEDTIME_CFG, cfg.toJson().toString()).apply();
+        } catch (Exception ignored) {
+            // never crash the engine on serialization
+        }
+    }
+
+    /** Defaults (disabled) when bedtime was never configured. */
+    public static BedtimeConfig loadBedtimeConfig(Context ctx) {
+        try {
+            String raw = prefs(ctx).getString(KEY_BEDTIME_CFG, null);
+            if (raw != null) return BedtimeConfig.fromJson(new JSONObject(raw));
+        } catch (Exception ignored) {
+            // corrupt store → defaults
+        }
+        return new BedtimeConfig();
     }
 
     // =========================================================================

@@ -250,6 +250,7 @@ public class NativeAlarmPlugin extends Plugin {
             if (cfg != null) {
                 AlarmScheduler.cancelPrayerAlarms(ctx, cfg);
             }
+            AlarmScheduler.cancelBedtimeAlarms(ctx);
             AlarmScheduler.cancelDndRestore(ctx);
             AlarmStore.clearAll(ctx);
             JSObject ret = new JSObject();
@@ -258,6 +259,60 @@ public class NativeAlarmPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("বাতিল করা যায়নি", "CANCEL_FAILED");
         }
+    }
+
+    // =========================================================================
+    // Bedtime (রাতের বিশ্রাম) — wind-down DND + morning sleep report
+    // =========================================================================
+
+    /**
+     * Persists the bedtime config and (re)arms or cancels the horizon.
+     * Enabling implies the alarm engine — bedtimes are self-extending and
+     * boot-safe like every other alarm here.
+     */
+    @PluginMethod
+    public void saveBedtimeConfig(PluginCall call) {
+        try {
+            Context ctx = getContext();
+            AlarmStore.BedtimeConfig cfg = new AlarmStore.BedtimeConfig();
+            cfg.enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+            Integer startMin = call.getInt("startMinutes");
+            Integer endMin = call.getInt("endMinutes");
+            if (startMin != null) cfg.startMin = startMin;
+            if (endMin != null) cfg.endMin = endMin;
+            cfg.dnd = Boolean.TRUE.equals(call.getBoolean("dnd", true));
+
+            // Sanity: a zero-length quiet window is meaningless → reject.
+            if (cfg.enabled && cfg.startMin == cfg.endMin) {
+                call.reject("শুরু ও শেষ সময় একই হতে পারে না", "INVALID_ARGS");
+                return;
+            }
+
+            AlarmScheduler.cancelBedtimeAlarms(ctx);
+            AlarmStore.saveBedtimeConfig(ctx, cfg);
+            int scheduled = AlarmScheduler.scheduleBedtimeAlarms(ctx, cfg);
+
+            JSObject ret = bedtimeConfigJson(cfg);
+            ret.put("scheduled", scheduled);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("রাতের সেটিং সেভ করা যায়নি", "SAVE_FAILED");
+        }
+    }
+
+    /** Current bedtime config (defaults when never configured). */
+    @PluginMethod
+    public void getBedtimeConfig(PluginCall call) {
+        call.resolve(bedtimeConfigJson(AlarmStore.loadBedtimeConfig(getContext())));
+    }
+
+    private static JSObject bedtimeConfigJson(AlarmStore.BedtimeConfig cfg) {
+        JSObject o = new JSObject();
+        o.put("enabled", cfg.enabled);
+        o.put("startMinutes", cfg.startMin);
+        o.put("endMinutes", cfg.endMin);
+        o.put("dnd", cfg.dnd);
+        return o;
     }
 
     // =========================================================================

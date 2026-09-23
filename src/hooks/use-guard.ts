@@ -7,6 +7,7 @@ import {
   UsageGuard,
   isUsageAccessError,
   type AppUsage,
+  type InterceptionStatus,
   type UsageResult,
 } from "@/lib/native/usage-plugin";
 import {
@@ -32,7 +33,16 @@ export interface UsageGuardState {
   accessGranted: boolean;
   apps: AppUsage[];
   enforcementActive: boolean;
+  /** Block-screen interceptor state (native only; defaults off on web). */
+  interception: InterceptionStatus;
 }
+
+const INTERCEPTION_OFF: InterceptionStatus = {
+  enabled: false,
+  overlayGranted: false,
+  serviceRunning: false,
+  blockedToday: 0,
+};
 
 export function useUsageGuard() {
   const native = isNativeApp();
@@ -41,26 +51,46 @@ export function useUsageGuard() {
     accessGranted: false,
     apps: [],
     enforcementActive: false,
+    interception: INTERCEPTION_OFF,
   });
   const [busyPackage, setBusyPackage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!isNativeApp()) {
-      setState({ loading: false, accessGranted: false, apps: [], enforcementActive: false });
+      setState({
+        loading: false,
+        accessGranted: false,
+        apps: [],
+        enforcementActive: false,
+        interception: INTERCEPTION_OFF,
+      });
       return;
     }
     try {
       const access = await UsageGuard.isAccessGranted();
       if (!access.granted) {
-        setState({ loading: false, accessGranted: false, apps: [], enforcementActive: false });
+        setState({
+          loading: false,
+          accessGranted: false,
+          apps: [],
+          enforcementActive: false,
+          interception: INTERCEPTION_OFF,
+        });
         return;
       }
       const usage: UsageResult = await UsageGuard.getUsageToday();
+      let interception = INTERCEPTION_OFF;
+      try {
+        interception = await UsageGuard.getInterceptionStatus();
+      } catch {
+        // Older native build without the interceptor — honest defaults.
+      }
       setState({
         loading: false,
         accessGranted: true,
         apps: usage.apps,
         enforcementActive: usage.enforcementActive,
+        interception,
       });
     } catch {
       setState((s) => ({ ...s, loading: false }));
@@ -135,7 +165,55 @@ export function useUsageGuard() {
     []
   );
 
-  return { ...state, native, busyPackage, refresh, requestAccess, setLimit, setEnforcement };
+  /** Arm/disarm the block screen (needs Usage access; implies the service). */
+  const setInterception = useCallback(
+    async (enabled: boolean) => {
+      try {
+        const res = await UsageGuard.setInterception({ enabled });
+        setState((s) => ({ ...s, interception: { ...s.interception, enabled: res.enabled } }));
+        toast.success(
+          enabled
+            ? "থামানোর স্ক্রিন চালু — সময় শেষ হলে অ্যাপ খুললেই মনে করিয়ে দেওয়া হবে"
+            : "থামানোর স্ক্রিন বন্ধ করা হয়েছে"
+        );
+      } catch (err) {
+        if (isUsageAccessError(err)) {
+          toast.error("আগে Usage access অনুমতি দিন");
+        } else {
+          toast.error(enabled ? "থামানোর স্ক্রিন চালু করা যায়নি" : "বন্ধ করা যায়নি");
+        }
+      }
+    },
+    []
+  );
+
+  /** Opens the system "Display over other apps" screen (one-time). */
+  const requestOverlayPermission = useCallback(async () => {
+    try {
+      const res = await UsageGuard.requestOverlayPermission();
+      if (res.opened) {
+        toast.info("সেটিংসে “Display over other apps” অনুমতি দিন", {
+          description: "তালিকায় “অভ্যাস” খুঁজে অনুমতি দিন, তারপর অ্যাপে ফিরে আসুন।",
+        });
+      }
+      return res;
+    } catch {
+      toast.error("সেটিংস খোলা যায়নি");
+      return { granted: false, opened: false };
+    }
+  }, []);
+
+  return {
+    ...state,
+    native,
+    busyPackage,
+    refresh,
+    requestAccess,
+    setLimit,
+    setEnforcement,
+    setInterception,
+    requestOverlayPermission,
+  };
 }
 
 // ── Content filter (ContentGuard) ──────────────────────────────────────────

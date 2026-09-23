@@ -12,6 +12,7 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.provider.Settings;
 import android.util.Base64;
 
@@ -89,6 +90,9 @@ public class UsageGuardPlugin extends Plugin {
     /** Local store for {package → minutes/day} budgets + the service's notified-set. */
     static final String PREFS_NAME = "abhyas_usage_guard";
     static final String KEY_LIMITS = "limits";
+
+    /** Hard ceiling for the range/dashboard query (keeps the walk bounded). */
+    private static final int MAX_RANGE_DAYS = 14;
 
     /** Launcher icons are downscaled to this size (px) before base64 encoding. */
     private static final int ICON_PX = 48;
@@ -309,6 +313,183 @@ public class UsageGuardPlugin extends Plugin {
         call.resolve(ret);
     }
 
+    // ── Block screen (interception) ──────────────────────────────────
+
+    /**
+     * Arms / disarms the block-screen overlay. Arming requires Usage access
+     * (to know budgets are crossed) and implies the watchdog service — the
+     * overlay is shown by the service's fast loop, so it is started here.
+     * "Display over other apps" is checked honestly in the status call:
+     * without it the interceptor degrades to the once-per-day notification.
+     */
+    @PluginMethod
+    public void setInterception(PluginCall call) {
+        Boolean enabled = call.getBoolean("enabled");
+        if (enabled == null) {
+            call.reject("enabled মান দরকার", ERR_INVALID_ARGS);
+            return;
+        }
+        Context ctx = getContext();
+        if (enabled) {
+            if (!hasUsageAccess(ctx)) {
+                call.reject("ব্যবহারের তথ্য দেখার অনুমতি দরকার", ERR_USAGE_ACCESS_REQUIRED);
+                return;
+            }
+            AppInterceptor.setEnabled(ctx, true);
+            // The fast loop lives inside the watchdog — make sure it runs.
+            ContextCompat.startForegroundService(ctx, new Intent(ctx, UsageGuardService.class));
+        } else {
+            AppInterceptor.setEnabled(ctx, false);
+        }
+        JSObject ret = new JSObject();
+        ret.put("enabled", AppInterceptor.isEnabled(ctx));
+        call.resolve(ret);
+    }
+
+    /** Everything the নিয়ন্ত্রণ কেন্দ্র needs to render the interception card. */
+    @PluginMethod
+    public void getInterceptionStatus(PluginCall call) {
+        Context ctx = getContext();
+        JSObject ret = new JSObject();
+        ret.put("enabled", AppInterceptor.isEnabled(ctx));
+        ret.put("overlayGranted", AppInterceptor.isOverlayGranted(ctx));
+        ret.put("serviceRunning", UsageGuardService.isRunning());
+        ret.put("blockedToday", AppInterceptor.blockedToday(ctx));
+        call.resolve(ret);
+    }
+
+    /**
+     * Opens the system "Display over other apps" screen for THIS app so the
+     * user can grant the one-time special access the overlay needs. Resolves
+     * with `opened: true` — the JS layer re-checks when the user returns
+     * (same honest pattern as requestAccess).
+     */
+    @PluginMethod
+    public void requestOverlayPermission(PluginCall call) {
+        Context ctx = getContext();
+        if (AppInterceptor.isOverlayGranted(ctx)) {
+            JSObject ret = new JSObject();
+            ret.put("granted", true);
+            ret.put("opened", false);
+            call.resolve(ret);
+            return;
+        }
+        try {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + ctx.getPackageName()));
+            if (getActivity() != null) {
+                getActivity().startActivity(intent);
+            } else {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                ctx.startActivity(intent);
+            }
+            JSObject ret = new JSObject();
+            ret.put("granted", false);
+            ret.put("opened", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("সেটিংস স্ক্রিন খোলা যায়নি", ERR_SETTINGS_UNAVAILABLE);
+        }
+    }
+
+    // ── Screen-time dashboard + sleep ──────────────────────────────────
+
+    /**
+     * Per-day per-app foreground minutes for the last N days (1..14, newest
+     * last). One UsageEvents walk, day-end attribution, labels resolved via
+     * a PackageManager cache — the data behind the স্ক্রিন-টাইম রিপোর্ট.
+     */
+    @PluginMethod
+    public void getUsageRange(PluginCall call) {
+        if (!hasUsageAccess(getContext())) {
+            call.reject("ব্যবহারের তথ্য দেখার অনুমতি দরকার", ERR_USAGE_ACCESS_REQUIRED);
+            return;
+        }
+        Integer days = intArg(call, "days");
+        if (days == null || days < 1) days = 7;
+        if (days > MAX_RANGE_DAYS) days = MAX_RANGE_DAYS;
+
+        try {
+            Context ctx = getContext();
+            Calendar start = Calendar.getInstance();
+            start.add(Calendar.DAY_OF_YEAR, -(days - 1));
+            start.set(Calendar.HOUR_OF_DAY, 0);
+            start.set(Calendar.MINUTE, 0);
+            start.set(Calendar.SECOND, 0);
+            start.set(Calendar.MILLISECOND, 0);
+
+            Map<String, Map<String, Long>> perDay = rangeMillisSince(ctx, start.getTimeInMillis(), days);
+            Map<String, String> labels = new HashMap<>();
+
+            SimpleDateFormat dayFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            Calendar day = (Calendar) start.clone();
+            JSArray out = new JSArray();
+            for (int i = 0; i < days; i++) {
+                String dateKey = dayFmt.format(day.getTime());
+                Map<String, Long> totals = perDay.get(dateKey);
+                long dayTotalMs = 0;
+                JSArray apps = new JSArray();
+                if (totals != null) {
+                    List<Map.Entry<String, Long>> rows = new ArrayList<>(totals.entrySet());
+                    Collections.sort(rows, new Comparator<Map.Entry<String, Long>>() {
+                        @Override
+                        public int compare(Map.Entry<String, Long> a, Map.Entry<String, Long> b) {
+                            return Long.compare(b.getValue(), a.getValue());
+                        }
+                    });
+                    for (Map.Entry<String, Long> row : rows) {
+                        int minutes = (int) Math.round(row.getValue() / 60000.0);
+                        if (minutes <= 0) continue;
+                        dayTotalMs += minutes * 60_000L;
+                        JSObject app = new JSObject();
+                        app.put("packageName", row.getKey());
+                        app.put("label", labelFor(ctx, labels, row.getKey()));
+                        app.put("minutes", minutes);
+                        apps.put(app);
+                    }
+                }
+                JSObject d = new JSObject();
+                d.put("date", dateKey);
+                d.put("totalMinutes", (int) Math.round(dayTotalMs / 60000.0));
+                d.put("apps", apps);
+                out.put(d);
+                day.add(Calendar.DAY_OF_YEAR, 1);
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("days", out);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("ব্যবহারের তথ্য পড়া যায়নি", "USAGE_READ_FAILED");
+        }
+    }
+
+    /**
+     * Last night's device-local sleep estimate + the recorded 7-night
+     * history — the data behind the রাতের বিশ্রাম section.
+     */
+    @PluginMethod
+    public void getSleepEstimate(PluginCall call) {
+        try {
+            Context ctx = getContext();
+            long[] est = SleepEstimate.recordIfNew(ctx);
+            JSObject ret = new JSObject();
+            if (est != null) {
+                JSObject last = new JSObject();
+                last.put("startMs", est[0]);
+                last.put("endMs", est[1]);
+                last.put("minutes", Math.max(0, Math.round((est[1] - est[0]) / 60000.0)));
+                ret.put("lastNight", last);
+            } else {
+                ret.put("lastNight", JSONObject.NULL);
+            }
+            ret.put("history", SleepEstimate.history(ctx, 7));
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("ঘুমের অনুমান পড়া যায়নি", "SLEEP_READ_FAILED");
+        }
+    }
+
     // ── Shared helpers (also used by UsageGuardService) ──────────────────
 
     /**
@@ -440,6 +621,75 @@ public class UsageGuardPlugin extends Plugin {
         } catch (PackageManager.NameNotFoundException | RuntimeException ignored) {
         }
         return packageName;
+    }
+
+    /**
+     * Per-day ({@code days} date keys, oldest first) per-app foreground
+     * milliseconds since {@code sinceMillis} (local midnight of the oldest
+     * day). One UsageEvents walk; intervals are attributed to the day of
+     * their END (pause / now), consistent with the today-scoreboard's
+     * semantics. Never throws — an empty map means nothing measurable.
+     */
+    public static Map<String, Map<String, Long>> rangeMillisSince(
+            Context context, long sinceMillis, int days) {
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        Map<String, Map<String, Long>> perDay = new LinkedHashMap<>();
+        if (context == null) return perDay;
+        try {
+            UsageStatsManager usm =
+                    (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usm == null) return perDay;
+            long now = System.currentTimeMillis();
+            UsageEvents events = usm.queryEvents(Math.max(0L, sinceMillis), now);
+            if (events == null) return perDay;
+
+            UsageEvents.Event event = new UsageEvents.Event();
+            Map<String, Long> resumedAt = new HashMap<>();
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event);
+                String pkg = event.getPackageName();
+                if (pkg == null) continue;
+                int type = event.getEventType();
+                if (type == UsageEvents.Event.ACTIVITY_RESUMED) {
+                    resumedAt.put(pkg, event.getTimeStamp());
+                } else if (type == UsageEvents.Event.ACTIVITY_PAUSED) {
+                    Long start = resumedAt.remove(pkg);
+                    if (start != null && event.getTimeStamp() > start) {
+                        bucket(perDay, fmt, pkg, start, event.getTimeStamp());
+                    }
+                }
+            }
+            // The still-open interval(s) count up to NOW (today's bucket).
+            for (Map.Entry<String, Long> open : resumedAt.entrySet()) {
+                if (now > open.getValue()) {
+                    bucket(perDay, fmt, open.getKey(), open.getValue(), now);
+                }
+            }
+        } catch (RuntimeException e) {
+            // Access revoked mid-read or an OEM quirk — return what we have.
+        }
+        return perDay;
+    }
+
+    /** Adds one interval's milliseconds to the END-day's per-app bucket. */
+    private static void bucket(Map<String, Map<String, Long>> perDay, SimpleDateFormat fmt,
+                               String pkg, long startMs, long endMs) {
+        String dayKey = fmt.format(new Date(endMs));
+        Map<String, Long> apps = perDay.get(dayKey);
+        if (apps == null) {
+            apps = new HashMap<>();
+            perDay.put(dayKey, apps);
+        }
+        apps.merge(pkg, endMs - startMs, Long::sum);
+    }
+
+    /** Label lookup with a per-call cache (labels repeat across days). */
+    private static String labelFor(Context ctx, Map<String, String> cache, String pkg) {
+        String cached = cache.get(pkg);
+        if (cached != null) return cached;
+        String label = getAppLabel(ctx, pkg);
+        cache.put(pkg, label);
+        return label;
     }
 
     // ── Internals ────────────────────────────────────────────────────────

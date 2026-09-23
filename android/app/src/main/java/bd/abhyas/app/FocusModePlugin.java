@@ -35,6 +35,12 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * {@link DndControl}, shared with the prayer auto-silence path — so the
  * floating button and prayer-time DND restore the same "before" state and
  * can never clobber each other.
+ *
+ * ── Screen pinning (ডিস্ট্রাকশন-ফ্রি ইবাদত) ──────────────────────────────
+ * startScreenPin() pins OUR OWN activity with Activity.startLockTask() —
+ * no permission needed for self-pinning: the OS shows a pinned state the
+ * user can always leave by holding Back + Recents. Used optionally during
+ * তিলাওয়াত/জিকির focus sessions so wandering taps land on nothing.
  */
 @CapacitorPlugin(name = "FocusMode")
 public class FocusModePlugin extends Plugin {
@@ -144,5 +150,71 @@ public class FocusModePlugin extends Plugin {
         } else {
             call.reject("ফোকাস মোড বন্ধ করা যায়নি", "DISABLE_FAILED");
         }
+    }
+
+    // ── Screen pinning (optional, own activity only) ────────────────────
+
+    /** True when this Android supports self screen-pinning (API 23+). */
+    @PluginMethod
+    public void isScreenPinSupported(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("supported", Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
+        call.resolve(ret);
+    }
+
+    /**
+     * Pins অভ্যাস' own activity (startLockTask — no permission for
+     * self-pinning). The user can always exit by holding Back + Recents;
+     * our focus timer calls stopScreenPin() when the session ends.
+     */
+    @PluginMethod
+    public void startScreenPin(PluginCall call) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            call.reject("এই ফিচারটি Android 6.0+ প্রয়োজন", ERR_UNSUPPORTED);
+            return;
+        }
+        final android.app.Activity activity = getActivity();
+        if (activity == null) {
+            call.reject("অ্যাপ স্ক্রিনে নেই — আগে অ্যাপ খুলুন", "NO_ACTIVITY");
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    activity.startLockTask();
+                    JSObject ret = new JSObject();
+                    ret.put("pinned", true);
+                    call.resolve(ret);
+                } catch (Exception e) {
+                    call.reject("স্ক্রিন পিন করা যায়নি", "PIN_FAILED");
+                }
+            }
+        });
+    }
+
+    /** Unpins (no-op when not pinned — the honest idempotent exit). */
+    @PluginMethod
+    public void stopScreenPin(PluginCall call) {
+        final android.app.Activity activity = getActivity();
+        if (activity == null) {
+            JSObject ret = new JSObject();
+            ret.put("pinned", false);
+            call.resolve(ret);
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    activity.stopLockTask();
+                } catch (Exception ignored) {
+                    // not pinned — already the desired state
+                }
+                JSObject ret = new JSObject();
+                ret.put("pinned", false);
+                call.resolve(ret);
+            }
+        });
     }
 }

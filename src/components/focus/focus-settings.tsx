@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Pin, PinOff } from "lucide-react";
 import { toBn } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useFocusDndStore } from "@/stores/focus-dnd-store";
 import {
   Select,
   SelectContent,
@@ -175,6 +178,49 @@ export function FocusPresetConfig({
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  ডিস্ট্রাকশন-ফ্রি ইবাদত — screen pin during focus (native only)      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * ScreenPinToggle — pins অভ্যাস' own activity while a native focus session
+ * runs (Activity.startLockTask: no permission for self-pinning; exit any
+ * time by holding Back + Recents). Hidden on web — a browser tab cannot be
+ * pinned against the OS, and we never show a switch that does nothing.
+ */
+export function ScreenPinToggle() {
+  const platform = useFocusDndStore((s) => s.platform);
+  const screenPin = useFocusDndStore((s) => s.screenPin);
+  const setScreenPin = useFocusDndStore((s) => s.setScreenPin);
+
+  if (platform !== "android") return null;
+
+  return (
+    <div className="flex items-center gap-3 rounded-3xl border bg-card p-4 shadow-sm">
+      <span
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-2xl",
+          screenPin ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+        )}
+      >
+        {screenPin ? <Pin className="size-5" aria-hidden /> : <PinOff className="size-5" aria-hidden />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-bold">স্ক্রিন পিন (ডিস্ট্রাকশন-ফ্রি ইবাদত)</div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          ফোকাস চালু থাকা পর্যন্ত এই অ্যাপেই থাকবে — তিলাওয়াত/জিকিরে মন ভোলার সুযোগ থাকবে না।
+          বের হতে চাইলে “ব্যাক + রিসেন্ট” বোতাম একসাথে চেপে ধরুন।
+        </p>
+      </div>
+      <Switch
+        checked={screenPin}
+        onCheckedChange={setScreenPin}
+        aria-label="স্ক্রিন পিন চালু/বন্ধ"
+      />
     </div>
   );
 }

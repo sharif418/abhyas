@@ -27,6 +27,8 @@ interface FocusDndState {
   busy: boolean;
   sheet: FocusSheetKind | null;
   fabZone: FabZone;
+  /** ডিস্ট্রাকশন-ফ্রি ইবাদত: pin the screen during native focus (own choice). */
+  screenPin: boolean;
 
   init: () => Promise<void>;
   syncFromSystem: () => Promise<void>;
@@ -37,6 +39,7 @@ interface FocusDndState {
   openSheet: (kind: FocusSheetKind) => void;
   closeSheet: () => void;
   setFabZone: (zone: FabZone) => void;
+  setScreenPin: (pinned: boolean) => void;
 }
 
 /** Bengali human duration: "২ ঘণ্টা ৫ মিনিট" / "৪ মিনিট ১২ সেকেন্ড". */
@@ -79,6 +82,7 @@ export const useFocusDndStore = create<FocusDndState>()(
       busy: false,
       sheet: null,
       fabZone: "bottom",
+      screenPin: false,
 
       init: async () => {
         const platform = getNativePlatform();
@@ -148,6 +152,13 @@ export const useFocusDndStore = create<FocusDndState>()(
                   : "ফোনের সব নোটিফিকেশন বন্ধ করতে Android অ্যাপ ব্যবহার করুন।",
               });
             } else {
+              // ডিস্ট্রাকশন-ফ্রি ইবাদত (opt-in): pin our own activity while
+              // the session runs — wandering taps land on nothing.
+              if (get().screenPin) {
+                FocusMode.startScreenPin().catch(() => {
+                  /* not supported / OEM block — focus itself still works */
+                });
+              }
               toast.success("ফোকাস মোড চালু", {
                 description:
                   "ফোনের সব নোটিফিকেশন ও ডিস্ট্রাকশন এখন বন্ধ থাকবে।",
@@ -177,6 +188,10 @@ export const useFocusDndStore = create<FocusDndState>()(
           if (!res.active) {
             set({ active: false, startedAt: null });
             hapticPulse(16);
+            if (get().platform !== "web") {
+              // Session over → unpin (no-op when never pinned).
+              FocusMode.stopScreenPin().catch(() => {});
+            }
             const dur =
               prevStarted != null ? formatDurationBn(Date.now() - prevStarted) : null;
             if (dur) {
@@ -224,6 +239,17 @@ export const useFocusDndStore = create<FocusDndState>()(
       openSheet: (kind) => set({ sheet: kind }),
       closeSheet: () => set({ sheet: null }),
       setFabZone: (zone) => set({ fabZone: zone }),
+      setScreenPin: (pinned) => {
+        set({ screenPin: pinned });
+        // Applying mid-session keeps the promise honest immediately.
+        if (get().platform !== "web" && get().active) {
+          if (pinned) {
+            FocusMode.startScreenPin().catch(() => {});
+          } else {
+            FocusMode.stopScreenPin().catch(() => {});
+          }
+        }
+      },
     }),
     {
       name: "abhyas-focus-dnd",
@@ -232,6 +258,7 @@ export const useFocusDndStore = create<FocusDndState>()(
         active: s.active,
         startedAt: s.startedAt,
         fabZone: s.fabZone,
+        screenPin: s.screenPin,
       }),
     }
   )

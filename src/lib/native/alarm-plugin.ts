@@ -127,6 +127,27 @@ export interface SyncAlarmsResult {
   cancelled: number;
 }
 
+/**
+ * রাতের বিশ্রাম (bedtime) — scheduled wind-down + honest morning report.
+ * Lives in the alarm engine: exact alarms, boot-safe, self-extending,
+ * 100% offline. DND needs the same "Do Not Disturb access" the focus
+ * button uses; without it the bedtime still reminds, just without silence.
+ */
+export interface BedtimeConfig {
+  enabled: boolean;
+  /** Minutes-of-day the wind-down starts (default 23:00 → 1380). */
+  startMinutes: number;
+  /** Minutes-of-day the quiet window ends (default 06:00 → 360). */
+  endMinutes: number;
+  /** Total-silence DND during the window (needs DND access). */
+  dnd: boolean;
+}
+
+export interface BedtimeConfigResult extends BedtimeConfig {
+  /** Alarms actually scheduled by the last save (future-only). */
+  scheduled?: number;
+}
+
 export interface NativeAlarmPlugin {
   getStatus(): Promise<AlarmStatus>;
   /** Opens the system "Alarms & reminders" special access screen (API 31+). */
@@ -140,6 +161,10 @@ export interface NativeAlarmPlugin {
   getPendingActions(): Promise<{ actions: PendingAction[] }>;
   /** Fire a harmless test notification in ~seconds (default 20s). */
   testAlarm(options?: { seconds?: number }): Promise<{ ok: boolean; at: number }>;
+  /** Persist + (re)arm / cancel the bedtime horizon (রাতের বিশ্রাম). */
+  saveBedtimeConfig(options: BedtimeConfig): Promise<BedtimeConfigResult>;
+  /** Current bedtime config (defaults when never configured). */
+  getBedtimeConfig(): Promise<BedtimeConfigResult>;
 }
 
 /** Error codes the Java plugin rejects with. */
@@ -188,6 +213,16 @@ class NativeAlarmWeb implements NativeAlarmPlugin {
   async testAlarm(options?: { seconds?: number }): Promise<{ ok: boolean; at: number }> {
     void options;
     return { ok: false, at: 0 };
+  }
+
+  async saveBedtimeConfig(options: BedtimeConfig): Promise<BedtimeConfigResult> {
+    // Browsers cannot schedule DND or survive reboots — bedtime is native.
+    void options;
+    return { ...options, scheduled: 0 };
+  }
+
+  async getBedtimeConfig(): Promise<BedtimeConfigResult> {
+    return { enabled: false, startMinutes: 23 * 60, endMinutes: 6 * 60, dnd: true, scheduled: 0 };
   }
 }
 

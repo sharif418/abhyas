@@ -24,6 +24,11 @@ import androidx.core.app.NotificationManagerCompat;
  *   3. Self-extension: every fired PRAYER alarm re-extends the horizon for
  *      the coming days (offline recalculation), so the engine keeps
  *      ringing after months without opening the app.
+ *   4. Bedtime (রাতের বিশ্রাম): "bedtime-on" → wind-down notification +
+ *      total-silence DND until the morning "bedtime-off" alarm; the
+ *      morning fire restores DND and reports the device-local sleep
+ *      estimate ("রাতে X ঘণ্টা ফোন স্পর্শ করেননি")। Both re-extend the
+ *      bedtime horizon — offline forever, boot-safe.
  *
  * Also handles the internal ACTION_RESTORE_DND one-shot (auto-DND expiry).
  */
@@ -31,6 +36,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     public static final String CHANNEL_PRAYERS = "abhyas_prayers";
     public static final String CHANNEL_HABITS = "abhyas_habits";
+    public static final String CHANNEL_BEDTIME = "abhyas_bedtime";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -57,6 +63,10 @@ public class AlarmReceiver extends BroadcastReceiver {
             if (cfg != null) {
                 AlarmScheduler.schedulePrayerAlarms(ctx, cfg);
             }
+        } else if ("bedtime-on".equals(spec.kind)) {
+            onBedtimeStart(ctx, spec);
+        } else if ("bedtime-off".equals(spec.kind)) {
+            onBedtimeEnd(ctx, spec);
         } else {
             postHabitNotification(ctx, spec);
         }
@@ -185,9 +195,81 @@ public class AlarmReceiver extends BroadcastReceiver {
             );
             habits.setDescription("অভ্যাসের সময় হলে মনে করিয়ে দেয়");
             nm.createNotificationChannel(habits);
+
+            NotificationChannel bedtime = new NotificationChannel(
+                    CHANNEL_BEDTIME,
+                    "রাতের বিশ্রাম",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            bedtime.setDescription("রাতে ঘুমানোর সময় মনে করিয়ে দেয় আর সকালে ঘুমের হিসাব জানায়");
+            nm.createNotificationChannel(bedtime);
         } catch (Exception ignored) {
             // channel creation must never crash
         }
+    }
+
+    // =========================================================================
+    // Bedtime (রাতের বিশ্রাম) — scheduled DND + honest morning report
+    // =========================================================================
+
+    /** Wind-down fire: notification + total silence until the morning alarm. */
+    private void onBedtimeStart(Context ctx, AlarmStore.Spec spec) {
+        AlarmStore.BedtimeConfig cfg = AlarmStore.loadBedtimeConfig(ctx);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_BEDTIME)
+                .setSmallIcon(android.R.drawable.ic_menu_agenda)
+                .setColor(0xFF059669)
+                .setContentTitle(spec.title)
+                .setContentText(spec.body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(spec.body))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(contentIntent(ctx));
+        notifySafely(ctx, spec.id.hashCode(), b);
+
+        if (cfg != null && cfg.dnd && DndControl.hasPolicyAccess(ctx)) {
+            DndControl.enable(ctx); // restored by the bedtime-off alarm
+        }
+        // Self-extension: keep the offline bedtime horizon alive.
+        AlarmScheduler.scheduleBedtimeAlarms(ctx, cfg);
+    }
+
+    /**
+     * Morning fire: restore DND, record the night's estimate, and greet the
+     * user with the honest "ফোন স্পর্শ করেননি" number (never invented).
+     */
+    private void onBedtimeEnd(Context ctx, AlarmStore.Spec spec) {
+        AlarmStore.BedtimeConfig cfg = AlarmStore.loadBedtimeConfig(ctx);
+
+        if (cfg != null && cfg.dnd && DndControl.hasPolicyAccess(ctx)
+                && DndControl.isTotalSilence(ctx)) {
+            DndControl.disable(ctx);
+        }
+
+        String body = "শান্ত রাত শেষ — সকালের অভ্যাসগুলো শুরু করুন।";
+        long[] est = SleepEstimate.recordIfNew(ctx);
+        if (est != null) {
+            long minutes = Math.max(0, Math.round((est[1] - est[0]) / 60000.0));
+            body = "রাতে " + AlarmScheduler.toBn((int) (minutes / 60)) + " ঘণ্টা "
+                    + AlarmScheduler.toBn((int) (minutes % 60)) + " মিনিট ফোন স্পর্শ করেননি — "
+                    + "সারাদিন এই শান্তিটাই কাজে লাগান।";
+        }
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_BEDTIME)
+                .setSmallIcon(android.R.drawable.ic_dialog_dialer)
+                .setColor(0xFF059669)
+                .setContentTitle(spec.title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(contentIntent(ctx));
+        notifySafely(ctx, spec.id.hashCode(), b);
+
+        // Self-extension: keep the offline bedtime horizon alive.
+        AlarmScheduler.scheduleBedtimeAlarms(ctx, cfg);
     }
 
     // =========================================================================

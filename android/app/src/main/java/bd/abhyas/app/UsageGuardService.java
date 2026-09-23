@@ -27,12 +27,18 @@ import java.util.Map;
 /**
  * UsageGuardService — the background budget watchdog for অভ্যাস.
  *
- * A START_STICKY foreground service that re-checks every app's foreground time
- * once a minute and fires ONE high-importance Bengali notification per app per
- * day when its daily budget is crossed:
+ * A START_STICKY foreground service with TWO loops:
+ *
+ *   • budget sweep (every 60 s) — fires ONE high-importance Bengali
+ *     notification per app per day when its daily budget is crossed:
  *
  *      সময় শেষ: {অ্যাপের নাম}
  *      আজকের নির্ধারিত সময় পার হয়েছে — অভ্যাসে ফিরে আসুন।
+ *
+ *   • interception sweep (every 4 s, only while the user armed the block
+ *     screen) — when an over-budget app is OPEN RIGHT NOW, AppInterceptor
+ *     shows the calm full-screen “অভ্যাসে ফিরে আসুন” overlay over it.
+ *     When interception is off the tick costs one SharedPreferences read.
  *
  * Tapping it opens অভ্যাস itself. The service measures nothing the plugin
  * cannot already see: it reuses UsageGuardPlugin.foregroundMillisSince(), so
@@ -76,6 +82,8 @@ public class UsageGuardService extends Service {
 
     private static final int PERSISTENT_NOTIFICATION_ID = 0x5501;
     private static final long CHECK_INTERVAL_MS = 60_000L;
+    /** Interception reacts in seconds — the industry app-blocker cadence. */
+    private static final long INTERCEPT_INTERVAL_MS = 4_000L;
     /** Small first delay so the service settles before its first sweep. */
     private static final long FIRST_CHECK_DELAY_MS = 1_200L;
     private static final int ALERT_ICON_SIZE = 64;
@@ -103,6 +111,25 @@ public class UsageGuardService extends Service {
         }
     };
 
+    /** The fast block-screen loop — cheap no-op unless interception is armed. */
+    private final Runnable interceptRunnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                // Re-read the preference every tick so the নিয়ন্ত্রণ কেন্দ্র
+                // switch takes effect without restarting the service.
+                if (AppInterceptor.isEnabled(UsageGuardService.this)) {
+                    AppInterceptor.maybeIntercept(UsageGuardService.this);
+                }
+            } catch (Exception e) {
+                // one bad tick never kills the loop
+            }
+            if (handler != null) {
+                handler.postDelayed(this, INTERCEPT_INTERVAL_MS);
+            }
+        }
+    };
+
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
     @Override
@@ -118,11 +145,13 @@ public class UsageGuardService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // (Re)schedule the sweep — also covers START_STICKY restarts where
-        // intent is null: the loop re-reads limits + usage from scratch.
+        // (Re)schedule the sweeps — also covers START_STICKY restarts where
+        // intent is null: the loops re-read limits + usage from scratch.
         if (handler != null) {
             handler.removeCallbacks(checkRunnable);
+            handler.removeCallbacks(interceptRunnable);
             handler.postDelayed(checkRunnable, FIRST_CHECK_DELAY_MS);
+            handler.postDelayed(interceptRunnable, FIRST_CHECK_DELAY_MS);
         }
         return START_STICKY;
     }
@@ -141,7 +170,9 @@ public class UsageGuardService extends Service {
         super.onTaskRemoved(rootIntent);
         if (handler != null) {
             handler.removeCallbacks(checkRunnable);
+            handler.removeCallbacks(interceptRunnable);
             handler.postDelayed(checkRunnable, CHECK_INTERVAL_MS);
+            handler.postDelayed(interceptRunnable, INTERCEPT_INTERVAL_MS);
         }
     }
 
@@ -149,6 +180,7 @@ public class UsageGuardService extends Service {
     public void onDestroy() {
         if (handler != null) {
             handler.removeCallbacks(checkRunnable);
+            handler.removeCallbacks(interceptRunnable);
             handler = null;
         }
         running = false;
