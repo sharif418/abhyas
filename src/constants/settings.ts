@@ -8,4 +8,6 @@ export const DEFAULT_SETTINGS: UserSettings = {
   sound: true,
   remindersEnabled: true,
   notificationsEnabled: true,
+  smartRemindersEnabled: true,
+  prayerSilenceEnabled: true,
 };

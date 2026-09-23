@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSettingsEffect } from "@/hooks/use-settings-effect";
 import { useNotifications } from "@/hooks/use-notifications";
+import { usePrayerSilence } from "@/hooks/use-prayer-silence";
 import { useUIStore, bindHistoryNavigation } from "@/stores/ui-store";
 import { ALL_VIEWS } from "./nav-config";
 import { SidebarNav } from "./sidebar-nav";
@@ -36,6 +37,7 @@ function anyOverlayOpen(): boolean {
 export function AppShell() {
   useSettingsEffect();
   useNotifications();
+  usePrayerSilence();
 
   const templatesOpen = useUIStore((s) => s.templatesOpen);
   const setTemplatesOpen = useUIStore((s) => s.setTemplatesOpen);

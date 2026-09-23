@@ -4111,3 +4111,92 @@ Stage Summary:
 - Commit ade2284 pushed; learning deploy queued via Coolify API
   (p9z41w2avv8lmyn9vijqwlds) — next agent: verify /api/learning 200 +
   migrationsRecorded:6 after it finishes, then browser-verify live.
+
+---
+Task ID: P1-4 (Phase 1 finale: নোটিফিকেশন স্মার্টনেস)
+Agent: Z.ai Code (Principal Architect)
+
+Task: ROADMAP ফেজ ১ item 4 — smart notifications: escalating reminders for
+forgotten habits + prayer-time silence suggestion. Also: deploy the
+never-deployed push-scheduler to production (found dead code in prod).
+
+Work Log:
+- Sandbox resynced to origin/main (one junk PID-only commit discarded);
+  prod verified first: /api/health healthy, migrationsRecorded:6,
+  /api/learning 200 → P1-c deploy confirmed LIVE (closing last session's
+  open action).
+- Dev environment revival: db:push script now URL-aware (file:→
+  schema.dev.prisma, postgres→schema.prisma — same pattern as postinstall;
+  prod behavior unchanged). SQLite rebuilt. Root cause: sandbox reset
+  wiped db/ and the old script hard-failed on the postgres schema.
+- Settings plumbing: smartRemindersEnabled + prayerSilenceEnabled added
+  (types, DEFAULT_SETTINGS both true, store toggles + partialize, debounced
+  server sync, zod schema). Old users default-on via parseSettings merge.
+- Client escalation (use-notifications rewrite): L1 unchanged behavior
+  (15-min window, once/day); L2 fires +90 min after reminderTime (≤22:29
+  same-day guard, streak-aware Bengali copy, tag habit-{id}-{date}-l2);
+  L3 consolidated rescue at 20:30 + 22:30 (single notification, all open
+  habits, tags rescue-{date}-evening|final). Old-key dedup keys retired;
+  daily keys swept on mount (bounded localStorage).
+- Prayer silence (use-prayer-silence, new): 60s poll detects prayer-key
+  TRANSITIONS (no spam on reload; baseline post-mount); once per prayer/
+  day via localStorage; visible tab → sonner toast with "১৫ মিনিট ফোকাস"
+  action → focus-dnd-store.enable() (Android: real DND; web: soft focus),
+  auto-disable after 15 min only if session untouched; hidden tab → OS
+  notification when permission granted. PrayerCard city now persisted
+  (abhyas-prayer-city) and consumed by the hook; usePrayerTimes gained an
+  enabled option (no query when setting off).
+- Profile UI: new "স্মার্ট সহায়তা" section (Sparkles) with the two
+  ToggleRows, Bengali descriptions, default ON.
+- Server escalation (push-scheduler rewritten as 3 modules ≤400 lines):
+  shared.ts (log/time/toBn/settings-parse/schedule-awareness/send),
+  escalation.ts (L2 window + L3 rescue), index.ts (main loop + L1, now
+  also honoring remindersEnabled/notificationsEnabled per user).
+  L2 uses a 90–95 min CATCH-UP WINDOW (self-healing across scheduler
+  restarts; Web Push topic collapse replaces re-sends). L3: ONE
+  consolidated push per user at 20:30 ("স্ট্রিক রক্ষার সময়") + 22:30
+  ("আজকের শেষ সুযোগ", urgency high), schedule-aware (no off-day nagging),
+  settings-gated (missing keys = ON). TTLs: L2 45m, rescue 90m.
+- **PRE-EXISTING PROD BUG FOUND & FIXED**: Web Push `topic` must be ≤32
+  URL-safe-Base64 chars — tags like habit-{cuid}-{date} are 42 chars, so
+  EVERY scheduled push (L1 included) threw "use maximum of 32
+  characters…" and never delivered. Fixed in scheduler shared.ts AND
+  src/lib/push-server.ts via pushTopic() (FNV-1a base36 + kind prefix).
+- Missing /api/push/test route added (Profile "পুশ পরীক্ষা" button was
+  hitting a 404): sends one Bengali test push, prunes 410/404 dead
+  subscriptions, 503 when VAPID unconfigured.
+- Scheduler Dockerfile: COPY fixed for the module files.
+- VERIFICATION (local, SQLite + real clock):
+  * tsc 0 errors (app + scheduler standalone), eslint clean.
+  * L2 e2e: habit reminder set to now−92min → tick found it in window,
+    send reached the network layer (web-push always uses https.request —
+    local plain-HTTP receiver impossible by design; validation+VAPID
+    signing+encryption all passed; topic error GONE).
+  * Guard matrix: smartRemindersEnabled=false → no send; off-day
+    (নির্দিক্ত দিন, wrong weekdays) → no send; scheduled-today → send
+    attempted. L3 query shape executed correctly on SQLite (nested
+    some/none filters, user+subs+open habits).
+  * API suite: settings POST/GET round-trip with new fields ✓, invalid
+    type → 400 ✓, /api/push/test → 503 Bengali error (no VAPID locally) ✓.
+  * Browser (agent-browser 390×844 + 1280×800): app boots 0 console/page
+    errors both viewports; profile shows both toggles default-on; toggle →
+    localStorage + server sync verified; reload rehydrates persisted
+    state + #/profile deep-link; prayer-city select persists to
+    localStorage; both /api/prayer/times city fetches 200.
+- COOLIFY: push-scheduler was NEVER deployed (applications list showed
+  only abhyas + abhyas-social) — the entire server push layer was dead
+  code in prod. Created dockerfile app "abhyas-push-scheduler"
+  (uuid okuxyzj6lpx13tdovv6duu4n) — self-contained Dockerfile clones the
+  PUBLIC repo (no secrets baked; in-repo Dockerfile had a context bug:
+  COPY package.json would grab the root Next app's manifest), prisma
+  copied locally + generated against the postgres schema. Env set: TZ,
+  DATABASE_URL (coolify-network db alias), VAPID_* (same keys as main
+  app so existing subscriptions validate).
+
+Stage Summary:
+- Phase 1 COMPLETE (all 4 roadmap items shipped). Smart notification
+  stack: L1 exact → L2 +90min insight → L3 evening rescue, both sides
+  (client + server) sharing tags for OS-level dedup, all opt-out.
+- Roadmap updated (shipped table + feature-location matrix + v1.2.0).
+- Remaining: push code → deploy scheduler + main app → verify prod; live
+  Isha prayer-suggestion browser check pending (~19:05 Dhaka).

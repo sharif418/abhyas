@@ -83,6 +83,27 @@ export interface PushPayload {
   data?: Record<string, unknown>;
 }
 
+const URLSAFE_B64 = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Web Push `topic` (collapse key) must be ≤32 URL-safe-Base64 chars —
+ * web-push throws otherwise, silently killing the send. Long tags are
+ * shortened to a deterministic FNV-1a base36 hash with a kind prefix.
+ */
+function pushTopic(tag: string | undefined): string | undefined {
+  if (!tag) return undefined;
+  if (tag.length <= 32 && URLSAFE_B64.test(tag)) return tag;
+
+  let h = 0x811c9dc5;
+  for (let i = 0; i < tag.length; i++) {
+    h ^= tag.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const b36 = (h >>> 0).toString(36);
+  const kind = tag.split("-", 1)[0].slice(0, 4) || "t";
+  return `${kind}-${b36}`;
+}
+
 /**
  * Send a push notification to a single subscription.
  *
@@ -102,7 +123,7 @@ export async function sendPushNotification(
   const options: RequestOptions = {
     TTL: 60 * 60, // 1 hour — drop the message if undelivered by then
     urgency: "normal",
-    topic: payload.tag, // collapse key — replaces prior notif with same tag
+    topic: pushTopic(payload.tag), // collapse key — ≤32 url-safe chars
   };
 
   await webPush.sendNotification(

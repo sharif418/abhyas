@@ -128,6 +128,11 @@ export interface UserSettings {
   sound: boolean;
   remindersEnabled: boolean;
   notificationsEnabled: boolean;
+  /** Smart reminders — escalating nudges for forgotten habits (L2 +90 min,
+   *  L3 evening rescue) and consolidated streak-rescue digests. Default on. */
+  smartRemindersEnabled: boolean;
+  /** Suggest silence/DND when a prayer time arrives (Android: real DND). */
+  prayerSilenceEnabled: boolean;
 }
 
 export interface Badge {

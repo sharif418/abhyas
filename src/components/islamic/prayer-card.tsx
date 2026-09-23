@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { usePrayerTimes, usePrayerRecord, useTogglePrayer } from "@/hooks/use-prayer";
+import { getPrayerCity, PRAYER_CITY_KEY } from "@/hooks/use-prayer-silence";
 import { getNextPrayer } from "@/lib/prayer";
 import { bnTime, toBn, bnDuration, todayKey } from "@/lib/date-bn";
 import { PRAYERS, BD_CITIES } from "@/constants";
@@ -49,8 +50,18 @@ const TIME_KEY = {
 } as const;
 
 export function PrayerCard() {
-  const [city, setCity] = useState("ঢাকা");
+  const [city, setCity] = useState(getPrayerCity);
   const [now, setNow] = useState(new Date());
+
+  // Remember the chosen city so other consumers (prayer-silence
+  // suggestions) use the same location.
+  useEffect(() => {
+    try {
+      localStorage.setItem(PRAYER_CITY_KEY, city);
+    } catch {
+      /* ignore */
+    }
+  }, [city]);
 
   const { data: times, isLoading, isError, refetch } = usePrayerTimes(city);
   const { data: record } = usePrayerRecord();

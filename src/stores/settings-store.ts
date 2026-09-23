@@ -13,6 +13,8 @@ interface SettingsState extends UserSettings {
   toggleSound: () => void;
   toggleReminders: () => void;
   toggleNotifications: () => void;
+  toggleSmartReminders: () => void;
+  togglePrayerSilence: () => void;
   hydrateFromServer: (s: Partial<UserSettings>) => void;
   reset: () => void;
 }
@@ -33,6 +35,10 @@ export const useSettingsStore = create<SettingsState>()(
       toggleReminders: () => set((s) => ({ remindersEnabled: !s.remindersEnabled })),
       toggleNotifications: () =>
         set((s) => ({ notificationsEnabled: !s.notificationsEnabled })),
+      toggleSmartReminders: () =>
+        set((s) => ({ smartRemindersEnabled: !s.smartRemindersEnabled })),
+      togglePrayerSilence: () =>
+        set((s) => ({ prayerSilenceEnabled: !s.prayerSilenceEnabled })),
       hydrateFromServer: (s) => set({ ...s }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
@@ -47,6 +53,8 @@ export const useSettingsStore = create<SettingsState>()(
         sound: s.sound,
         remindersEnabled: s.remindersEnabled,
         notificationsEnabled: s.notificationsEnabled,
+        smartRemindersEnabled: s.smartRemindersEnabled,
+        prayerSilenceEnabled: s.prayerSilenceEnabled,
       }),
     }
   )

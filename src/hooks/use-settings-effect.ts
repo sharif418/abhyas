@@ -21,6 +21,8 @@ export function useSettingsEffect() {
     sound,
     remindersEnabled,
     notificationsEnabled,
+    smartRemindersEnabled,
+    prayerSilenceEnabled,
   } = useSettingsStore();
   const { setTheme } = useThemeManager();
 
@@ -62,6 +64,8 @@ export function useSettingsEffect() {
           sound,
           remindersEnabled,
           notificationsEnabled,
+          smartRemindersEnabled,
+          prayerSilenceEnabled,
         })
         .catch(() => {});
     }, 600);
@@ -74,6 +78,8 @@ export function useSettingsEffect() {
     sound,
     remindersEnabled,
     notificationsEnabled,
+    smartRemindersEnabled,
+    prayerSilenceEnabled,
   ]);
 }
 

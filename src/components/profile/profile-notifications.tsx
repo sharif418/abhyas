@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, Loader2, Send } from "lucide-react";
+import { BellRing, Loader2, Send, Sparkles, MoonStar } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import {
@@ -13,16 +13,54 @@ import {
   PUSH_PERMISSION_LABEL,
   type PushPermissionState,
 } from "@/lib/push";
+import { useSettingsStore } from "@/stores/settings-store";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { Section } from "./profile-shared";
+import { Section, ToggleRow } from "./profile-shared";
 
-/** পুশ নোটিফিকেশন — VAPID Web Push section. */
+/** পুশ নোটিফিকেশন — VAPID Web Push section + স্মার্ট বুদ্ধিমত্তা। */
 export function ProfileNotificationsSection() {
   return (
-    <Section title="পুশ নোটিফিকেশন" icon={BellRing}>
-      <PushNotificationsRow />
+    <>
+      <Section title="পুশ নোটিফিকেশন" icon={BellRing}>
+        <PushNotificationsRow />
+      </Section>
+      <SmartRemindersSection />
+    </>
+  );
+}
+
+/**
+ * SmartRemindersSection — স্মার্ট নোটিফিকেশন (Roadmap ফেজ ১-৪):
+ *  ১. স্মার্ট রিমাইন্ডার — ভুলে যাওয়া অভ্যাসের ধাপে-ধাপে মনে করানো
+ *     (৯০ মিনিট পর মৃদু বার্তা, রাত ৮:৩০/১০:৩০-এ স্ট্রিক রক্ষার সারসংক্ষেপ)।
+ *  ২. নামাজে সাইলেন্ট পরামর্শ — ওয়াক্ত শুরুতে ১৫ মিনিট ফোকাস মোডের
+ *     পরামর্শ (অ্যান্ড্রয়েডে আসল DND, ওয়েবে সফট ফোকাস)।
+ */
+function SmartRemindersSection() {
+  const smartReminders = useSettingsStore((s) => s.smartRemindersEnabled);
+  const prayerSilence = useSettingsStore((s) => s.prayerSilenceEnabled);
+  const toggleSmartReminders = useSettingsStore((s) => s.toggleSmartReminders);
+  const togglePrayerSilence = useSettingsStore((s) => s.togglePrayerSilence);
+
+  return (
+    <Section title="স্মার্ট সহায়তা" icon={Sparkles}>
+      <ToggleRow
+        icon={Sparkles}
+        label="স্মার্ট রিমাইন্ডার"
+        desc="ভুলে গেলে ৯০ মিনিট পর মৃদু বার্তা, রাতে স্ট্রিক রক্ষার শেষ সুযোগ"
+        checked={smartReminders}
+        onChange={toggleSmartReminders}
+      />
+      <ToggleRow
+        icon={MoonStar}
+        label="নামাজে সাইলেন্ট পরামর্শ"
+        desc="ওয়াক্ত শুরুতে ১৫ মিনিট ফোকাস মোডের পরামর্শ (অ্যান্ড্রয়েডে আসল DND)"
+        checked={prayerSilence}
+        onChange={togglePrayerSilence}
+        last
+      />
     </Section>
   );
 }

@@ -15,6 +15,8 @@ const SettingsSchema = z.object({
   sound: z.boolean().optional(),
   remindersEnabled: z.boolean().optional(),
   notificationsEnabled: z.boolean().optional(),
+  smartRemindersEnabled: z.boolean().optional(),
+  prayerSilenceEnabled: z.boolean().optional(),
 });
 
 /** POST /api/me/settings — persist user settings */

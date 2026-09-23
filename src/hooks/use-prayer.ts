@@ -7,12 +7,13 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { toast } from "sonner";
 import type { PrayerRecord, PrayerTimes } from "@/types";
 
-export function usePrayerTimes(city: string) {
+export function usePrayerTimes(city: string, opts?: { enabled?: boolean }) {
   return useQuery<PrayerTimes>({
     queryKey: ["prayer-times", city],
     queryFn: () =>
       api.get<PrayerTimes>(`/api/prayer/times?city=${encodeURIComponent(city)}`),
     staleTime: 1000 * 60 * 30, // 30 min
+    enabled: opts?.enabled !== false,
   });
 }
 

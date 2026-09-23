@@ -7,7 +7,7 @@
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production node .next/standalone/server.js",
     "lint": "eslint .",
-    "db:push": "prisma db push --accept-data-loss",
+    "db:push": "bun -e \"const u=process.env.DATABASE_URL||'';const s=u.startsWith('file:')?'prisma/schema.dev.prisma':'prisma/schema.prisma';console.log('prisma db push ('+s+')');require('node:child_process').execSync('bunx prisma db push --accept-data-loss --schema='+s,{stdio:'inherit'})\"",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
