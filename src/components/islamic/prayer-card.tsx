@@ -54,13 +54,15 @@ export function PrayerCard() {
   const [now, setNow] = useState(new Date());
 
   // Remember the chosen city so other consumers (prayer-silence
-  // suggestions) use the same location.
+  // suggestions, the native alarm engine) use the same location.
   useEffect(() => {
     try {
       localStorage.setItem(PRAYER_CITY_KEY, city);
     } catch {
       /* ignore */
     }
+    // Let the native alarm engine re-sync its prayer alarms for the new city.
+    window.dispatchEvent(new CustomEvent("abhyas:prayer-city"));
   }, [city]);
 
   const { data: times, isLoading, isError, refetch } = usePrayerTimes(city);

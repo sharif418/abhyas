@@ -65,11 +65,53 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="dns_filter" />
         </service>
+        <!-- ── Native alarm engine receivers ────────────────────────────── -->
+
+        <!-- Where every scheduled alarm lands: posts the notification with
+             action buttons, applies prayer auto-DND, self-extends the
+             offline prayer horizon. Not exported — our own alarms only. -->
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="false" />
+
+        <!-- Notification action buttons ([✓ সম্পন্ন], [১০ মিনিট পর],
+             [১৫ মিনিট ফোকাস]) — queue actions while the app is closed. -->
+        <receiver
+            android:name=".AlarmActionReceiver"
+            android:exported="false" />
+
+        <!-- Reboot survival: rebuilds every alarm from the persisted store
+             (offline prayer recalculation via PrayerTimesCalc). Exported
+             because the system delivers protected system broadcasts. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- ── Native alarm engine ────────────────────────────────────────────
+         Exact alarms: USE_EXACT_ALARM (API 33+) is auto-granted for the
+         alarm/prayer-time app category (Play-allowed); SCHEDULE_EXACT_ALARM
+         (API 31-32) is user-granted special access — the engine degrades
+         honestly to inexact windows when neither is available. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Boot receiver: re-schedule every alarm after a restart. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Notification vibration for prayer reminders. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Focus Mode (floating button): switch the phone's Do Not Disturb on/off.
          Granted by the user from Settings → Do Not Disturb access (one-time);

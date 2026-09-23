@@ -4200,3 +4200,105 @@ Stage Summary:
 - Roadmap updated (shipped table + feature-location matrix + v1.2.0).
 - Remaining: push code → deploy scheduler + main app → verify prod; live
   Isha prayer-suggestion browser check pending (~19:05 Dhaka).
+
+---
+Task ID: P2-0 (Native Alarm Engine — the notification architecture upgrade)
+Agent: Z.ai Code (Principal Architect)
+Task: The user's core ask: make reminders work at the ANDROID SYSTEM level
+(not web hacks). Own architecture decision requested — "no limitations,
+want the best." Delivered: the full hybrid alarm engine + PWA parity.
+
+Work Log:
+- Pulled origin/main first (sandbox trust reset) — already in sync; studied
+  the whole notification stack (use-notifications L1-L3, use-prayer-silence,
+  push-scheduler modules, FocusModePlugin.java, UsageGuard/ContentGuard
+  conventions, Capacitor plugin API signatures from the REAL
+  node_modules/@capacitor/android sources).
+- ARCHITECTURE (my decision, beyond the advisor-agent's suggestion):
+  "Brain in Web, Muscle in Native" — web layer owns WHAT/WHEN/Bengali copy;
+  native layer owns delivery. One contract (alarm-plugin.ts ⇄
+  NativeAlarmPlugin.java), two backends (Android exact alarms / web no-op —
+  PWA users keep in-app + server Web Push). FCM deliberately DEFERRED:
+  time-based reminders are 100% covered by local alarms; FCM only matters
+  for server-initiated content and needs the user's google-services.json.
+- src/lib/native/alarm-plugin.ts — NativeAlarm contract (getStatus,
+  requestExactAlarmAccess, requestNotificationPermission, syncAlarms,
+  cancelAll, getPendingActions, testAlarm, "alarmAction" listener) +
+  honest web no-op implementation.
+- src/lib/notifications/alarm-plan.ts — pure planner: habit L1 specs
+  (today-open + tomorrow, schedule-aware) + PrayerAlarmConfig recipe
+  (city/coords, per-prayer toggles, offset, autoSilence, horizon=3d,
+  today's authoritative Aladhan times embedded).
+- src/hooks/use-native-alarms.ts — mounted in AppShell: debounced plan sync
+  on every input change + resume + 30-min rollover; drains pending
+  notification-button actions (60s + visibility + live event) → applies
+  via /api/prayer/log & /api/habits/:id/toggle → query invalidation +
+  toasts; failed applies retried in-session.
+- Settings: prayerAlarmsEnabled (default ON), prayerAlarmOffsetMin
+  (0/5/10/15), prayerAlarmPrayers (5-key array), prayerAutoSilenceEnabled
+  (default OFF — a self-silencing phone must be explicit) — plumbed through
+  types, DEFAULT_SETTINGS, store (+canonical-order toggle), zod, sync
+  effect, scheduler parse.
+- Profile: new "নামাজের ওয়াকত" section (master toggle + offset radio group
+  + per-prayer chips + auto-silence row) + "অ্যালার্ম ইঞ্জিন" native status
+  card (exact-alarm / POST_NOTIFICATIONS / DND access checks + fix buttons
+  + 20s test alarm) — mounted-guard for hydration safety; VAPID push row
+  replaced by an honest native notice inside the Android app.
+- JAVA (7 new + 2 touched, all ≤400 lines):
+  PrayerTimesCalc.java — PrayTimes MWL algorithm (Fajr 18°/Isha 17°/Shafi
+  Asr shadow form); VERIFIED against the live Aladhan API (method 3) across
+  5 cities × 8 dates: worst diff 1 minute. Two real bugs caught by that
+  verification (eqTime hours/minutes mix + fixed-45° Asr) before shipping.
+  AlarmStore.java — SharedPreferences persistence: habit plan, prayer
+  config (+todayTimes), bounded (300) pending-action queue.
+  DndControl.java — DND ownership EXTRACTED from FocusModePlugin (same
+  previous-filter bookkeeping) so floating button + prayer auto-silence +
+  focus action can never clobber each other; FocusModePlugin now delegates.
+  AlarmScheduler.java — exact setExactAndAllowWhileIdle (USE_EXACT_ALARM
+  13+ / SCHEDULE_EXACT_ALARM 31-32 / inexact honest fallback), deterministic
+  ids, future-only, DND-restore one-shot, prayer horizon generation.
+  AlarmReceiver.java — notification with [✓ হয়ে গেছে][১৫ মিনিট ফোকাস] /
+  [✓ সম্পন্ন][১০ মিনিট পর] actions, auto-DND + restore, prayer-horizon
+  SELF-EXTENSION on every fire (offline forever), POST_NOTIFICATIONS-safe.
+  AlarmActionReceiver.java — button presses queue actions + live webview
+  event + snooze rescheduling + focus-15 DND.
+  BootReceiver.java — BOOT_COMPLETED / MY_PACKAGE_REPLACED / TIME_SET /
+  TIMEZONE_CHANGED → full offline reschedule from the store.
+  NativeAlarmPlugin.java — the bridge (@Permission alias for
+  POST_NOTIFICATIONS + @PermissionCallback, static-instance live events).
+- AndroidManifest: SCHEDULE_EXACT_ALARM + USE_EXACT_ALARM (prayer/alarm
+  app category — Play-allowed) + RECEIVE_BOOT_COMPLETED + VIBRATE; 3
+  receivers (2 unexported + exported BootReceiver).
+- SERVER: mini-services/push-scheduler/prayer.ts — PWA prayer-time Web
+  Push with the SAME verified algorithm (fixed UTC+6), settings-gated
+  (prayerAlarmsEnabled/per-prayer/offset), ±2-min catch-up window +
+  in-memory dedup, TTL 30min urgency high, tag prayer-{key}-{date}
+  (≤32 chars → real collapse key); wired into the tick loop + Dockerfile.
+- VERIFICATION:
+  * ECJ 3.36 (downloaded to /tmp) + API-faithful stubs (android/androidx/
+    org.json/Capacitor — signatures cross-checked line-by-line against the
+    real @capacitor/android sources, incl. PluginMethod living in
+    com.getcapacitor NOT annotation): 10 app files compile with 0 errors.
+    Caught: Calendar.MINUTE_OF_DAY doesn't exist (→ cal.set(h, m) form).
+  * Manifest XML validated (11 permissions, 3 receivers, 2 services).
+  * tsc 0 errors; eslint clean; scheduler bun-build clean (54 modules).
+  * agent-browser E2E: onboarding dismissed → profile → new section
+    renders (defaults ON, all-five chips ✓); offset→৫ মিনিট + ফজর off →
+    localStorage persisted with canonical order; POST /api/me/settings 200
+    (3×); reload rehydrated; server GET round-trip shows all 4 new fields;
+    restored defaults; mobile 390×844 + desktop OK; 0 page/console errors;
+    dev.log clean (Prisma UPDATE on settings JSON visible).
+
+Stage Summary:
+- Shipped: the complete native alarm engine (Android) + prayer Web Push
+  (PWA/server) + settings + profile UI — one semantics, two deliveries.
+- Artifacts: 3 new TS lib/hook + 1 profile component (web), 7 new Java +
+  FocusModePlugin refactor + manifest (android), prayer.ts scheduler
+  module (server), ROADMAP v1.3.0.
+- Play Store note: USE_EXACT_ALARM fits the alarm/prayer-time category;
+  QUERY_ALL_PACKAGES/VpnService declarations remain the other justifications.
+- APK build still requires a real Android SDK machine: cd android &&
+  ./gradlew assembleDebug (then smoke-test exact-alarm permission flow +
+  a prayer notification's action buttons + reboot survival).
+- Next: Coolify scheduler dockerfile must COPY prayer.ts (deploy step of
+  this task) + main app redeploy via push.

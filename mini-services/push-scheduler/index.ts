@@ -42,6 +42,7 @@ import {
   sendToSubscriptions,
 } from "./shared";
 import { escalationTick } from "./escalation";
+import { prayerTick } from "./prayer";
 
 const CHECK_INTERVAL_MS = 60_000; // 1 minute
 
@@ -140,7 +141,7 @@ async function tick(): Promise<ReminderResult> {
 // Main loop
 // ---------------------------------------------------------------------------
 async function main(): Promise<void> {
-  log("Starting অভ্যাস Push Notification Scheduler (L1 + smart L2/L3)...");
+  log("Starting অভ্যাস Push Notification Scheduler (L1 + smart L2/L3 + prayer)...");
   log(`Timezone: ${TZ}`);
   log(`Check interval: ${CHECK_INTERVAL_MS / 1000}s`);
   ensureVapidConfigured();
@@ -165,14 +166,15 @@ async function runTick(): Promise<void> {
   try {
     const result = await tick();
     const escalation = await escalationTick();
+    const prayer = await prayerTick();
 
     const anyActivity =
-      result.checked > 0 || escalation.l2Sent > 0 || escalation.rescueSent > 0;
+      result.checked > 0 || escalation.l2Sent > 0 || escalation.rescueSent > 0 || prayer.sent > 0;
     if (anyActivity) {
       log(
         `Tick: L1 ${result.checked} checked/${result.sent} sent/` +
           `${result.skipped} skipped, L2 ${escalation.l2Sent} sent, ` +
-          `L3 ${escalation.rescueSent} sent.`
+          `L3 ${escalation.rescueSent} sent, prayer ${prayer.sent} sent.`
       );
     }
   } catch (err) {

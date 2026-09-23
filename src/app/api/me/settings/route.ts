@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
+const PRAYER_KEYS = ["fajr", "dhuhr", "asr", "maghrib", "isha"] as const;
+
 const SettingsSchema = z.object({
   theme: z.enum(["light", "dark", "system"]).optional(),
   accent: z.string().regex(HEX_COLOR).optional(),
@@ -17,6 +19,10 @@ const SettingsSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
   smartRemindersEnabled: z.boolean().optional(),
   prayerSilenceEnabled: z.boolean().optional(),
+  prayerAlarmsEnabled: z.boolean().optional(),
+  prayerAlarmOffsetMin: z.union([z.literal(0), z.literal(5), z.literal(10), z.literal(15)]).optional(),
+  prayerAlarmPrayers: z.array(z.enum(PRAYER_KEYS)).optional(),
+  prayerAutoSilenceEnabled: z.boolean().optional(),
 });
 
 /** POST /api/me/settings — persist user settings */

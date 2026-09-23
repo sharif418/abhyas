@@ -11,9 +11,12 @@ public class MainActivity extends BridgeActivity {
         // FocusMode   → system-wide Do-Not-Disturb for the floating focus button.
         // UsageGuard  → per-app daily time budgets (UsageStatsManager + watchdog service).
         // ContentGuard → DNS-level content filtering VPN (family/security/ads/custom).
+        // NativeAlarm → exact offline alarms: prayer times + habit reminders
+        //               that survive reboots and Doze (the alarm engine).
         registerPlugin(FocusModePlugin.class);
         registerPlugin(UsageGuardPlugin.class);
         registerPlugin(ContentGuardPlugin.class);
+        registerPlugin(NativeAlarmPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

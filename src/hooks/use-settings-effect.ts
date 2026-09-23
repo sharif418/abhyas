@@ -23,6 +23,10 @@ export function useSettingsEffect() {
     notificationsEnabled,
     smartRemindersEnabled,
     prayerSilenceEnabled,
+    prayerAlarmsEnabled,
+    prayerAlarmOffsetMin,
+    prayerAlarmPrayers,
+    prayerAutoSilenceEnabled,
   } = useSettingsStore();
   const { setTheme } = useThemeManager();
 
@@ -66,6 +70,10 @@ export function useSettingsEffect() {
           notificationsEnabled,
           smartRemindersEnabled,
           prayerSilenceEnabled,
+          prayerAlarmsEnabled,
+          prayerAlarmOffsetMin,
+          prayerAlarmPrayers,
+          prayerAutoSilenceEnabled,
         })
         .catch(() => {});
     }, 600);
@@ -80,6 +88,10 @@ export function useSettingsEffect() {
     notificationsEnabled,
     smartRemindersEnabled,
     prayerSilenceEnabled,
+    prayerAlarmsEnabled,
+    prayerAlarmOffsetMin,
+    prayerAlarmPrayers,
+    prayerAutoSilenceEnabled,
   ]);
 }
 

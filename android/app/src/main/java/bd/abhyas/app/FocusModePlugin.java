@@ -1,9 +1,6 @@
 package bd.abhyas.app;
 
-import android.app.NotificationManager;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.provider.Settings;
 
@@ -33,11 +30,11 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * re-sync on app resume and the floating button never lies (e.g. if the user
  * toggles DND from quick settings, or the app was killed mid-session).
  *
- * ── Roadmap hooks ────────────────────────────────────────────────────────
- * This plugin is the first of the phone-control family. Planned siblings:
- * UsageStatsManager (per-app social-media time budgets) and an app-blocking
- * service — both follow the same pattern: explicit user permission, honest
- * status reporting, graceful degradation.
+ * ── Shared ownership ─────────────────────────────────────────────────────
+ * The actual DND switching + previous-filter bookkeeping lives in
+ * {@link DndControl}, shared with the prayer auto-silence path — so the
+ * floating button and prayer-time DND restore the same "before" state and
+ * can never clobber each other.
  */
 @CapacitorPlugin(name = "FocusMode")
 public class FocusModePlugin extends Plugin {
@@ -47,44 +44,12 @@ public class FocusModePlugin extends Plugin {
     static final String ERR_UNSUPPORTED = "UNSUPPORTED";
     static final String ERR_SETTINGS_UNAVAILABLE = "SETTINGS_UNAVAILABLE";
 
-    private static final String PREFS_NAME = "abhyas_focus_mode";
-    private static final String KEY_PREVIOUS_FILTER = "previous_filter";
-
-    private NotificationManager notificationManager() {
-        return (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-    }
-
-    private SharedPreferences prefs() {
-        return getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-    }
-
-    /** DND access granted? (always false below Android 6.0) */
-    private boolean hasPolicyAccess() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false;
-        try {
-            return notificationManager().isNotificationPolicyAccessGranted();
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
-
-    /** True only while the phone is in "total silence" (our focus state). */
-    private boolean isTotalSilence() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false;
-        try {
-            return notificationManager().getCurrentInterruptionFilter()
-                    == NotificationManager.INTERRUPTION_FILTER_NONE;
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
-
     // ── JS API ────────────────────────────────────────────────────────────
 
     @PluginMethod
     public void isAccessGranted(PluginCall call) {
         JSObject ret = new JSObject();
-        ret.put("granted", hasPolicyAccess());
+        ret.put("granted", DndControl.hasPolicyAccess(getContext()));
         call.resolve(ret);
     }
 
@@ -99,7 +64,7 @@ public class FocusModePlugin extends Plugin {
             call.reject("এই ফিচারটি Android 6.0+ প্রয়োজন", ERR_UNSUPPORTED);
             return;
         }
-        if (hasPolicyAccess()) {
+        if (DndControl.hasPolicyAccess(getContext())) {
             JSObject ret = new JSObject();
             ret.put("granted", true);
             ret.put("opened", false);
@@ -126,17 +91,18 @@ public class FocusModePlugin extends Plugin {
     @PluginMethod
     public void getStatus(PluginCall call) {
         JSObject ret = new JSObject();
-        ret.put("granted", hasPolicyAccess());
-        ret.put("active", isTotalSilence());
+        ret.put("granted", DndControl.hasPolicyAccess(getContext()));
+        ret.put("active", DndControl.isTotalSilence(getContext()));
         call.resolve(ret);
     }
 
     /**
-     * Enables focus: remembers the phone's current interruption filter,
-     * then switches to total silence (all apps' notifications + calls +
-     * ringtones suppressed). Persists the "previous" filter so a later
-     * `disable()` — even after an app restart — restores exactly what the
-     * user had before.
+     * Enables focus via the shared {@link DndControl} owner (total silence:
+     * all apps' notifications + calls + ringtones suppressed). The
+     * "previous" filter is remembered once, so a later disable() — even
+     * after an app restart, and whether triggered by this button, a prayer
+     * auto-silence or a focus notification action — restores exactly what
+     * the user had before.
      */
     @PluginMethod
     public void enable(PluginCall call) {
@@ -144,27 +110,15 @@ public class FocusModePlugin extends Plugin {
             call.reject("এই ফিচারটি Android 6.0+ প্রয়োজন", ERR_UNSUPPORTED);
             return;
         }
-        if (!hasPolicyAccess()) {
+        if (!DndControl.hasPolicyAccess(getContext())) {
             call.reject("Do Not Disturb অনুমতি দরকার", ERR_DND_ACCESS_REQUIRED);
             return;
         }
-        try {
-            NotificationManager nm = notificationManager();
-            int current = nm.getCurrentInterruptionFilter();
-            if (current != NotificationManager.INTERRUPTION_FILTER_NONE) {
-                int previous = current == NotificationManager.INTERRUPTION_FILTER_UNKNOWN
-                        ? NotificationManager.INTERRUPTION_FILTER_ALL
-                        : current;
-                prefs().edit().putInt(KEY_PREVIOUS_FILTER, previous).apply();
-            }
-            nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
-
+        if (DndControl.enable(getContext())) {
             JSObject ret = new JSObject();
             ret.put("active", true);
             call.resolve(ret);
-        } catch (SecurityException e) {
-            call.reject("Do Not Disturb অনুমতি দরকার", ERR_DND_ACCESS_REQUIRED);
-        } catch (Exception e) {
+        } else {
             call.reject("ফোকাস মোড চালু করা যায়নি", "ENABLE_FAILED");
         }
     }
@@ -179,22 +133,15 @@ public class FocusModePlugin extends Plugin {
             call.reject("এই ফিচারটি Android 6.0+ প্রয়োজন", ERR_UNSUPPORTED);
             return;
         }
-        if (!hasPolicyAccess()) {
+        if (!DndControl.hasPolicyAccess(getContext())) {
             call.reject("Do Not Disturb অনুমতি দরকার", ERR_DND_ACCESS_REQUIRED);
             return;
         }
-        try {
-            NotificationManager nm = notificationManager();
-            int previous = prefs().getInt(KEY_PREVIOUS_FILTER,
-                    NotificationManager.INTERRUPTION_FILTER_ALL);
-            nm.setInterruptionFilter(previous);
-
+        if (DndControl.disable(getContext())) {
             JSObject ret = new JSObject();
-            ret.put("active", previous == NotificationManager.INTERRUPTION_FILTER_NONE);
+            ret.put("active", DndControl.isTotalSilence(getContext()));
             call.resolve(ret);
-        } catch (SecurityException e) {
-            call.reject("Do Not Disturb অনুমতি দরকার", ERR_DND_ACCESS_REQUIRED);
-        } catch (Exception e) {
+        } else {
             call.reject("ফোকাস মোড বন্ধ করা যায়নি", "DISABLE_FAILED");
         }
     }

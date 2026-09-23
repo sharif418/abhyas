@@ -24,8 +24,8 @@ COPY prisma ./prisma
 # Generate Prisma client
 RUN bunx prisma generate
 
-# Copy source (index.ts entry + shared/escalation modules)
-COPY index.ts shared.ts escalation.ts ./
+# Copy source (index.ts entry + shared/escalation/prayer modules)
+COPY index.ts shared.ts escalation.ts prayer.ts ./
 
 # No port exposed — this is a background worker, not a server
 # No healthcheck — the process either runs or exits (Coolify monitors via restart policy)

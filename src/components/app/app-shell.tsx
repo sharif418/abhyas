@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useSettingsEffect } from "@/hooks/use-settings-effect";
 import { useNotifications } from "@/hooks/use-notifications";
 import { usePrayerSilence } from "@/hooks/use-prayer-silence";
+import { useNativeAlarms } from "@/hooks/use-native-alarms";
 import { useUIStore, bindHistoryNavigation } from "@/stores/ui-store";
 import { ALL_VIEWS } from "./nav-config";
 import { SidebarNav } from "./sidebar-nav";
@@ -38,6 +39,8 @@ export function AppShell() {
   useSettingsEffect();
   useNotifications();
   usePrayerSilence();
+  // Native alarm engine: plan sync + notification-button action drain.
+  useNativeAlarms();
 
   const templatesOpen = useUIStore((s) => s.templatesOpen);
   const setTemplatesOpen = useUIStore((s) => s.setTemplatesOpen);

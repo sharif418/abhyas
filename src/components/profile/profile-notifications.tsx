@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, Loader2, Send, Sparkles, MoonStar } from "lucide-react";
+import { BellRing, Loader2, Send, Sparkles, MoonStar, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { isNativeApp } from "@/lib/native/capacitor";
 import {
   isPushSupported,
   getPushPermissionState,
@@ -17,15 +18,17 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { ProfilePrayerAlarmsSection } from "./profile-prayer-alarms";
 import { Section, ToggleRow } from "./profile-shared";
 
-/** পুশ নোটিফিকেশন — VAPID Web Push section + স্মার্ট বুদ্ধিমত্তা। */
+/** পুশ নোটিফিকেশন — VAPID Web Push section + স্মার্ট বুদ্ধিমত্তা + ওয়াকত রিমাইন্ডার। */
 export function ProfileNotificationsSection() {
   return (
     <>
       <Section title="পুশ নোটিফিকেশন" icon={BellRing}>
         <PushNotificationsRow />
       </Section>
+      <ProfilePrayerAlarmsSection />
       <SmartRemindersSection />
     </>
   );
@@ -85,6 +88,11 @@ function PushNotificationsRow() {
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+
+  // Inside the Android app the native alarm engine owns notifications —
+  // VAPID web push does not apply there. (mounted-guard keeps SSR stable.)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Check for an existing push subscription on mount.
   useEffect(() => {
@@ -157,6 +165,24 @@ function PushNotificationsRow() {
       setSendingTest(false);
     }
   };
+
+  // --- Native app: the alarm engine replaces web push entirely ---
+  if (mounted && isNativeApp()) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-islamic/10 text-islamic dark:text-islamic-foreground">
+          <Zap size={16} aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium">সিস্টেম অ্যালার্ম ইঞ্জিন</div>
+          <div className="text-[11px] text-muted-foreground">
+            অ্যান্ড্রয়েড অ্যাপে নোটিফিকেশন সরাসরি OS অ্যালার্ম ইঞ্জিন সামলায় — ওয়েব পুশ
+            প্রযোজ্য নয় (নিচের “অ্যালার্ম ইঞ্জিন” কার্ড দেখুন)
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- Unsupported: show muted info row, no switch ---
   if (!supported) {

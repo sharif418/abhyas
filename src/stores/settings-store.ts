@@ -15,6 +15,10 @@ interface SettingsState extends UserSettings {
   toggleNotifications: () => void;
   toggleSmartReminders: () => void;
   togglePrayerSilence: () => void;
+  togglePrayerAlarms: () => void;
+  setPrayerAlarmOffset: (min: number) => void;
+  togglePrayerAlarmPrayer: (key: string) => void;
+  togglePrayerAutoSilence: () => void;
   hydrateFromServer: (s: Partial<UserSettings>) => void;
   reset: () => void;
 }
@@ -39,6 +43,21 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ smartRemindersEnabled: !s.smartRemindersEnabled })),
       togglePrayerSilence: () =>
         set((s) => ({ prayerSilenceEnabled: !s.prayerSilenceEnabled })),
+      togglePrayerAlarms: () =>
+        set((s) => ({ prayerAlarmsEnabled: !s.prayerAlarmsEnabled })),
+      setPrayerAlarmOffset: (min) => set({ prayerAlarmOffsetMin: min }),
+      togglePrayerAlarmPrayer: (key) =>
+        set((s) => {
+          const all = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+          const current = s.prayerAlarmPrayers ?? all;
+          const next = current.includes(key)
+            ? current.filter((k) => k !== key)
+            : [...current, key];
+          // keep canonical order regardless of toggle sequence
+          return { prayerAlarmPrayers: all.filter((k) => next.includes(k)) };
+        }),
+      togglePrayerAutoSilence: () =>
+        set((s) => ({ prayerAutoSilenceEnabled: !s.prayerAutoSilenceEnabled })),
       hydrateFromServer: (s) => set({ ...s }),
       reset: () => set({ ...DEFAULT_SETTINGS }),
     }),
@@ -55,6 +74,10 @@ export const useSettingsStore = create<SettingsState>()(
         notificationsEnabled: s.notificationsEnabled,
         smartRemindersEnabled: s.smartRemindersEnabled,
         prayerSilenceEnabled: s.prayerSilenceEnabled,
+        prayerAlarmsEnabled: s.prayerAlarmsEnabled,
+        prayerAlarmOffsetMin: s.prayerAlarmOffsetMin,
+        prayerAlarmPrayers: s.prayerAlarmPrayers,
+        prayerAutoSilenceEnabled: s.prayerAutoSilenceEnabled,
       }),
     }
   )

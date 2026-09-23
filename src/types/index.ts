@@ -133,6 +133,15 @@ export interface UserSettings {
   smartRemindersEnabled: boolean;
   /** Suggest silence/DND when a prayer time arrives (Android: real DND). */
   prayerSilenceEnabled: boolean;
+  /** Prayer-time ALARMS — the native alarm engine's flagship (Android:
+   *  exact offline alarms; PWA: server web push + in-app notice). */
+  prayerAlarmsEnabled: boolean;
+  /** Minutes before each prayer time the alarm should ring (0/5/10/15). */
+  prayerAlarmOffsetMin: number;
+  /** Which prayers ring (subset of the five keys; empty = none). */
+  prayerAlarmPrayers: string[];
+  /** Opt-in: Android auto-enables real DND for 15 min at prayer time. */
+  prayerAutoSilenceEnabled: boolean;
 }
 
 export interface Badge {
