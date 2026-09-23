@@ -4431,3 +4431,17 @@ Stage Summary:
 - Remaining per ROADMAP: ফেজ ৩ (পরিবার মোড, মসজিদ কমিউনিটি, স্টাডি রুম) +
   ফেজ ৪ (Play checklist: justification forms, privacy policy page, data
   safety, Sentry opt-in; iOS shell; cloud sync).
+
+---
+Task ID: P3-deploy
+Agent: Z.ai Code (Principal Architect)
+
+Work Log:
+- Pushed 1ce83ea to GitHub; triggered Coolify redeploy (qemddmalgpuyho4a1cuujftp).
+- PROD VERIFIED: deployment finished, fresh container (uptime reset), /api/health
+  healthy (db ok, schemaDrift ok, migrations 6); https://abhyas.ailearnersbd.com/#/guard
+  renders the NEW sections (স্ক্রিন-টাইম রিপোর্ট + রাতের বিশ্রাম ও ঘুম) with 0 page
+  errors. Push-scheduler untouched (no server code changed in P3).
+
+Stage Summary:
+- Phase 2 fully live in production (v1.4.0).
