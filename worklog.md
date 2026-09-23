@@ -4004,3 +4004,110 @@ Stage Summary:
   Coolify → অভ্যাস application → Deployments → "Redeploy" (or check the
   GitHub webhook deliveries / Coolify webhook URL). Everything on the repo
   side is verified green.
+
+---
+Task ID: P0 (prod incident repair + environment revival)
+Agent: Z.ai Code (Principal Architect)
+
+Task: User provided Coolify API token/UUIDs; pull latest from GitHub (long gap
+since last session — sandbox may have drifted), then diagnose & repair
+production (habits/goals/planner 500s).
+
+Work Log:
+- Repo verified in sync with origin/main (0/0); 175 "modified" files were
+  pure file-mode noise → `git config core.fileMode false` → clean tree.
+- Sandbox reset casualties rebuilt: prisma/schema.dev.prisma (SQLite dev
+  schema, Json→String / Int[]→String per db-compat contract) + db/custom.db
+  via db push; dev server restarted; .env unchanged (file:…custom.db).
+- Coolify API (token provided): GET applications/psqr62a9…; /deploy POST
+  works; /deployments/{uuid} status works; no logs endpoint in this version.
+- DIAGNOSIS: /api/me|journal|mood 200 but habits|stats|goals|planner 500 →
+  prod PostgreSQL schema drift: `_prisma_migrations` bookkeeping out of sync
+  with actual schema → plain `migrate deploy` aborts → add_habit_note,
+  add_goal, add_planner_task never applied (Habit.note column + Goal +
+  PlannerTask tables missing).
+- ROOT-CAUSE FIX: scripts/migrate-selfheal.mjs — idempotent additive
+  convergence: reads all migration.sql files, applies each missing STATEMENT
+  guarded by catalog existence probes (to_regclass/information_schema/
+  pg_indexes/pg_constraint/pg_type), tolerates "already exists" +
+  extension-privilege errors, then repairs _prisma_migrations (delete failed
+  rows, insert sha256-checksummed applied rows, sync stale checksums).
+  52/52 statements classified & verified against real migration files
+  (49 guarded + 3 deliberate always-attempt: SCHEMA/EXTENSION).
+- docker-entrypoint.sh: selfheal first, then migrate deploy (verification
+  layer → green no-op). Dockerfile: COPY scripts into runtime image.
+- /api/health: + read-only schema-drift diagnostics (missing tables/columns,
+  migrationsRecorded/Failed, provider-aware for sqlite+postgres).
+- tsconfig excludes sandbox-injected skills/ (matches Docker context);
+  schema.dev.prisma un-gitignored (was lost on sandbox reset — postinstall
+  depends on it).
+- DEPLOYED: 058d3db via API-triggered deploy (webhook+API deploys race →
+  first attempt failed in 7s with lock conflict; single retry succeeded,
+  05:02:23→05:07:41).
+- VERIFIED LIVE: /api/health schemaDrift = {missingTables:[], missingColumns:
+  [], migrationsRecorded:5, migrationsFailed:0}; habits/goals/planner/stats
+  ALL → 200. Production incident CLOSED.
+
+Stage Summary:
+- Self-healing migration system is a permanent capability: any future drift
+  (failed deploys, partial migrations, edited files) auto-repairs on next
+  boot; health endpoint exposes drift state for monitoring.
+- Coolify deploy via API: POST /api/v1/deploy {uuid, force:true} → poll
+  GET /api/v1/deployments/{uuid}. Never fire while another deploy runs.
+
+---
+Task ID: P1-c (Phase 1 flagship: শেখা মডিউল / Learning Module)
+Agent: Z.ai Code (Principal Architect)
+
+Task: ROADMAP ফেজ ১ item 1 — শেখা মডিউল full-stack: tracks/courses, lessons,
+SM-2 flashcards, habit+goal integration.
+
+Work Log:
+- Prisma: LearningTrack/Lesson/Flashcard models (both schemas + migration
+  20260923100000_add_learning; habitId/goalId are SOFT links — delete only
+  unlinks, user data never silently destroyed).
+- learning-server.ts: SM-2 (pure: ease-factor EF' formula, rep=1→1d,
+  rep=2→6d, then interval×EF; grade<3 → reset+lapse, due stays today);
+  buildTrackMeta serializer; completeLinkedHabitToday (reuse toggleHabit →
+  streaks/badges identical to manual tick, idempotent/day); syncLinkedGoal
+  (currentValue=lessonsDone, milestone auto-complete, completion);
+  awardXp shared tail.
+- Templates (constants/learning-tracks.ts): REAL verified content only —
+  আরবি ২৮ হরফ (28 cards: ا→আলিফ … ي→ইয়া + 5 lessons), রোজকার ইংরেজি (16
+  cards + 5 lessons), কোডিং HTML (10 cards + 5 lessons), নিজের সিলেবাস
+  (empty starter).
+- APIs: /api/learning (GET list+summary+practice-streak; POST create from
+  template + optional habit "{title} — আজ {N} মিনিট" + optional goal with
+  25/50/75/100% milestones), /api/learning/[id] (GET detail; PATCH
+  discriminated-union: lesson-toggle/lesson-add/lesson-delete/card-add/
+  card-delete/track-update, guards ≤100 lessons/≤500 cards; DELETE),
+  /api/learning/review (POST grade → SM-2 + +2 XP + habit tick).
+- XP: review +2, lesson +6 (symmetric reversal), track-complete +40
+  one-time. Un-completing a lesson reverses (floor 0) like planner.
+- UI (all ≤400 lines): learning-view (hero: 4 stats + practice-streak chip
+  + how-it-works strip), track-detail (lesson checklist with content,
+  review CTA with due count, card deck grid, inline add/delete), review-
+  session (3D flip card — RTL-aware Arabic fronts, 4-grade rail with
+  hints, optimistic queue, আবার re-queues in-session, completion
+  celebration), track-form (template picker, title override, minutes
+  stepper 10–60, habit/goal link switches), learning-shared (TrackRow,
+  LessonProgress, LearnStat, SubjectTag).
+- Nav: ViewKey "learn" + VIEW_KEYS hash deep-link (#/learn) + MORE sheet
+  FIRST item + home quick action (replaced duplicate-islamic তাসবিহ slot).
+- Local E2E (curl suite): create → 5 lessons/28 cards/habit+goal linked;
+  lesson-toggle → +6 XP + habitCompleted:true + goal currentValue 1/5 +
+  milestone auto-done; review grade=4 → interval 6d (SM-2 correct);
+  grade=0 → lapses+1, due stays TODAY; habit idempotent (2nd tick no-op).
+- Browser E2E (agent-browser, 390×844): #/learn deep-link renders; track
+  open; review modal flip+grade via UI; lesson toggle via UI; home goals
+  card shows "আরবি পড়া শুরু — ২/৫ লেসন"; More sheet lists শেখা first;
+  0 console errors; screenshots saved (/tmp/learning-final.png etc).
+- tsc 0 errors; eslint clean (fixed preserve-manual-memoization by
+  de-memoizing the grade handler).
+
+Stage Summary:
+- The full daily loop now: শেখা → lesson done → habit auto-ticked → goal
+  progress → XP. Flashcards resurface exactly per SM-2 forgetting curve.
+- Commit ade2284 pushed; learning deploy queued via Coolify API
+  (p9z41w2avv8lmyn9vijqwlds) — next agent: verify /api/learning 200 +
+  migrationsRecorded:6 after it finishes, then browser-verify live.
