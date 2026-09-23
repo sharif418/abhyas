@@ -42,6 +42,7 @@ const VIEW_KEYS: ViewKey[] = [
   "goals",
   "guard",
   "planner",
+  "learn",
   "profile",
 ];
 

@@ -170,6 +170,7 @@ export type ViewKey =
   | "goals"
   | "guard"
   | "planner"
+  | "learn"
   | "profile"
   | "more"; // virtual — opens the More menu, not a real view
 

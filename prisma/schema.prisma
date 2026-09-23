@@ -37,6 +37,7 @@ model User {
   goals         Goal[]
   plannerTasks  PlannerTask[]
   pushSubscriptions PushSubscription[]
+  learningTracks LearningTrack[]
 
   @@index([email])
 }
@@ -232,6 +233,70 @@ model PlannerTask {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
+}
+
+// শেখা মডিউল (Learning) — Phase 1 flagship: subject tracks with lessons +
+// SM-2 spaced-repetition flashcards. Links to a daily-practice Habit and a
+// progress Goal (soft references — deleting a habit/goal just unlinks).
+model LearningTrack {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  subject       String   @default("অন্য") // আরবি | ইংরেজি | কোডিং | পড়াশোনা | HSC | অন্য
+  icon          String   @default("BookOpen")
+  color         String   @default("#0d9488")
+  minutesPerDay Int      @default(20)
+  habitId       String? // linked daily-practice habit
+  goalId        String? // linked progress goal (currentValue = lessons done)
+  archived      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+  cards   Flashcard[]
+
+  @@index([userId, archived])
+}
+
+model Lesson {
+  id        String    @id @default(cuid())
+  trackId   String
+  userId    String
+  title     String
+  content   String?
+  sortOrder Int       @default(0)
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([trackId, sortOrder])
+}
+
+model Flashcard {
+  id             String    @id @default(cuid())
+  trackId        String
+  userId         String
+  front          String
+  back           String
+  // SM-2 spaced repetition state
+  easeFactor     Float     @default(2.5)
+  intervalDays   Int       @default(0)
+  repetitions    Int       @default(0)
+  lapses         Int       @default(0)
+  dueDate        String // YYYY-MM-DD (Asia/Dhaka)
+  lastReviewedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+  @@index([trackId])
 }
 
 // Web Push subscriptions for sending push notifications to users' devices.
