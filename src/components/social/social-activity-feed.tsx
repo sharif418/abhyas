@@ -43,7 +43,9 @@ export function SocialActivityFeed({
         </AnimatePresence>
         {activities.length === 0 && (
           <div className="py-8 text-center text-xs text-muted-foreground">
-            লাইভ কার্যকলাপ এখনো নেই — কেউ অনলাইন নেই।
+            {connected
+              ? "এখনো কোনো লাইভ কার্যকলাপ নেই। কেউ অভ্যাস সম্পন্ন করলেই এখানে দেখা যাবে।"
+              : "সংযোগ ছিন্ন — সংযোগ ফিরলে লাইভ কার্যকলাপ দেখা যাবে।"}
           </div>
         )}
       </div>
