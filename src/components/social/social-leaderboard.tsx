@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Crown, Flame, Loader2, Share2, Trophy } from "lucide-react";
+import { Crown, Flame, Loader2, Share2, Trophy, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { toBn } from "@/lib/date-bn";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/shared/stat-pill";
 import type { LeaderboardEntry } from "@/hooks/use-social";
 
 export interface SocialMe {
+  id: string;
   name: string;
   xp: number;
   level: number;
@@ -42,61 +43,97 @@ async function handleInvite(): Promise<void> {
 }
 
 /**
- * Live leaderboard — rank hero + ranked list. When nobody else is on the
- * board yet (only you / nobody), an honest empty state invites friends.
+ * Real leaderboard — database-backed ranking of registered users with live
+ * presence dots. Guests see the board plus an honest "register to compete"
+ * card instead of a fake personal rank. When no registered users exist yet,
+ * an honest empty state invites friends.
  */
 export function SocialLeaderboard({
   me,
+  isGuest,
   leaderboard,
   isLoading,
 }: {
   me?: SocialMe;
+  isGuest: boolean;
   leaderboard: LeaderboardEntry[];
   isLoading: boolean;
 }) {
-  const myRank = useMemo(() => {
-    const idx = leaderboard.findIndex((e) => e.isYou);
-    return idx >= 0 ? idx + 1 : null;
-  }, [leaderboard]);
-
-  // "Empty" means no OTHER participants — a board with only you is still
-  // friendless, so the invite empty state applies.
-  const hasFriends = useMemo(
-    () => leaderboard.some((e) => !e.isYou),
+  const myEntry = useMemo(
+    () => leaderboard.find((e) => e.isYou) ?? null,
     [leaderboard]
   );
+  const myRank = myEntry?.rank ?? null;
+
+  // "Empty" means no registered participants on the board yet — an honest
+  // state, so the invite empty state applies.
+  const hasCompetitors = leaderboard.length > 0;
 
   return (
     <div className="space-y-4">
-      {/* Your rank hero — only when live data includes you */}
+      {/* Your rank hero — guest CTA or registered-user rank card */}
       <AnimatePresence mode="wait">
-        {me && leaderboard.length > 0 && (
+        {isGuest ? (
           <motion.div
-            key="rank-hero"
+            key="guest-cta"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
+            className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
           >
             <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
             <div className="relative flex items-center gap-3">
-              <div className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
-                <span className="tabular text-lg font-extrabold leading-none">
-                  {myRank ? toBn(myRank) : "—"}
-                </span>
-                <span className="text-[8px]">র‍্যাঙ্ক</span>
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+                <UserPlus size={22} aria-hidden />
               </div>
-              <div className="flex-1">
-                <div className="text-sm font-bold">{me.name}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold">প্রতিযোগিতায় যুক্ত হন</div>
                 <div className="text-xs text-muted-foreground">
-                  লেভেল {toBn(me.level)} • {toBn(me.xp)} XP
+                  অ্যাকাউন্ট খুলে আপনার XP দিয়ে লিডারবোর্ডে অংশ নিন — বিনামূল্যে।
                 </div>
               </div>
-              {myRank && myRank <= 3 && (
-                <Crown className="text-amber-500" size={24} fill="currentColor" />
-              )}
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  window.location.href = "/login";
+                }}
+              >
+                শুরু করুন
+              </Button>
             </div>
           </motion.div>
+        ) : (
+          me &&
+          myEntry && (
+            <motion.div
+              key="rank-hero"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
+            >
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+              <div className="relative flex items-center gap-3">
+                <div className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+                  <span className="tabular text-lg font-extrabold leading-none">
+                    {myRank ? toBn(myRank) : "—"}
+                  </span>
+                  <span className="text-[8px]">র‍্যাঙ্ক</span>
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-bold">{me.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    লেভেল {toBn(me.level)} • {toBn(me.xp)} XP
+                  </div>
+                </div>
+                {myRank && myRank <= 3 && (
+                  <Crown className="text-amber-500" size={24} fill="currentColor" />
+                )}
+              </div>
+            </motion.div>
+          )
         )}
       </AnimatePresence>
 
@@ -111,7 +148,7 @@ export function SocialLeaderboard({
 
         <div className="space-y-1">
           <AnimatePresence mode="popLayout">
-            {hasFriends &&
+            {hasCompetitors &&
               leaderboard.map((entry, i) => (
                 <motion.div
                   layout
@@ -127,17 +164,27 @@ export function SocialLeaderboard({
                       : "hover:bg-muted/40"
                   )}
                 >
-                  <RankBadge rank={i + 1} />
+                  <RankBadge rank={entry.rank ?? i + 1} />
                   <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <div
-                      className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                        entry.isYou
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                    <div className="relative shrink-0">
+                      <div
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold",
+                          entry.isYou
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {entry.name.charAt(0)}
+                      </div>
+                      {entry.online && (
+                        <span
+                          className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-background"
+                          title="এখন অনলাইন"
+                        >
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                        </span>
                       )}
-                    >
-                      {entry.name.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
@@ -204,23 +251,41 @@ export function SocialLeaderboard({
             )}
           </AnimatePresence>
 
-          {/* Empty state — nobody (or only you) on the board */}
-          {!isLoading && !hasFriends && (
+          {/* Empty state — no registered competitors on the board yet */}
+          {!isLoading && !hasCompetitors && (
             <EmptyState
               icon="Users"
-              title="এখনো কোনো বন্ধু অনলাইন নেই"
-              description="আপনার বন্ধুরাও অভ্যাস অ্যাপ ব্যবহার করলে এখানে লিডারবোর্ডে দেখা যাবে।"
+              title="লিডারবোর্ড এখনো খালি"
+              description={
+                isGuest
+                  ? "প্রথম হয়ে যান! অ্যাকাউন্ট খুলে অভ্যাস সম্পন্ন করলেই আপনি এখানে আসবেন।"
+                  : "আপনি প্রথম ব্যবহারকারী! আরও অভ্যাস সম্পন্ন করে XP বাড়াতে থাকুন।"
+              }
               action={
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void handleInvite()}
-                  className="gap-1.5"
-                >
-                  <Share2 size={13} aria-hidden />
-                  বন্ধুদের আমন্ত্রণ জানান
-                </Button>
+                isGuest ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      window.location.href = "/login";
+                    }}
+                    className="gap-1.5"
+                  >
+                    <UserPlus size={13} aria-hidden />
+                    অ্যাকাউন্ট খুলুন
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void handleInvite()}
+                    className="gap-1.5"
+                  >
+                    <Share2 size={13} aria-hidden />
+                    বন্ধুদের আমন্ত্রণ জানান
+                  </Button>
+                )
               }
             />
           )}

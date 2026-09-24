@@ -10,6 +10,10 @@ export interface LeaderboardEntry {
   xp: number;
   level: number;
   bestStreak: number;
+  /** Precise global rank (users outside the top list get their real position). */
+  rank?: number;
+  /** Live presence — the user has a social socket connected right now. */
+  online?: boolean;
   isYou?: boolean;
 }
 
@@ -38,8 +42,9 @@ const CONNECT_TIMEOUT_MS = 5000;
 
 /**
  * useSocial — connects to the social WebSocket mini-service (port 3003).
- * Returns live leaderboard + activity feed + a function to broadcast the
- * current user's activity.
+ * The leaderboard is backed by the production database (real registered
+ * users, real XP) with live presence overlaid; the activity feed streams
+ * real events from real people. No demo data exists anywhere in the chain.
  *
  * The hook tracks a finite-state connection lifecycle so the UI can show a
  * proper loading skeleton, surface a clear error state on failure (empty
@@ -47,6 +52,7 @@ const CONNECT_TIMEOUT_MS = 5000;
  * via `reconnect()`.
  */
 export function useSocial(opts?: {
+  userId?: string;
   name?: string;
   xp?: number;
   level?: number;
@@ -173,6 +179,7 @@ export function useSocial(opts?: {
     if (!opts?.name) return;
     joinedRef.current = true;
     socketRef.current.emit("join", {
+      userId: opts.userId,
       name: opts.name,
       xp: opts.xp ?? 0,
       level: opts.level ?? 1,
@@ -180,6 +187,7 @@ export function useSocial(opts?: {
     });
   }, [
     connectionState,
+    opts?.userId,
     opts?.name,
     opts?.xp,
     opts?.level,
