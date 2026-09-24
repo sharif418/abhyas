@@ -4445,3 +4445,87 @@ Work Log:
 
 Stage Summary:
 - Phase 2 fully live in production (v1.4.0).
+
+---
+Task ID: 5 (Social 100% Real + Android SDK Machine Setup)
+Agent: Z.ai Code (Principal Architect)
+
+Task: (1) Set up the Android SDK on this machine, best approach, so Android
+builds happen locally. (2) The Social section still showed demo users
+(রহিম/করিম/ফাতেমা...) in production — make it work 100% real, quality-full,
+zero mock data anywhere in the chain.
+
+Work Log:
+- Pulled latest from GitHub (git reset --hard origin/main; divergence was only
+  .zscripts/dev.pid). Audited the full social chain: frontend components were
+  already demo-free, but a socket.io probe against production
+  (social.abhyas.ailearnersbd.com) revealed the DEPLOYED service ran a STALE
+  build from before the demo purge (commit ad34041 removed DEMO_USERS from the
+  repo, but the Coolify social app was never redeployed).
+- Root architecture flaw fixed too: the old leaderboard was ephemeral (only
+  users with a live WebSocket showed; leave = vanish). Not "real".
+- **Social service rewrite (mini-services/social/index.ts)**:
+  - Leaderboard now READS the production PostgreSQL (same User/Habit tables
+    the main app writes) via postgres.js — top 20 real registered users by
+    XP → bestStreak → name. Single-writer principle preserved (main app
+    writes XP; social only reads + live-patches).
+  - `join` now carries userId (from /api/me) → per-viewer `isYou`, precise
+    global rank via COUNT query (cached 30s) for users outside top-20, and
+    live presence overlay (`online: true`) for users with a live socket.
+  - Shared guest row (local-default-user) EXCLUDED from the board — guests
+    get an honest "অ্যাকাউন্ট খুলুন" CTA. Registered users only.
+  - `update-xp` patches the board instantly, then reconciles from DB after a
+    2.5s debounce; periodic 60s refresh only while users are online.
+  - Fixed healthz double-response crash: owned the httpServer request routing
+    (removeAllListeners + delegate) so /healthz answers exactly once with
+    JSON 200 (Docker/Coolify healthchecks now truly green).
+  - postgres:// URL guard: SQLite file URLs (local dev) don't activate DB
+    mode → graceful live-connections-only fallback; unreachable DB degrades
+    the same way. dbHealthy reported in /healthz.
+  - Join activity events only for registered users (guest joins would flood
+    the feed with indistinguishable "অতিথি" entries).
+- **Frontend (social-view / social-leaderboard / use-social / feed)**:
+  - SocialMe gains `id`; useSocial passes userId; bestStreak computed from
+    the real habits query (shared ["habits"] cache).
+  - Leaderboard rows: precise rank badges (entry.rank), live presence dots
+    (emerald pulse), guest CTA hero card ("প্রতিযোগিতায় যুক্ত হন" → /login).
+  - Empty state split: guest (register CTA) vs first-registered-user (invite
+    friends); feed empty state distinguishes connected vs disconnected.
+- **Deployment**: pushed 4e0606c; added DATABASE_URL env to the Coolify
+  social app (geus73jhhje3xtae9mjluzn3) via API (internal Docker URL
+  postgresql://abhyas:***@k14nyp47jml21rpbztoqx078:5432/abhyas); redeployed
+  BOTH apps (social + main).
+- **Android SDK setup** (machine-level, survives):
+  - JDK 21 was JRE-only (no javac) → installed Temurin JDK 21 to /home/z/jdk
+    (JAVA_HOME in ~/.bashrc).
+  - Android cmdline-tools → /home/z/Android/Sdk (ANDROID_HOME in ~/.bashrc);
+  accepted licenses; installed platform-tools 37.0.1, platforms;android-36,
+  build-tools;36.0.0.
+  - android/local.properties → sdk.dir (gitignored).
+  - `bunx cap sync android` + `./gradlew assembleDebug --no-daemon
+    -Dorg.gradle.jvmargs=-Xmx1024m -Dorg.gradle.workers.max=2` →
+    **BUILD SUCCESSFUL in 1m47s** → app-debug.apk (4.2MB) at
+    android/app/build/outputs/apk/debug/. Toolchain fully verified.
+  - ESLint ignores added for android build outputs + capacitor-web.
+- **Production verification (end-to-end)**:
+  - social /healthz → `{"status":"ok","db":"ok"}` (DB-backed mode live).
+  - socket probe: leaderboard = [Sharif, xp 1045, level 4, bestStreak 10,
+    rank 1] — a REAL registered account. ZERO demo entries.
+  - Browser (agent-browser, mobile 390px + desktop 1280px) on
+    https://abhyas.ailearnersbd.com: Social view connected ("১ জন অনলাইন"),
+    guest CTA card, leaderboard row "১ | S | Sharif | ১০৪৫ XP | ১০ | লেভেল ৪",
+    honest feed empty state, zero console/page errors.
+  - Local dev verified through Caddy gateway (:81 → XTransformPort=3003):
+    connect → join(userId) → activity broadcast → update-xp re-rank →
+    get-leaderboard snapshot all pass (protocol test).
+
+Stage Summary:
+- Social section is now 100% REAL end-to-end: PostgreSQL-backed leaderboard
+  of real registered users (persistent, not ephemeral), live presence,
+  real activity events, honest guest/empty states. Demo data eradicated from
+  the deployed service (stale-build root cause) AND from the architecture.
+- This machine can now build the Android APK: JDK21+Temurin + Android SDK 36
+  + Gradle 8.14.3 verified by a successful assembleDebug.
+- Commits: 4e0606c (social overhaul), 6abd7d1 (polish + lint ignores).
+- Next: signed release APK/AAB for Play Store (needs keystore), FCM push
+  wiring in the Android shell, and more registered users make the board alive.
